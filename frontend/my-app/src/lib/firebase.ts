@@ -2,10 +2,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
 // Firebase config using environment variables
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

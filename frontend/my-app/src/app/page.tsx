@@ -2,7 +2,6 @@
 
 import LeagueSelector from "./components/LeagueSelector";
 import LeagueTable from "./components/LeagueTable";
-<<<<<<< HEAD
 import MemberManager from "./components/MemberManager";
 import TournamentManager from "./components/TournamentManager";
 import Link from "next/link";
@@ -14,15 +13,6 @@ function HomePage() {
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>("");
   const [mounted, setMounted] = useState(false);
   const [activeSection, setActiveSection] = useState<'leagues' | 'users' | 'tournaments'>('leagues');
-=======
-import Link from "next/link";
-import { useState, useEffect, useCallback } from "react";
-
-export default function Home() {
-  const [selectedLeague, setSelectedLeague] = useState<string>("");
-  const [selectedLeagueId, setSelectedLeagueId] = useState<string>("");
-  const [mounted, setMounted] = useState(false);
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
 
   // Handle mounting and localStorage in a single effect
   useEffect(() => {
@@ -57,11 +47,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-<<<<<<< HEAD
       {/* Enhanced Header with Navigation */}
-=======
-      {/* Enhanced Header */}
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
       <div className="text-center py-12 px-4">
         <div className="relative inline-block">
           <h1 className="text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent mb-4">
@@ -73,7 +59,6 @@ export default function Home() {
         </div>
         <p className="text-xl text-gray-600 font-medium">Create and manage your football leagues with style</p>
         <div className="w-32 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 mx-auto rounded-full mt-4"></div>
-<<<<<<< HEAD
         
         {/* Navigation Tabs */}
         <div className="flex justify-center mt-8">
@@ -180,94 +165,19 @@ export default function Home() {
         {/* Tournaments Section */}
         {activeSection === 'tournaments' && (
           <TournamentManager />
-=======
-      </div>
-
-      <div className="container mx-auto px-4 pb-12">
-        {/* League Selection */}
-        <LeagueSelector onLeagueSelect={handleLeagueSelect} />
-
-        {/* Main Content */}
-        {!selectedLeague ? (
-          <div className="text-center mt-12">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-12 max-w-2xl mx-auto border border-white/20">
-              <div className="text-8xl mb-8 animate-bounce">⚽</div>
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-4">
-                Welcome to League Manager!
-              </h2>
-              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Create your first league or select an existing one to start managing teams and matches.
-              </p>
-              
-              {/* Feature Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                {[
-                  { icon: "🏆", title: "Multiple Leagues", desc: "Create and manage unlimited leagues" },
-                  { icon: "👥", title: "Team Management", desc: "Add teams with automatic statistics" },
-                  { icon: "⚽", title: "Match Results", desc: "Record matches with live table updates" },
-                  { icon: "📊", title: "Match History", desc: "Beautiful history with filtering options" }
-                ].map((feature, index) => (
-                  <div key={index} className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <span className="text-2xl">{feature.icon}</span>
-                      <h3 className="font-bold text-gray-800">{feature.title}</h3>
-                    </div>
-                    <p className="text-gray-600 text-sm">{feature.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {/* Current League Display */}
-            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border-l-4 border-blue-500 border border-white/20">
-              <h2 className="text-2xl font-bold text-gray-800 flex items-center space-x-3">
-                <span className="text-3xl">🏆</span>
-                <span>Currently Managing: </span>
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  {selectedLeague}
-                </span>
-              </h2>
-            </div>
-
-            {/* League Table */}
-            <LeagueTable leagueName={selectedLeague} leagueId={selectedLeagueId} />
-
-            {/* Additional Links */}
-            <div className="flex justify-center pt-8">
-              <Link
-                href="/match-history"
-                className="group inline-flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-xl font-bold text-lg"
-              >
-                <span className="text-2xl group-hover:animate-bounce">📊</span>
-                <span>View Match History</span>
-                <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
-              </Link>
-            </div>
-          </div>
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
         )}
 
         {/* Enhanced Footer */}
         <footer className="mt-16 text-center">
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
             <p className="text-gray-600 font-medium">
-<<<<<<< HEAD
               ⚽ Football League Manager - @Kachy Odunze
-=======
-              ⚽ Football League Manager - Built with Next.js & React ⚽
-            </p>
-            <p className="text-gray-500 text-sm mt-2">
-              Professional league management made simple
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
             </p>
           </div>
         </footer>
       </div>
     </main>
   );
-<<<<<<< HEAD
 }
 
 export default function Home() {
@@ -277,6 +187,4 @@ export default function Home() {
       <AuthModal />
     </AuthProvider>
   );
-=======
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
 }

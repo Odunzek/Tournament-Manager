@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 // lib/firebaseUtils.ts - UPDATED with member support
-=======
-// lib/firebaseUtils.ts
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
 import { 
   collection, 
   addDoc, 
@@ -15,7 +11,6 @@ import {
   onSnapshot,
   orderBy 
 } from 'firebase/firestore';
-<<<<<<< HEAD
 import { db, League, Match } from './firebase';
 
 // Updated Team interface to include member information
@@ -40,9 +35,6 @@ export interface LeagueExtended extends League {
   status?: 'active' | 'ended';
   endedAt?: Date;
 }
-=======
-import { db, League, Team, Match } from './firebase';
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
 
 // League Functions
 export const createLeague = async (name: string): Promise<string> => {
@@ -50,10 +42,7 @@ export const createLeague = async (name: string): Promise<string> => {
     const docRef = await addDoc(collection(db, 'leagues'), {
       name,
       createdAt: new Date(),
-<<<<<<< HEAD
       status: 'active',  // Added: Default to active
-=======
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
       teams: []
     });
     return docRef.id;
@@ -63,11 +52,7 @@ export const createLeague = async (name: string): Promise<string> => {
   }
 };
 
-<<<<<<< HEAD
 export const getLeagues = async (): Promise<LeagueExtended[]> => {
-=======
-export const getLeagues = async (): Promise<League[]> => {
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
   try {
     const querySnapshot = await getDocs(
       query(collection(db, 'leagues'), orderBy('createdAt', 'desc'))
@@ -75,11 +60,7 @@ export const getLeagues = async (): Promise<League[]> => {
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
-<<<<<<< HEAD
     } as LeagueExtended));
-=======
-    } as League));
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
   } catch (error) {
     console.error('Error getting leagues:', error);
     return [];
@@ -98,7 +79,6 @@ export const deleteLeague = async (leagueId: string): Promise<void> => {
       deleteDoc(doc(db, 'teams', teamDoc.id))
     );
     
-<<<<<<< HEAD
     // Delete all matches for this league
     const matchesQuery = query(collection(db, 'matches'), where('leagueId', '==', leagueId));
     const matchesSnapshot = await getDocs(matchesQuery);
@@ -108,16 +88,12 @@ export const deleteLeague = async (leagueId: string): Promise<void> => {
     );
     
     await Promise.all([...deletePromises, ...deleteMatchPromises]);
-=======
-    await Promise.all(deletePromises);
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
   } catch (error) {
     console.error('Error deleting league:', error);
     throw error;
   }
 };
 
-<<<<<<< HEAD
 export const updateLeague = async (leagueId: string, updates: Partial<LeagueExtended>): Promise<void> => {
   try {
     const updateData: any = { ...updates };
@@ -128,18 +104,12 @@ export const updateLeague = async (leagueId: string, updates: Partial<LeagueExte
     }
     
     await updateDoc(doc(db, 'leagues', leagueId), updateData);
-=======
-export const updateLeague = async (leagueId: string, updates: Partial<League>): Promise<void> => {
-  try {
-    await updateDoc(doc(db, 'leagues', leagueId), updates);
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
   } catch (error) {
     console.error('Error updating league:', error);
     throw error;
   }
 };
 
-<<<<<<< HEAD
 // Updated Team Functions with member support
 export const createTeam = async (
   leagueId: string, 
@@ -148,12 +118,6 @@ export const createTeam = async (
 ): Promise<string> => {
   try {
     const teamData: any = {
-=======
-// Team Functions
-export const createTeam = async (leagueId: string, teamName: string): Promise<string> => {
-  try {
-    const docRef = await addDoc(collection(db, 'teams'), {
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
       leagueId,
       name: teamName,
       played: 0,
@@ -164,7 +128,6 @@ export const createTeam = async (leagueId: string, teamName: string): Promise<st
       goalsAgainst: 0,
       goalDifference: 0,
       points: 0
-<<<<<<< HEAD
     };
 
     // Add member information if provided
@@ -178,9 +141,6 @@ export const createTeam = async (leagueId: string, teamName: string): Promise<st
     }
 
     const docRef = await addDoc(collection(db, 'teams'), teamData);
-=======
-    });
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
     return docRef.id;
   } catch (error) {
     console.error('Error creating team:', error);
@@ -202,7 +162,6 @@ export const getTeams = async (leagueId: string): Promise<Team[]> => {
   }
 };
 
-<<<<<<< HEAD
 // Get all teams across all leagues (for checking member availability)
 export const getAllTeams = async (): Promise<Team[]> => {
   try {
@@ -251,8 +210,6 @@ export const isMemberInActiveLeague = async (memberId: string): Promise<{ inLeag
   }
 };
 
-=======
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
 export const updateTeamStats = async (teamId: string, stats: Partial<Team>): Promise<void> => {
   try {
     await updateDoc(doc(db, 'teams', teamId), stats);
@@ -262,7 +219,6 @@ export const updateTeamStats = async (teamId: string, stats: Partial<Team>): Pro
   }
 };
 
-<<<<<<< HEAD
 // Match Functions (updated to include leagueId)
 export const saveMatch = async (match: {
   leagueName: string;
@@ -280,15 +236,6 @@ export const saveMatch = async (match: {
     };
     
     const docRef = await addDoc(collection(db, 'matches'), matchData);
-=======
-// Match Functions
-export const saveMatch = async (match: Omit<Match, 'id'>): Promise<string> => {
-  try {
-    const docRef = await addDoc(collection(db, 'matches'), {
-      ...match,
-      date: new Date(match.date)
-    });
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
     return docRef.id;
   } catch (error) {
     console.error('Error saving match:', error);
@@ -314,7 +261,6 @@ export const getMatches = async (leagueName: string): Promise<Match[]> => {
   }
 };
 
-<<<<<<< HEAD
 // Get matches by league ID (alternative method)
 export const getMatchesByLeagueId = async (leagueId: string): Promise<Match[]> => {
   try {
@@ -336,20 +282,12 @@ export const getMatchesByLeagueId = async (leagueId: string): Promise<Match[]> =
 
 // Real-time listeners
 export const subscribeToLeagues = (callback: (leagues: LeagueExtended[]) => void) => {
-=======
-// Real-time listeners
-export const subscribeToLeagues = (callback: (leagues: League[]) => void) => {
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
   const q = query(collection(db, 'leagues'), orderBy('createdAt', 'desc'));
   return onSnapshot(q, (snapshot) => {
     const leagues = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
-<<<<<<< HEAD
     } as LeagueExtended));
-=======
-    } as League));
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
     callback(leagues);
   });
 };
@@ -364,7 +302,6 @@ export const subscribeToTeams = (leagueId: string, callback: (teams: Team[]) => 
     callback(teams);
   });
 };
-<<<<<<< HEAD
 
 // Subscribe to all teams (for checking member availability across leagues)
 export const subscribeToAllTeams = (callback: (teams: Team[]) => void) => {
@@ -378,6 +315,3 @@ export const subscribeToAllTeams = (callback: (teams: Team[]) => void) => {
 };
 
 export type { League, Match };
-=======
-export type { League, Team, Match };
->>>>>>> 04283011a3b48726eca886364dda426bcea2bffe
