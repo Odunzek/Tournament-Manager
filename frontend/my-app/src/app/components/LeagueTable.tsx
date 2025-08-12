@@ -1,5 +1,5 @@
 "use client";
-
+import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import MatchResultForm from "./MatchResultForm";
 import Link from "next/link";
@@ -18,12 +18,12 @@ import {
 } from "../../lib/membershipUtils";
 import { useAuth } from "../../lib/AuthContext";
 
-// Updated Team type to track member info
+// Team type
 type Team = {
   id?: string;
-  memberId: string;  // Track which member this is
+  memberId: string;
   name: string;
-  psnId?: string;    // Keep PSN ID from member
+  psnId?: string;
   played: number;
   won: number;
   drawn: number;
@@ -35,7 +35,6 @@ type Team = {
   leagueId?: string;
 };
 
-// League status type
 type LeagueStatus = 'active' | 'ended';
 
 interface LeagueTableProps {
@@ -43,44 +42,131 @@ interface LeagueTableProps {
   leagueId: string;
 }
 
-// Toast notification component
+// Toast notification component - MOBILE RESPONSIVE
 const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose: () => void }) => (
-  <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-2xl transform transition-all duration-500 ${
+  <div className={`fixed top-4 right-4 left-4 sm:left-auto z-50 px-4 sm:px-6 py-3 sm:py-4 rounded-lg shadow-2xl transform transition-all duration-500 max-w-sm sm:max-w-md ${
     type === 'success' ? 'bg-green-500 text-white' : 
     type === 'error' ? 'bg-red-500 text-white' :
     'bg-blue-500 text-white'
   }`}>
     <div className="flex items-center space-x-3">
-      <span className="text-xl">
+      <span className="text-lg sm:text-xl">
         {type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}
       </span>
-      <span className="font-medium">{message}</span>
-      <button onClick={onClose} className="ml-4 text-white hover:text-gray-200">×</button>
+      <span className="font-medium text-sm sm:text-base flex-1">{message}</span>
+      <button onClick={onClose} className="ml-4 text-white hover:text-gray-200 text-xl">×</button>
     </div>
   </div>
 );
 
-// Loading skeleton
+// Loading skeleton - MOBILE RESPONSIVE
 const TableSkeleton = () => (
   <div className="bg-white rounded-xl shadow-xl overflow-hidden">
-    <div className="bg-gradient-to-r from-gray-200 to-gray-300 px-6 py-4">
-      <div className="h-6 bg-white bg-opacity-30 rounded w-48"></div>
+    <div className="bg-gradient-to-r from-gray-200 to-gray-300 px-4 sm:px-6 py-3 sm:py-4">
+      <div className="h-5 sm:h-6 bg-white bg-opacity-30 rounded w-32 sm:w-48"></div>
     </div>
-    <div className="p-6 space-y-4">
+    <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="flex items-center space-x-4 animate-pulse">
-          <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
-          <div className="flex-1 h-4 bg-gray-200 rounded"></div>
-          <div className="w-8 h-4 bg-gray-200 rounded"></div>
-          <div className="w-8 h-4 bg-gray-200 rounded"></div>
-          <div className="w-8 h-4 bg-gray-200 rounded"></div>
-          <div className="w-8 h-4 bg-gray-200 rounded"></div>
-          <div className="w-12 h-6 bg-gray-200 rounded-full"></div>
+        <div key={i} className="flex items-center space-x-3 sm:space-x-4 animate-pulse">
+          <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-200 rounded-full"></div>
+          <div className="flex-1 h-3 sm:h-4 bg-gray-200 rounded"></div>
+          <div className="w-6 h-3 sm:w-8 sm:h-4 bg-gray-200 rounded"></div>
+          <div className="w-10 h-5 sm:w-12 sm:h-6 bg-gray-200 rounded-full"></div>
         </div>
       ))}
     </div>
   </div>
 );
+
+// Mobile Team Card Component - NEW FOR MOBILE
+const TeamCard = ({ team, position, totalTeams }: { team: Team; position: number; totalTeams: number }) => {
+  const goalDiff = team.gf - team.ga;
+  const winPercentage = team.played === 0 ? 0 : (team.won / team.played) * 100;
+  
+  return (
+    <div className={`bg-white rounded-xl shadow-lg overflow-hidden mb-4 border-l-4 ${
+      position === 1 ? 'border-yellow-400' :
+      position <= 4 ? 'border-green-400' :
+      position >= totalTeams - 1 && totalTeams > 4 ? 'border-red-400' : 'border-gray-300'
+    }`}>
+      <div className="p-4">
+        {/* Header with Position and Points */}
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex items-center space-x-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-lg ${
+              position === 1 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white' :
+              position <= 4 ? 'bg-gradient-to-r from-green-400 to-green-500 text-white' :
+              position >= totalTeams - 1 && totalTeams > 4 ? 'bg-gradient-to-r from-red-400 to-red-500 text-white' :
+              'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-700'
+            }`}>
+              {position}
+            </div>
+            <div>
+              <div className="font-bold text-gray-900">{team.name}</div>
+              {team.psnId && (
+                <div className="text-xs text-blue-600">{team.psnId}</div>
+              )}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-blue-600">{team.points}</div>
+            <div className="text-xs text-gray-500">POINTS</div>
+          </div>
+        </div>
+        
+        {/* Stats Grid */}
+        <div className="grid grid-cols-4 gap-2 text-center">
+          <div className="bg-gray-50 rounded-lg p-2">
+            <div className="text-xs text-gray-500">P</div>
+            <div className="font-bold text-sm">{team.played}</div>
+          </div>
+          <div className="bg-green-50 rounded-lg p-2">
+            <div className="text-xs text-gray-500">W</div>
+            <div className="font-bold text-sm text-green-600">{team.won}</div>
+          </div>
+          <div className="bg-yellow-50 rounded-lg p-2">
+            <div className="text-xs text-gray-500">D</div>
+            <div className="font-bold text-sm text-yellow-600">{team.drawn}</div>
+          </div>
+          <div className="bg-red-50 rounded-lg p-2">
+            <div className="text-xs text-gray-500">L</div>
+            <div className="font-bold text-sm text-red-600">{team.lost}</div>
+          </div>
+        </div>
+        
+        {/* Goals and Form */}
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="flex justify-between items-center">
+            <div className="flex space-x-4 text-sm">
+              <span className="text-gray-600">GF: <span className="font-bold">{team.gf}</span></span>
+              <span className="text-gray-600">GA: <span className="font-bold">{team.ga}</span></span>
+              <span className={`font-bold ${
+                goalDiff > 0 ? 'text-green-600' : goalDiff < 0 ? 'text-red-600' : 'text-gray-700'
+              }`}>
+                GD: {goalDiff > 0 ? '+' : ''}{goalDiff}
+              </span>
+            </div>
+            {team.played > 0 && (
+              <div className="flex items-center space-x-1">
+                <span className="text-xs text-gray-500">Form</span>
+                <div className="w-12 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      winPercentage >= 70 ? 'bg-green-500' :
+                      winPercentage >= 40 ? 'bg-yellow-500' :
+                      'bg-red-500'
+                    }`}
+                    style={{ width: `${winPercentage}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) {
   const { isAuthenticated, setShowAuthModal } = useAuth();
@@ -109,7 +195,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     setTimeout(() => setToast(null), 3000);
   };
 
-  // Check authentication
+  // Check authentication - KEEPING YOUR ORIGINAL SIMPLE VERSION
   const requireAuth = () => {
     if (!isAuthenticated) {
       setShowAuthModal(true);
@@ -154,7 +240,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     return () => unsubscribe();
   }, []);
 
-  // Load teams from Firebase when leagueId changes
+  // Load teams from Firebase
   useEffect(() => {
     if (!leagueId) {
       setIsLoaded(true);
@@ -191,18 +277,16 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     return () => unsubscribe();
   }, [leagueId]);
 
-  // Get available members (not in any active league)
+  // Get available members
   const getAvailableMembers = () => {
     return members.filter(member => {
-      // Check if member is in current league
       const inCurrentLeague = teams.some(team => 
         team.memberId === member.id || team.name === member.name
       );
       
-      // Check if member is in other active leagues
       const inOtherActiveLeague = otherLeagues.some(league => {
-        if (league.name === leagueName) return false; // Skip current league
-        if (league.status === 'ended') return false; // Skip ended leagues
+        if (league.name === leagueName) return false;
+        if (league.status === 'ended') return false;
         
         return league.teams.some((team: any) => 
           team.id === member.id || team.name === member.name
@@ -213,16 +297,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     });
   };
 
-  // Get which league a member is in
-  const getMemberLeague = (memberId: string) => {
-    const league = otherLeagues.find(league => {
-      if (league.status === 'ended') return false;
-      return league.teams.some((team: any) => team.id === memberId);
-    });
-    return league?.name;
-  };
-
-  // Handle adding a member to league
+  // Handle adding a member - USING YOUR ORIGINAL requireAuth()
   const handleAddMember = async () => {
     if (!requireAuth()) return;
     
@@ -244,13 +319,11 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
 
     setIsLoading(true);
     try {
-      // Create team with member info
       await createTeam(leagueId, selectedMember.name, {
         memberId: selectedMember.id,
         psnId: selectedMember.psnId
       });
       
-      // Also update localStorage for cross-league checking
       const teamsKey = `league_${leagueName}_teams`;
       const currentTeams = JSON.parse(localStorage.getItem(teamsKey) || '[]');
       currentTeams.push({
@@ -271,7 +344,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     }
   };
 
-  // Handle match results
+  // Handle match results - USING YOUR ORIGINAL requireAuth()
   const handleMatchSubmit = async (data: {
     team1: string;
     team2: string;
@@ -284,13 +357,14 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
       showToast('No league selected', 'error');
       return;
     }
-
+    // console.log('Current leagueId:', leagueId, 'Type:', typeof leagueId);
     const { team1, team2, score1, score2 } = data;
     setIsLoading(true);
 
     try {
       await saveMatch({
         leagueName,
+        leagueId,
         homeTeam: team1,
         awayTeam: team2,
         homeScore: score1,
@@ -305,7 +379,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
         throw new Error('Teams not found');
       }
 
-      // Calculate and update stats (same as before)
+      // Calculate stats
       const team1GoalsFor = team1Data.gf + score1;
       const team1GoalsAgainst = team1Data.ga + score2;
       const team1Won = team1Data.won + (score1 > score2 ? 1 : 0);
@@ -343,7 +417,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
         })
       ]);
 
-      setActiveTab('table');
+      
       const result = score1 === score2 ? 'Draw' : 
                     score1 > score2 ? `${team1} wins` : `${team2} wins`;
       showToast(`Match result recorded: ${result}`, 'success');
@@ -355,17 +429,15 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     }
   };
 
-  // Handle ending the league (releases members)
+  // Handle ending league - USING YOUR ORIGINAL requireAuth()
   const handleEndLeague = async () => {
     if (!requireAuth()) return;
     
     setIsLoading(true);
     try {
-      // Update league status
       localStorage.setItem(`league_${leagueId}_status`, 'ended');
       setLeagueStatus('ended');
       
-      // Update in Firebase if needed
       if (leagueId) {
         await updateLeague(leagueId, { status: 'ended', endedAt: new Date() });
       }
@@ -380,7 +452,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     }
   };
 
-  // Handle clearing/deleting the entire league
+  // Handle deleting league - USING YOUR ORIGINAL requireAuth()
   const handleClearLeague = async () => {
     if (!requireAuth()) return;
     
@@ -393,7 +465,6 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     try {
       await deleteLeague(leagueId);
       
-      // Clear localStorage data
       localStorage.removeItem(`league_${leagueName}_teams`);
       localStorage.removeItem(`league_${leagueId}_status`);
       
@@ -440,10 +511,10 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8 text-center">
-            <div className="h-12 bg-gray-200 rounded w-64 mx-auto mb-4 animate-pulse"></div>
-            <div className="w-24 h-1 bg-gray-200 rounded mx-auto animate-pulse"></div>
+        <div className="container mx-auto px-4 py-4 sm:py-8">
+          <div className="mb-6 sm:mb-8 text-center">
+            <div className="h-8 sm:h-12 bg-gray-200 rounded w-48 sm:w-64 mx-auto mb-3 sm:mb-4 animate-pulse"></div>
+            <div className="w-20 sm:w-24 h-1 bg-gray-200 rounded mx-auto animate-pulse"></div>
           </div>
           <TableSkeleton />
         </div>
@@ -452,42 +523,32 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Toast Notifications */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
-
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8 text-center relative">
+    <div className="min-h-screen">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
+        {/* Header - MOBILE RESPONSIVE */}
+        <div className="mb-6 sm:mb-8 text-center relative">
           <div className="relative">
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent mb-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-white bg-clip-text text-transparent mb-3 sm:mb-4 leading-snug px-4">
               {leagueName || "League"} Table
             </h1>
             {leagueStatus === 'ended' && (
-              <span className="absolute top-0 -right-20 bg-gray-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+              <span className="absolute -top-2 -right-2 sm:top-0 sm:-right-20 bg-gray-500 text-white px-2 py-1 sm:px-3 rounded-full text-xs sm:text-sm font-bold">
                 ENDED
               </span>
             )}
           </div>
-          <div className="w-32 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 mx-auto rounded-full mb-4"></div>
-          
-          {/* Action Buttons */}
+
+          {/* Action Buttons - MOBILE RESPONSIVE */}
           {teams.length > 0 && (
-            <div className="absolute top-0 right-0 flex gap-2">
+            <div className="mt-4 sm:mt-0 sm:absolute sm:top-0 sm:right-0 flex flex-col sm:flex-row gap-2">
               {leagueStatus === 'active' && (
                 <button
                   onClick={() => setShowEndConfirm(true)}
                   disabled={isLoading}
-                  className="group bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50"
+                  className="group bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50"
                   title="End league and release members"
                 >
-                  <span className="flex items-center space-x-2">
+                  <span className="flex items-center justify-center space-x-2">
                     <span>🏁</span>
                     <span>End League</span>
                   </span>
@@ -496,10 +557,10 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={isLoading}
-                className="group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50"
+                className="group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50"
                 title="Delete league permanently"
               >
-                <span className="flex items-center space-x-2">
+                <span className="flex items-center justify-center space-x-2">
                   <span className="group-hover:rotate-12 transition-transform duration-300">🗑️</span>
                   <span>Clear League</span>
                 </span>
@@ -508,29 +569,41 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
           )}
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-2 flex space-x-2 border border-white/20">
+        {/* Navigation Tabs - MOBILE RESPONSIVE */}
+        <div className="flex justify-center mb-6 sm:mb-8 overflow-x-auto">
+          <div className="p-3 sm:p-6 flex space-x-2 sm:space-x-4 min-w-max">
             {[
-              { id: 'table', label: 'League Table', icon: '🏆', color: 'blue' },
-              { id: 'add-member', label: 'Add Member', icon: '➕', color: 'green', disabled: leagueStatus === 'ended' },
-              { id: 'add-match', label: 'Add Match', icon: '⚽', color: 'purple', disabled: leagueStatus === 'ended' }
+              { id: 'table', label: 'Table', icon: '/icons/leaguesTable.svg', color: 'blue', size: 30, disabled: false },
+              { id: 'add-member', label: 'Add', icon: '/icons/addplayers.svg', color: 'blue', disabled: leagueStatus === 'ended', size: 38 },
+              { id: 'add-match', label: 'Match', icon: '/icons/addmatches.svg', color: 'blue', disabled: leagueStatus === 'ended', size: 38 }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => !tab.disabled && setActiveTab(tab.id as any)}
                 disabled={isLoading || tab.disabled}
-                className={`px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`px-4 sm:px-8 py-2 sm:py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
                   activeTab === tab.id
                     ? `bg-gradient-to-r from-${tab.color}-500 to-${tab.color}-600 text-white shadow-lg scale-105`
                     : tab.disabled
                     ? 'text-gray-400 bg-gray-100'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+                    : 'text-white hover:text-gray-800 hover:bg-white/50'
                 }`}
               >
-                <span className="flex items-center space-x-2">
-                  <span className="text-lg">{tab.icon}</span>
-                  <span>{tab.label}</span>
+                <span className="flex flex-col sm:flex-row items-center sm:space-x-2">
+                  <div className="w-6 h-6 sm:w-auto sm:h-auto">
+                    <Image 
+                      src={tab.icon} 
+                      alt={`${tab.label} icon`} 
+                      width={tab.size} 
+                      height={tab.size}
+                      className="mb-1 sm:mb-0 "
+                    />
+                  </div>
+                  <span className="text-xs sm:text-base hidden sm:block">{tab.label}</span>
+                  {/* Shorter labels for mobile */}
+                  <span className="text-xs sm:text-base block sm:hidden">
+                    {tab.id === 'table' ? 'Table' : tab.id === 'add-member' ? 'Add' : 'Match'}
+                  </span>
                 </span>
               </button>
             ))}
@@ -539,24 +612,52 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
 
         {/* Table Content */}
         {activeTab === 'table' && (
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden border border-white/20">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
             {/* Table Header */}
-            <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 px-8 py-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-white flex items-center space-x-3">
-                  <span className="text-3xl">🏆</span>
+            <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 px-4 sm:px-8 py-4 sm:py-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between">
+                <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-0">
+                  <span className="text-2xl sm:text-3xl">🏆</span>
                   <span>Current Standings</span>
                 </h2>
                 {teams.length > 0 && (
-                  <div className="text-white/80 text-sm">
-                    {teams.length} Members • {teams.reduce((sum, team) => sum + team.played, 0)} Matches Played
+                  <div className="text-white/80 text-xs sm:text-sm">
+                    {teams.length} Members • {teams.reduce((sum, team) => sum + team.played, 0)} Matches
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
+            {/* Mobile Cards View - NEW */}
+            <div className="block md:hidden p-4">
+              {sortedTeams.map((team, index) => (
+                <TeamCard 
+                  key={team.id || team.name} 
+                  team={team} 
+                  position={index + 1} 
+                  totalTeams={sortedTeams.length}
+                />
+              ))}
+              {teams.length === 0 && (
+                <div className="py-12 text-center">
+                  <div className="text-6xl mb-4 animate-bounce">⚽</div>
+                  <p className="text-xl font-bold text-gray-800 mb-2">No members added yet</p>
+                  <p className="text-sm text-gray-600 mb-6">Add members to get started!</p>
+                  {leagueStatus === 'active' && (
+                    <button
+                      onClick={() => setActiveTab('add-member')}
+                      disabled={isLoading}
+                      className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50"
+                    >
+                      Add First Member
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Table View - YOUR ORIGINAL */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>
@@ -582,7 +683,6 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                           position >= sortedTeams.length - 2 && sortedTeams.length > 4 ? 'bg-gradient-to-r from-red-50 via-rose-50 to-red-100 border-l-4 border-red-400' : 'hover:bg-gray-50'
                         }`}
                       >
-                        {/* Position */}
                         <td className="px-4 py-6 whitespace-nowrap">
                           <div className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold shadow-lg ${
                             position === 1 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white' :
@@ -593,8 +693,6 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                             {position}
                           </div>
                         </td>
-
-                        {/* Member Name */}
                         <td className="px-4 py-6 whitespace-nowrap">
                           <div className="flex items-center space-x-3">
                             <div 
@@ -617,13 +715,9 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                             </div>
                           </div>
                         </td>
-
-                        {/* PSN ID */}
                         <td className="px-4 py-6 whitespace-nowrap text-center text-sm text-blue-600 font-medium">
                           {team.psnId || '-'}
                         </td>
-
-                        {/* Stats */}
                         <td className="px-3 py-6 whitespace-nowrap text-center text-sm text-gray-700 font-medium">
                           {team.played}
                         </td>
@@ -647,8 +741,6 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                         }`}>
                           {goalDiff > 0 ? '+' : ''}{goalDiff}
                         </td>
-
-                        {/* Form */}
                         <td className="px-3 py-6 whitespace-nowrap text-center">
                           <div className="flex items-center justify-center">
                             <div className="w-12 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -663,8 +755,6 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                             </div>
                           </div>
                         </td>
-
-                        {/* Points */}
                         <td className="px-4 py-6 whitespace-nowrap text-center">
                           <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 shadow-md">
                             {team.points}
@@ -697,53 +787,60 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
               </table>
             </div>
 
-            {/* Footer */}
+            {/* Footer - MOBILE RESPONSIVE */}
             {teams.length > 0 && (
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-6 border-t border-gray-200">
-                <div className="flex flex-wrap items-center justify-between">
-                  <div className="flex items-center space-x-6 text-xs text-gray-600">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full shadow-md"></div>
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 sm:px-8 py-4 sm:py-6 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-center space-x-3 sm:space-x-6 text-xs text-gray-600">
+                    <div className="flex items-center space-x-1 sm:space-x-2">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full shadow-md"></div>
                       <span className="font-medium">Champion</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 bg-gradient-to-r from-green-400 to-green-500 rounded-full shadow-md"></div>
+                    <div className="flex items-center space-x-1 sm:space-x-2">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-green-400 to-green-500 rounded-full shadow-md"></div>
                       <span className="font-medium">Top 4</span>
                     </div>
                     {teams.length > 4 && (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 bg-gradient-to-r from-red-400 to-red-500 rounded-full shadow-md"></div>
+                      <div className="flex items-center space-x-1 sm:space-x-2">
+                        <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-red-400 to-red-500 rounded-full shadow-md"></div>
                         <span className="font-medium">Bottom 2</span>
                       </div>
                     )}
                   </div>
-                  <Link
+                  {/* <Link
                     href="/match-history"
-                    className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-800 font-bold transition-all duration-300 transform hover:scale-105"
+                    className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-800 font-bold transition-all duration-300 transform hover:scale-105 text-sm"
                   >
                     <span>📊</span>
                     <span>View Match History</span>
                     <span>→</span>
-                  </Link>
+                  </Link> */}
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Add Member Tab */}
+        {/* Add Member Tab - MOBILE RESPONSIVE */}
         {activeTab === 'add-member' && (
-          <div className="max-w-lg mx-auto">
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden border border-white/20">
-              <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 px-8 py-6">
-                <h2 className="text-2xl font-bold text-white flex items-center space-x-3">
-                  <span className="text-3xl">➕</span>
+          <div className="max-w-lg mx-auto px-4 sm:px-0">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
+              <div className="bg-blue-600 px-6 sm:px-8 py-4 sm:py-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center space-x-2 sm:space-x-3">
+                  <span className="text-2xl sm:text-3xl">
+                    <Image
+                      src="/icons/plus.svg"
+                      alt="Add Icon"
+                      width={24}
+                      height={24}
+                      className="sm:w-7 sm:h-7"
+                    />
+                  </span>
                   <span>Add Member to League</span>
                 </h2>
               </div>
-              <div className="p-8">
+              <div className="p-6 sm:p-8">
                 <div className="space-y-6">
-                  {/* Member Selection */}
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">
                       Select Member ({availableMembers.length} available)
@@ -767,40 +864,18 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                     </select>
                   </div>
 
-                  {/* Unavailable Members Info */}
-                  {members.length > availableMembers.length && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-                      <p className="text-sm font-bold text-yellow-800 mb-2">
-                        ℹ️ Members in Other Leagues:
-                      </p>
-                      <div className="space-y-1">
-                        {members.filter(m => !availableMembers.includes(m)).map(member => {
-                          const leagueName = getMemberLeague(member.id!);
-                          const inCurrentLeague = teams.some(t => t.memberId === member.id);
-                          return (
-                            <p key={member.id} className="text-xs text-yellow-700">
-                              • {member.name} - {inCurrentLeague ? 'Already in this league' : `In ${leagueName}`}
-                            </p>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* No Members Message */}
                   {members.length === 0 && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
-                      <p className="text-blue-800 font-medium">
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-6 text-center">
+                      <p className="text-blue-800 font-medium text-sm">
                         No members found. Please add members in the Players tab first.
                       </p>
                     </div>
                   )}
 
-                  {/* Add Button */}
                   <button
                     onClick={handleAddMember}
                     disabled={isLoading || !selectedMemberId}
-                    className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:cursor-not-allowed disabled:transform-none"
+                    className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-600 disabled:to-gray-700 text-white px-6 py-3 sm:py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:cursor-not-allowed disabled:transform-none"
                   >
                     {isLoading ? (
                       <div className="flex items-center justify-center space-x-2">
@@ -817,29 +892,43 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
           </div>
         )}
 
-        {/* Add Match Tab */}
+        {/* Add Match Tab - MOBILE RESPONSIVE */}
         {activeTab === 'add-match' && (
-          <div className="max-w-lg mx-auto">
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden border border-white/20">
-              <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 px-8 py-6">
-                <h2 className="text-2xl font-bold text-white flex items-center space-x-3">
-                  <span className="text-3xl">⚽</span>
+          <div className="max-w-lg mx-auto px-4 sm:px-0">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
+              <div className="bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 px-6 sm:px-8 py-4 sm:py-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center space-x-2 sm:space-x-3">
+                  <Image
+                    src="/icons/football.svg"
+                    alt="Ball Icon"
+                    width={24}
+                    height={24}
+                    className="sm:w-7 sm:h-7"
+                  />
                   <span>Add Match Result</span>
                 </h2>
               </div>
-              <div className="p-8">
+              <div className="p-6 sm:p-8">
                 {teams.length >= 2 ? (
                   <MatchResultForm teams={teams.map((t) => t.name)} onSubmit={handleMatchSubmit} />
                 ) : (
-                  <div className="text-center py-12">
-                    <div className="text-6xl mb-6">⚽</div>
-                    <p className="text-xl text-gray-700 font-semibold mb-2">Need More Members</p>
-                    <p className="text-gray-600 mb-8">You need at least 2 members to record a match result.</p>
+                  <div className="text-center py-8 sm:py-12">
+                    <div className="flex justify-center mb-4 sm:mb-6">
+                      <Image
+                        src="/icons/football.svg"
+                        alt="Ball Icon"
+                        width={48}
+                        height={48}
+                        className="animate-bounce drop-shadow-lg sm:w-14 sm:h-14"
+                      />
+                    </div>
+                    <p className="text-lg sm:text-xl text-gray-700 font-semibold mb-2">Need More Members</p>
+                    <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">You need at least 2 members to record a match result.</p>
                     {leagueStatus === 'active' && (
                       <button
                         onClick={() => setActiveTab('add-member')}
                         disabled={isLoading}
-                        className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg font-semibold disabled:opacity-50"
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg font-semibold disabled:opacity-50 text-sm sm:text-base"
                       >
                         Add Members First
                       </button>
@@ -852,33 +941,33 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
         )}
       </div>
 
-      {/* End League Confirmation Modal */}
+      {/* End League Modal - MOBILE RESPONSIVE */}
       {showEndConfirm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
-            <div className="p-8">
-              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-orange-100 rounded-full">
-                <span className="text-3xl">🏁</span>
+            <div className="p-6 sm:p-8">
+              <div className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 sm:mb-6 bg-orange-100 rounded-full">
+                <span className="text-2xl sm:text-3xl">🏁</span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 text-center mb-3">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-3">
                 End League?
               </h3>
-              <p className="text-gray-600 text-center mb-8 leading-relaxed">
+              <p className="text-sm sm:text-base text-gray-600 text-center mb-6 sm:mb-8 leading-relaxed px-4">
                 This will end <strong>"{leagueName}"</strong> and release all members to join other leagues. 
                 The league history and standings will be preserved.
               </p>
-              <div className="flex space-x-4">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                 <button
                   onClick={() => setShowEndConfirm(false)}
                   disabled={isLoading}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 sm:py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 text-sm sm:text-base"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleEndLeague}
                   disabled={isLoading}
-                  className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50"
+                  className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 sm:py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 text-sm sm:text-base"
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center space-x-2">
@@ -895,33 +984,41 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete League Modal - MOBILE RESPONSIVE */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
-            <div className="p-8">
-              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-red-100 rounded-full">
-                <span className="text-3xl animate-pulse">⚠️</span>
+            <div className="p-6 sm:p-8">
+              <div className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 sm:mb-6 bg-gradient-to-r from-red-500 to-red-600 rounded-full">
+                <span className="text-2xl sm:text-3xl">
+                  <Image
+                    src="/icons/danger.svg"
+                    alt="Delete Icon"
+                    width={28}
+                    height={28}
+                    className="sm:w-8 sm:h-8"
+                  />
+                </span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 text-center mb-3">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-3">
                 Delete League?
               </h3>
-              <p className="text-gray-600 text-center mb-8 leading-relaxed">
+              <p className="text-sm sm:text-base text-gray-600 text-center mb-6 sm:mb-8 leading-relaxed px-4">
                 This will permanently delete <strong>"{leagueName}"</strong> and all its teams, matches, and history. 
                 This action cannot be undone.
               </p>
-              <div className="flex space-x-4">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
                   disabled={isLoading}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 sm:py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 text-sm sm:text-base"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleClearLeague}
                   disabled={isLoading}
-                  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50"
+                  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-3 sm:py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 text-sm sm:text-base"
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center space-x-2">
@@ -936,6 +1033,15 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
             </div>
           </div>
         </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
       )}
     </div>
   );

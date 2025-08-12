@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import LeagueSelector from "./components/LeagueSelector";
 import LeagueTable from "./components/LeagueTable";
 import MemberManager from "./components/MemberManager";
@@ -46,12 +47,12 @@ function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <main className="min-h-screen bg-[url('/images/Fc1.jpg')] bg-cover bg-center from-slate-50 via-blue-50 to-indigo-100">
       {/* Enhanced Header with Navigation */}
       <div className="text-center py-12 px-4">
         <div className="relative inline-block">
           <h1 className="text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent mb-4">
-            Football League Manager
+           EA TOURNAMENT MANAGER
           </h1>
           <div className="absolute -top-3 -right-3">
             <div className="w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full animate-pulse"></div>
@@ -62,23 +63,28 @@ function HomePage() {
         
         {/* Navigation Tabs */}
         <div className="flex justify-center mt-8">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-2 flex space-x-2 border border-white/20">
+          <div className=" rounded  p-1 flex space-x-1  ">
             {[
-              { id: 'leagues', label: 'Leagues', icon: '🏆' },
-              { id: 'users', label: 'Players', icon: '👥' },
-              { id: 'tournaments', label: 'Tournaments', icon: '🏟️' }
+              { id: 'leagues', label: 'Leagues', icon: '/icons/league.svg', size:64 },
+              { id: 'users', label: 'Players', icon: '/icons/Players.svg', size:64 },
+              { id: 'tournaments', label: 'Tournaments', icon: '/icons/tournaments.svg', size:64 },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveSection(tab.id as any)}
-                className={`px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${
+                className={`flex items-center justify-center px-6 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-70 text-[21pt] ${
                   activeSection === tab.id
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg scale-105'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+                    ? 'bg-blue-600 text-white shadow-lg scale-90'
+                    : 'text-gray-200 '
                 }`}
               >
                 <span className="flex items-center space-x-2">
-                  <span className="text-lg">{tab.icon}</span>
+                  <Image 
+                    src={tab.icon} 
+                    alt={`${tab.label} icon`} 
+                    width={tab.size} 
+                    height={tab.size}
+                  />
                   <span>{tab.label}</span>
                 </span>
               </button>
@@ -128,15 +134,7 @@ function HomePage() {
             ) : (
               <div className="space-y-8">
                 {/* Current League Display */}
-                <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border-l-4 border border-white/20">
-                  <h2 className="text-2xl font-bold text-gray-800 flex items-center space-x-3">
-                    <span className="text-3xl">🏆</span>
-                    <span>Currently Managing: </span>
-                    <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                      {selectedLeague}
-                    </span>
-                  </h2>
-                </div>
+
 
                 {/* League Table */}
                 <LeagueTable leagueName={selectedLeague} leagueId={selectedLeagueId} />
@@ -147,7 +145,7 @@ function HomePage() {
                     href="/match-history"
                     className="group inline-flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-xl font-bold text-lg"
                   >
-                    <span className="text-2xl group-hover:animate-bounce">📊</span>
+                    <span className="text-2xl group-hover:animate-bounce"></span>
                     <span>View Match History</span>
                     <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
                   </Link>
@@ -167,11 +165,11 @@ function HomePage() {
           <TournamentManager />
         )}
 
-        {/* Enhanced Footer */}
+        {/*Footer */}
         <footer className="mt-16 text-center">
-          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-            <p className="text-gray-600 font-medium">
-              ⚽ Football League Manager - @Kachy Odunze
+          <div className=" ">
+            <p className="text-gray-300 font-medium">
+               Created by Kachy Odunze
             </p>
           </div>
         </footer>

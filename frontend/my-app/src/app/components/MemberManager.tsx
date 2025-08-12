@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { 
   addGroupMember, 
@@ -282,17 +283,21 @@ export default function WhatsAppMemberManager() {
         />
       )}
 
-      <div className="mb-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
+      <div className="mb-8 bg-white/30 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-600 via-teal-600 to-blue-600 px-8 py-6">
+        <div className="bg-gradient-to-r from-blue-700 via-purple-700 to-indigo-600 px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">📱</span>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center">
+                  <Image
+                  src="/icons/addplayers.svg"
+                  alt="Add Player Icon"
+                  width={50}
+                  height={50}
+                 />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">WhatsApp Group Members</h2>
-                <p className="text-white/80 text-sm">Manage your EA FC25 competition group</p>
+                <h2 className="text-2xl font-bold text-white">Manage your EA FC25 competition group</h2>
               </div>
             </div>
             <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-xl">
@@ -313,7 +318,7 @@ export default function WhatsAppMemberManager() {
                   placeholder="Search members by name or PSN ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="text-black placeholder-gray-500 w-full px-4 py-3 pl-12 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all duration-300"
+                  className="text-black bg-white placeholder-gray-500 w-full px-4 py-3 pl-12  rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-300 transition-all duration-300"
                 />
                 <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl">🔍</span>
               </div>
@@ -325,7 +330,7 @@ export default function WhatsAppMemberManager() {
               className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
                 showInactive
                   ? 'bg-gray-500 hover:bg-gray-600 text-white'
-                  : 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                  : 'bg-blue-600 hover:bg-indigo-600 text-white'
               }`}
             >
               {showInactive ? 'Hide Inactive' : 'Show Inactive'}
@@ -349,11 +354,25 @@ export default function WhatsAppMemberManager() {
               className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg ${
                 showAddForm
                   ? 'bg-gray-500 hover:bg-gray-600 text-white'
-                  : 'bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white'
+                  : 'bg-green-600 hover:from-green-600 hover:to-teal-600 text-white'
               } disabled:opacity-50`}
             >
               <span className="flex items-center space-x-2">
-                <span className="text-lg">{showAddForm ? '❌' : '➕'}</span>
+                <span className="text-lg">{showAddForm ? (
+                    <Image
+                      src="/icons/cancel.svg"
+                      alt="Cancel"
+                      width={20}
+                      height={20}
+                    />
+                    ) : (
+                    <Image
+                      src="/icons/plus.svg" 
+                      alt="Add"
+                      width={20}
+                      height={20}
+                    />
+                  )}</span>
                 <span>{showAddForm ? 'Cancel' : 'Add Member'}</span>
               </span>
             </button>
@@ -361,7 +380,7 @@ export default function WhatsAppMemberManager() {
 
           {/* Add/Edit Member Form */}
           {(showAddForm || editingMember) && (
-            <div className="bg-gradient-to-r from-green-50 to-teal-50 rounded-xl p-6 border border-green-200 mb-8">
+            <div className="bg-white/100 rounded-xl p-6 shadow-sm mb-8">
               <h3 className="text-lg text-black font-bold mb-6 flex items-center space-x-2">
                 <span className="text-xl">{editingMember ? '✏️' : '👤'}</span>
                 <span>{editingMember ? 'Edit Member' : 'Add New Member'}</span>
@@ -383,7 +402,7 @@ export default function WhatsAppMemberManager() {
                     className={`text-black placeholder-gray-500 w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-300 ${
                       formErrors.name
                         ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-100'
-                        : 'border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-100'
+                        : 'border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100'
                     }`}
                     placeholder="Enter full name"
                     disabled={isLoading}
@@ -411,7 +430,7 @@ export default function WhatsAppMemberManager() {
                     className={`text-black placeholder-gray-500 w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-300 ${
                       formErrors.psnId
                         ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-100'
-                        : 'border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-100'
+                        : 'border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100'
                     }`}
                     placeholder="PSN ID or Gaming handle (optional)"
                     disabled={isLoading}
@@ -432,7 +451,7 @@ export default function WhatsAppMemberManager() {
                   <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="text-black placeholder-gray-500 w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all duration-300"
+                    className="text-black placeholder-gray-500 w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300"
                     placeholder="Any additional notes (optional)"
                     rows={3}
                     disabled={isLoading}
@@ -448,7 +467,7 @@ export default function WhatsAppMemberManager() {
                     onChange={(e) =>
                       setFormData({ ...formData, isActive: e.target.value === "active" })
                     }
-                    className="text-black w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all duration-300"
+                    className="text-black w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300"
                     disabled={isLoading}
                   >
                     <option value="active">✅ Active</option>
@@ -461,7 +480,7 @@ export default function WhatsAppMemberManager() {
                   <button
                     type="submit"
                     disabled={isLoading || !formData.name.trim()}
-                    className="flex-1 bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:cursor-not-allowed disabled:transform-none"
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-indigo-500 hover:to-indigo-600 disabled:from-gray-400 disabled:to-gray-500 text-white px-5 py-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-101 shadow-lg disabled:cursor-not-allowed disabled:transform-none"
                   >
                     {isLoading ? (
                       <div className="flex items-center justify-center space-x-2">
@@ -494,8 +513,8 @@ export default function WhatsAppMemberManager() {
               {filteredMembers.map((member) => (
                 <div
                   key={member.id}
-                  className={`group bg-white border-2 rounded-xl p-6 hover:shadow-lg transition-all duration-300 transform hover:scale-105 ${
-                    member.isActive ? 'border-gray-100 hover:border-green-300' : 'border-gray-300 bg-gray-50'
+                  className={`group bg-white/70 shadow-sm rounded-xl p-6 hover:shadow-lg transition-all duration-300 transform hover:scale-105 ${
+                    member.isActive ? 'border-gray-100 hover:border-indigo-300' : 'border-gray-300 bg-gray-50'
                   }`}
                 >
                   {/* Member Avatar and Info */}
@@ -513,7 +532,7 @@ export default function WhatsAppMemberManager() {
                     </div>
                   </div>
 
-                  {/* Remove Favorite Team section since it's no longer needed */}
+                  {/* Remove Favorite Team section if it's no longer needed */}
 
                   {/* Status */}
                   <div className="mb-4">
@@ -561,8 +580,8 @@ export default function WhatsAppMemberManager() {
 
                   {/* Notes */}
                   {member.notes && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <p className="text-xs text-gray-600 italic">{member.notes}</p>
+                    <div className="mt-3 pt-3 border-t border-gray-400">
+                      <p className="text-xs text-gray-700 italic">{member.notes}</p>
                     </div>
                   )}
                 </div>
@@ -587,7 +606,7 @@ export default function WhatsAppMemberManager() {
                     if (!requireAuth()) return;
                     setShowAddForm(true);
                   }}
-                  className="bg-gradient-to-r from-green-500 to-teal-500 text-white px-8 py-3 rounded-xl hover:from-green-600 hover:to-teal-600 transition-all duration-300 transform hover:scale-105 shadow-lg font-semibold"
+                  className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-8 py-3 rounded-xl hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 transform hover:scale-105 shadow-lg font-semibold"
                 >
                   Add First Member
                 </button>

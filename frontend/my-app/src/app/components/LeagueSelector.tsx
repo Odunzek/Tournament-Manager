@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { createLeague, deleteLeague, subscribeToLeagues, League, updateLeague } from "../../lib/firebaseutils";
+import { useAuth } from "../../lib/AuthContext";
 
 interface LeagueSelectorProps {
   onLeagueSelect: (league: string, leagueId: string) => void;
@@ -36,6 +38,17 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+const { isAuthenticated, setShowAuthModal } = useAuth();
+
+  // requireAuth function
+  const requireAuth = () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return false;
+    }
+    return true;
+  };
 
   // Show toast notification
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
@@ -106,11 +119,11 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
     setEditingLeague(null);
     setError("");
     
-    showToast(`Switched to ${league.name}`, 'info');
     onLeagueSelect(league.name, league.id!);
   };
 
   const handleCreateNew = async () => {
+    if (!requireAuth()) return;
     const trimmedName = inputValue.trim();
     const validationError = validateLeagueName(trimmedName);
     
@@ -153,6 +166,7 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
   };
 
   const handleSaveEdit = async () => {
+    if (!requireAuth()) return;
     if (!editingLeague?.id) return;
     
     const trimmedName = editValue.trim();
@@ -189,6 +203,7 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
   };
 
   const handleDeleteLeague = async (league: League) => {
+    if (!requireAuth()) return;
     if (!league.id) return;
     
     setIsLoading(true);
@@ -261,13 +276,20 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
         />
       )}
 
-      <div className="mb-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
+      <div className="mb-8 bg-white/10 backdrop-blur-sm rounded-2xl shadow-2xl  overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">⚽</span>
+              <div className="w-12 h-12  rounded-xl flex items-center justify-center">
+                <div className="  flex items-center justify-center">
+                  <Image
+                    src="/icons/league.svg"
+                    alt="League Icon"
+                    width={48} 
+                    height={48}
+                  />
+                </div>
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-white">League Manager</h2>
@@ -298,10 +320,10 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
           {leagues.length > 0 ? (
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-800">Your Leagues</h3>
+                <h3 className="text-xl font-bold text-gray-100">Your Leagues</h3>
                 <div className="flex items-center space-x-2 text-sm text-gray-500">
                   <span>📊</span>
-                  <span>{leagues.length} league{leagues.length !== 1 ? 's' : ''}</span>
+                  <span className="font-semibold text-gray-100">{leagues.length} league{leagues.length !== 1 ? 's' : ''}</span>
                 </div>
               </div>
               
@@ -309,18 +331,18 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
                 {leagues.map((league, index) => (
                   <div
                     key={league.id}
-                    className={`group relative p-6 rounded-xl border-2 transition-all duration-300 cursor-pointer transform hover:scale-105 ${
+                    className={`group relative p-6 rounded-xl transition-all duration-300 cursor-pointer transform hover:scale-105 ${
                       currentLeague?.id === league.id
-                        ? 'border-green-400 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg'
-                        : 'border-gray-200 bg-gradient-to-br from-gray-50 to-white hover:border-blue-300 hover:shadow-lg'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'border-gray-200 bg-gradient-to-br from-gray-50 to-white hover:border-blue hover:shadow-lg'
                     }`}
                     onClick={() => !editingLeague && currentLeague?.id !== league.id && handleSelectExisting(league)}
                   >
                     {/* League Card Content */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center space-x-3 flex-1">
+                    <div className="flex items-center justify-between gap-2 mb-4">
+                      <div className="flex items-center space-x-3 flex-1 min-w-0">
                         <div className={`w-3 h-3 rounded-full ${
-                          currentLeague?.id === league.id ? 'bg-green-400' : 'bg-blue-400'
+                          currentLeague?.id === league.id ? 'bg-blue-400' : 'bg-blue-400'
                         }`}></div>
                         
                         {/* Editable League Name */}
@@ -330,14 +352,14 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
                             onKeyDown={handleKeyPress}
-                            className="font-bold text-lg bg-white border-2 border-blue-300 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-500"
+                            className="w-full max-w-full font-bold text-lg text-black bg-white  rounded-lg px-2 py-1 focus:outline-none focus:border-blue-500"
                             autoFocus
                             maxLength={50}
                             disabled={isLoading}
                           />
                         ) : (
                           <span className={`font-bold text-lg ${
-                            currentLeague?.id === league.id ? 'text-green-800' : 'text-gray-800'
+                            currentLeague?.id === league.id ? 'text-white' : 'text-black'
                           }`}>
                             {league.name}
                           </span>
@@ -345,7 +367,8 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
                       </div>
                       
                       {/* Action Buttons */}
-                      <div className="flex items-center space-x-1">
+                      {(currentLeague?.id === league.id || editingLeague?.id === league.id) && (
+                      <div className="flex items-center space-x-1 ">
                         {editingLeague?.id === league.id ? (
                           <>
                             <button
@@ -354,10 +377,15 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
                                 handleSaveEdit();
                               }}
                               disabled={isLoading}
-                              className="p-2 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-lg transition-all duration-300"
+                              className="p-2 text-green-600 hover:text-green-800 hover:bg-blue-400 rounded-lg transition-all duration-300"
                               title="Save changes"
                             >
-                              ✅
+                                <Image
+                                src="/icons/checkbox.svg"
+                                alt="checkbox Icon"
+                                width={24}
+                                height={24}
+                              />
                             </button>
                             <button
                               onClick={(e) => {
@@ -367,10 +395,15 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
                                 setError("");
                               }}
                               disabled={isLoading}
-                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-300"
+                              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-blue-400 rounded-lg transition-all duration-300"
                               title="Cancel editing"
                             >
-                              ❌
+                                <Image
+                                src="/icons/cancel.svg"
+                                alt="cancel Icon"
+                                width={24}
+                                height={24}
+                              />
                             </button>
                           </>
                         ) : (
@@ -380,26 +413,37 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
                                 e.stopPropagation();
                                 handleEditLeague(league);
                               }}
-                              className="opacity-0 group-hover:opacity-100 p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-100 rounded-lg transition-all duration-300"
+                              className=" p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-400 rounded-lg "
                               title="Edit league name"
                               disabled={isLoading}
                             >
-                              ✏️
+                                <Image
+                                src="/icons/editB.svg"
+                                alt="edit Icon"
+                                width={24}
+                                height={24}
+                              />
                             </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setShowDeleteConfirm(league);
                               }}
-                              className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-lg transition-all duration-300"
+                              className=" p-2 text-red-500 hover:text-red-700 hover:bg-blue-400 rounded-lg "
                               title="Delete league"
                               disabled={isLoading}
                             >
-                              🗑️
+                                <Image
+                                src="/icons/delete.svg"
+                                alt="delete Icon"
+                                width={24}
+                                height={24}
+                              />
                             </button>
                           </>
                         )}
                       </div>
+                      )}
                     </div>
 
                     {/* League Status */}
@@ -407,23 +451,21 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
                       <div className="text-sm text-gray-600">
                         {currentLeague?.id === league.id ? (
                           <div className="flex items-center space-x-2">
-                            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                            <span className="font-medium text-green-700">Currently Active</span>
                           </div>
                         ) : editingLeague?.id === league.id ? (
                           <div className="flex items-center space-x-2">
                             <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
-                            <span className="font-medium text-blue-700">Editing...</span>
+                            <span className="font-medium text-white">Editing...</span>
                           </div>
                         ) : (
-                          <span className="text-gray-500">Click to switch</span>
+                          <span className="text-gray-600">Click to switch</span>
                         )}
                       </div>
                       
                       {/* League Number Badge */}
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                         currentLeague?.id === league.id 
-                          ? 'bg-green-400 text-white' 
+                          ? 'bg-blue-400 text-white' 
                           : 'bg-gray-300 text-gray-600'
                       }`}>
                         {index + 1}
@@ -433,8 +475,8 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
                     {/* Active indicator */}
                     {currentLeague?.id === league.id && (
                       <div className="absolute top-2 right-2">
-                        <div className="w-3 h-3 bg-green-400 rounded-full animate-ping"></div>
-                        <div className="absolute top-0 right-0 w-3 h-3 bg-green-400 rounded-full"></div>
+                        <div className="w-3 h-3 bg-blue-400 rounded-full animate-ping"></div>
+                        <div className="absolute top-0 right-0 w-3 h-3 bg-blue-400 rounded-full"></div>
                       </div>
                     )}
                   </div>
@@ -443,23 +485,37 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
             </div>
           ) : (
             /* Empty State */
-            <div className="text-center mb-8 py-12">
-              <div className="text-6xl mb-4">🏆</div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">No Leagues Yet</h3>
+            <div className="flex flex-col items-center justify-center text-center mb-8 py-12">
+              <div className=" mb-2">
+                  <Image
+                  src="/icons/trophy.svg"
+                  alt="trophy Icon"
+                  width={48}
+                  height={48}
+                 /> 
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2"> No Leagues Yet</h3>
               <p className="text-gray-600 mb-6">Create your first league to get started!</p>
             </div>
           )}
 
           {/* Create New League Section */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+          <div className="  backdrop-blur-sm rounded-xl p-4 ">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-                  <span className="text-white text-xl">➕</span>
+                  <span className="text-white text-xl">
+                    <Image
+                      src="/icons/plus.svg"
+                      alt="plus Icon"
+                      width={24}
+                      height={24}
+                    />
+                  </span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-800">Create New League</h3>
-                  <p className="text-gray-600 text-sm">Start managing a new football league</p>
+                  <h3 className="text-lg font-bold text-white">Create New League</h3>
+                  <p className="text-white text-sm">Start managing a new football league</p>
                 </div>
               </div>
               
@@ -484,13 +540,13 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       onKeyDown={handleKeyPress}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-white placeholder-gray-400 focus:outline-none  focus:ring-4 focus:ring-blue-100 transition-all duration-300"
                       autoFocus
                       maxLength={50}
                       disabled={isLoading}
                     />
                     <div className="mt-2 flex items-center justify-between text-xs">
-                      <span className="text-gray-500">
+                      <span className="text-white">
                         {inputValue.length >= 2 && !error ? '✅ Ready to create!' : 'Min 2 characters'}
                       </span>
                       <span className="text-gray-400">{inputValue.length}/50</span>
@@ -501,7 +557,7 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
                     <button
                       onClick={handleCreateNew}
                       disabled={!inputValue.trim() || !!error || isLoading}
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:cursor-not-allowed disabled:transform-none"
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:cursor-not-allowed disabled:transform-none"
                     >
                       {isLoading ? (
                         <div className="flex items-center space-x-2">
@@ -552,8 +608,15 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300">
             <div className="p-8">
-              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-red-100 rounded-full">
-                <span className="text-3xl">🗑️</span>
+              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-red-500 to-red-600 rounded-full">
+                <span className="text-3xl">
+                  <Image
+                  src="/icons/delete.svg"
+                  alt="delete Icon"
+                  width={32}
+                  height={32}
+                 /> 
+                </span>
               </div>
               <h3 className="text-2xl font-bold text-gray-900 text-center mb-3">
                 Delete League?

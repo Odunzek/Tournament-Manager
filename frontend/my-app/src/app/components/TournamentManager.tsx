@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { deleteDoc, doc } from "firebase/firestore";
 import { useState, useEffect } from "react";
 import { 
@@ -17,9 +18,9 @@ import {
   TournamentParticipant,
   TournamentGroup,
   GroupStanding,
-  getQualifiedTeamsForKnockout,  // ✅ Use new function
-  progressToKnockoutStage,        // ADD THIS
-  calculateOptimalBracketSize, // ADD THIS
+  getQualifiedTeamsForKnockout,  
+  progressToKnockoutStage,        
+  calculateOptimalBracketSize, 
   DEFAULT_CHAMPIONS_LEAGUE_SETTINGS,
   DEFAULT_CUSTOM_SETTINGS,
   DEFAULT_KNOCKOUT_SETTINGS
@@ -49,6 +50,15 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
     </div>
   </div>
 );
+
+// Put this ABOVE your component, after imports
+export const formatDate = (dateLike: any) => {
+  if (!dateLike) return 'Not set';
+  if (dateLike?.toDate) return dateLike.toDate().toLocaleDateString();
+  if (dateLike?.seconds) return new Date(dateLike.seconds * 1000).toLocaleDateString();
+  return new Date(dateLike).toLocaleDateString();
+};
+
 
 export default function TournamentManager() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -83,6 +93,9 @@ export default function TournamentManager() {
     startDate: '',
     endDate: ''
   });
+
+
+
 
   // Add team form data
   const [teamFormData, setTeamFormData] = useState({
@@ -550,16 +563,23 @@ const handleGenerateKnockout = async () => {
         />
       )}
 
-      <div className="mb-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
+      <div className="mb-8 bg-white/20 backdrop-blur-2 rounded-2xl shadow-2xl  overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <span className="text-2xl">🏆</span>
+              <div className="w-12 h-12  rounded-xl flex items-center justify-center">
+                <span className="text-2xl">
+                  <Image
+                    src="/icons/tournaments.svg"
+                    alt="Tournament Icon"
+                    width={60}
+                    height={60}
+                  />
+                </span>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">Tournament Manager</h2>
+                <h2 className="text-2xl font-bold text-white">Tournaments</h2>
                 <p className="text-white/80 text-sm">Create and manage football tournaments</p>
               </div>
             </div>
@@ -571,24 +591,31 @@ const handleGenerateKnockout = async () => {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="px-8 py-4 bg-gray-50 border-b border-gray-200">
-          <div className="flex space-x-1">
+        <div className="px-8 py-4 bg-gray-50 ">
+          <div className="flex space-x-1 " >
             {[
-              { id: 'tournaments', label: 'Tournaments', icon: '🏟️' },
-              { id: 'create', label: 'Create Tournament', icon: '➕' },
-              { id: 'manage', label: 'Manage', icon: '⚙️' }
+              { id: 'tournaments', label: 'Tournaments', icon: '/icons/league.svg', size:24 },
+              { id: 'create', label: 'Create Tournament', icon: '/icons/plus.svg', size:24 },
+              { id: 'manage', label: 'Manage', icon: '/icons/manage.svg', size:24 }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 disabled={isLoading || (tab.id === 'manage' && !selectedTournament)}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 ${
+                className={`px-6 py-3 text-white bg-purple-600 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 ${
                   activeTab === tab.id
-                    ? 'bg-white text-indigo-600 shadow-md'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-gray-600 hover:text-white hover:bg-indigo-600'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                <span>{tab.icon}</span>
+                <span>
+                  <Image 
+                    src={tab.icon} 
+                    alt={`${tab.label} icon`} 
+                    width={tab.size} 
+                    height={tab.size}
+                  />                  
+                </span>
                 <span>{tab.label}</span>
                 {tab.id === 'manage' && selectedTournament && (
                   <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-1 rounded-full">
@@ -613,7 +640,7 @@ const handleGenerateKnockout = async () => {
                     return (
                       <div
                         key={tournament.id}
-                        className={`group bg-white border-2 rounded-xl p-6 hover:shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer relative ${
+                        className={`group bg-white/70  rounded-xl p-6 hover:shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer relative ${
                           selectedTournament?.id === tournament.id
                             ? 'border-indigo-400 bg-indigo-50'
                             : 'border-gray-200 hover:border-indigo-300'
@@ -641,7 +668,7 @@ const handleGenerateKnockout = async () => {
                                 setShowDeleteConfirm(tournament);
                               }}
                               disabled={isLoading}
-                              className="p-2 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-lg transition-colors duration-300 disabled:opacity-30"
+                              className="p-2 text-red-500 hover:text-red-700 hover:bg-indigo-100 rounded-lg transition-colors duration-300 disabled:opacity-30"
                               title="Delete tournament"
                             >
                               🗑️
@@ -669,7 +696,7 @@ const handleGenerateKnockout = async () => {
                           
                           {tournament.startDate && (
                             <div className="text-xs text-gray-500">
-                              Starts: {new Date(tournament.startDate).toLocaleDateString()}
+                              Starts: {formatDate(tournament.startDate)}
                             </div>
                           )}
                         </div>
@@ -704,7 +731,7 @@ const handleGenerateKnockout = async () => {
           {/* Create Tournament Tab */}
           {activeTab === 'create' && (
             <div className="max-w-2xl mx-auto">
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-200">
+              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 shadow-lg mb-8">
                 <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center space-x-3">
                   <span className="text-3xl">🏆</span>
                   <span>Create New Tournament</span>
@@ -819,7 +846,7 @@ const handleGenerateKnockout = async () => {
           {activeTab === 'manage' && selectedTournament && (
             <div className="space-y-8">
               {/* Sub-Navigation for Manage */}
-              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="bg-white rounded-xl  overflow-hidden">
                 <div className="bg-blue-600 px-6 py-4">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center text-white text-xl">
@@ -1088,7 +1115,7 @@ const handleGenerateKnockout = async () => {
               </div>
             </div>
           </div>
-        )};
+        )}
 
     </div>
   );

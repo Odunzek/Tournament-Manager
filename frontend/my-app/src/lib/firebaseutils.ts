@@ -314,4 +314,38 @@ export const subscribeToAllTeams = (callback: (teams: Team[]) => void) => {
   });
 };
 
+// ---- Matches (real-time) ----
+export const subscribeToMatchesByLeagueId = (
+  leagueId: string,
+  callback: (matches: Match[]) => void
+) => {
+  const q = query(
+    collection(db, 'matches'),
+    where('leagueId', '==', leagueId),
+    orderBy('date', 'desc')
+  );
+
+  return onSnapshot(q, (snap) => {
+    const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Match, 'id'>) }));
+    callback(rows as Match[]);
+  });
+};
+
+export const subscribeToMatchesByLeagueName = (
+  leagueName: string,
+  callback: (matches: Match[]) => void
+) => {
+  const q = query(
+    collection(db, 'matches'),
+    where('leagueName', '==', leagueName),
+    orderBy('date', 'desc')
+  );
+
+  return onSnapshot(q, (snap) => {
+    const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Match, 'id'>) }));
+    callback(rows as Match[]);
+  });
+};
+
+
 export type { League, Match };

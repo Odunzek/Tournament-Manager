@@ -1,15 +1,12 @@
 "use client";
 
+import { subscribeToMatchesByLeagueId } from "../../lib/firebaseutils";
+import type { Match } from "../../lib/firebase";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-type Match = {
-  team1: string;
-  team2: string;
-  score1: number;
-  score2: number;
-  date: string;
-};
+
 
 export default function MatchHistory() {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -20,53 +17,54 @@ export default function MatchHistory() {
   const [allTeams, setAllTeams] = useState<string[]>([]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    const id = localStorage.getItem("currentLeagueId") || "";
+
+      // console.log("Match History - Looking for matches with leagueId:", id);
       const leagueName = localStorage.getItem("currentLeagueName") || "";
       setCurrentLeague(leagueName);
 
-      if (leagueName) {
-        // Load match history
-        const historyKey = `league_${leagueName}_history`;
-        const history = localStorage.getItem(historyKey);
-        const parsedHistory = history ? JSON.parse(history) : [];
-        
-        // Sort by date (newest first)
-        const sortedMatches = parsedHistory.sort((a: Match, b: Match) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
+    if (!id) return;
 
-        setMatches(sortedMatches);
+    const unsub = subscribeToMatchesByLeagueId(id, (firebaseMatches) => {
+      // console.log("Matches returned from Firebase:", firebaseMatches.length, firebaseMatches);
+      const toMillis = (d: any) =>
+        typeof d?.toDate === "function" ? d.toDate().getTime()
+        : typeof d?.toMillis === "function" ? d.toMillis()
+        : new Date(d).getTime();
 
-        // Get all unique teams
-        const teams = new Set<string>();
-        sortedMatches.forEach((match: Match) => {
-          teams.add(match.team1);
-          teams.add(match.team2);
-        });
-        setAllTeams(Array.from(teams).sort());
-      }
-      
+      const sorted = [...firebaseMatches].sort(
+        (a, b) => toMillis(b.date) - toMillis(a.date)
+      );
+
+      setMatches(sorted);
+
+      const teams = new Set<string>();
+      sorted.forEach(m => {
+        if (m.homeTeam) teams.add(m.homeTeam);
+        if (m.awayTeam) teams.add(m.awayTeam);
+      });
+      setAllTeams(Array.from(teams).sort());
       setIsLoaded(true);
-    }
+    });
+
+    return () => unsub();
   }, []);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      weekday: "short",
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+
+
+  const formatDate = (dateLike: any) => {
+    const d = typeof dateLike?.toDate === "function" 
+      ? dateLike.toDate()
+      : new Date(dateLike);
+    return d.toLocaleString();
   };
 
+
   const getMatchResult = (match: Match) => {
-    if (match.score1 > match.score2) {
-      return { winner: match.team1, loser: match.team2, isDraw: false };
-    } else if (match.score2 > match.score1) {
-      return { winner: match.team2, loser: match.team1, isDraw: false };
+    if (match.homeScore > match.awayScore) {
+      return { winner: match.homeTeam, loser: match.awayTeam, isDraw: false };
+    } else if (match.awayScore > match.homeScore) {
+      return { winner: match.awayTeam, loser: match.homeTeam, isDraw: false };
     } else {
       return { winner: "", loser: "", isDraw: true };
     }
@@ -79,15 +77,15 @@ export default function MatchHistory() {
       return new Date(match.date) >= oneWeekAgo;
     }
     if (filter === "team" && selectedTeam) {
-      return match.team1 === selectedTeam || match.team2 === selectedTeam;
+      return match.homeTeam === selectedTeam || match.awayTeam === selectedTeam;
     }
     return true;
   });
 
   const getMatchStats = () => {
     const totalMatches = matches.length;
-    const totalGoals = matches.reduce((sum, match) => sum + match.score1 + match.score2, 0);
-    const draws = matches.filter(match => match.score1 === match.score2).length;
+    const totalGoals = matches.reduce((sum, match) => sum + match.homeScore + match.awayScore, 0);
+    const draws = matches.filter(match => match.homeScore === match.awayScore).length;
     const avgGoalsPerMatch = totalMatches > 0 ? (totalGoals / totalMatches).toFixed(1) : "0";
 
     return { totalMatches, totalGoals, draws, avgGoalsPerMatch };
@@ -97,7 +95,7 @@ export default function MatchHistory() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[url('/images/Fc1.jpg')] bg-cover bg-center flex items-center justify-center">
         <div className="animate-pulse text-center">
           <div className="w-16 h-16 bg-gray-300 rounded-full mx-auto mb-4"></div>
           <div className="h-4 bg-gray-300 rounded w-32 mx-auto"></div>
@@ -107,26 +105,32 @@ export default function MatchHistory() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-[url('/images/Fc1.jpg')] bg-cover bg-center">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            📊 Match History
+          <h1 className="flex items-center gap-2 justify-center text-4xl font-bold text-white mb-2">
+            <Image
+              src="/icons/matchhist.svg"
+              alt="Match History"
+              width={60}
+              height={60}
+            />
+            Match History
           </h1>
           {currentLeague && (
-            <p className="text-lg text-gray-600 mb-4">
+            <p className="text-2xl font-bold text-white mb-4">
               {currentLeague} League
             </p>
           )}
-          <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full"></div>
+          {/* <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full"></div> */}
         </div>
 
         {/* Back Button */}
         <div className="mb-6">
           <Link
             href="/"
-            className="inline-flex items-center px-4 py-2 bg-white text-gray-700 rounded-lg shadow-md hover:bg-gray-50 transition-colors duration-150"
+            className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg shadow-md hover:bg-gray-50 transition-colors duration-150"
           >
             ← Back to League Table
           </Link>
@@ -153,26 +157,26 @@ export default function MatchHistory() {
           <>
             {/* Statistics Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+              <div className="bg-blue-200 rounded-xl shadow-lg p-4 text-center">
                 <div className="text-3xl font-bold text-blue-600 mb-2">{stats.totalMatches}</div>
                 <div className="text-sm text-gray-600 font-medium">Total Matches</div>
               </div>
-              <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+              <div className="bg-green-200 rounded-xl shadow-lg p-4 text-center">
                 <div className="text-3xl font-bold text-green-600 mb-2">{stats.totalGoals}</div>
                 <div className="text-sm text-gray-600 font-medium">Total Goals</div>
               </div>
-              <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+              <div className="bg-yellow-200 rounded-xl shadow-lg p-4 text-center">
                 <div className="text-3xl font-bold text-yellow-600 mb-2">{stats.draws}</div>
                 <div className="text-sm text-gray-600 font-medium">Draws</div>
               </div>
-              <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+              <div className="bg-purple-200 rounded-xl shadow-lg p-4 text-center">
                 <div className="text-3xl font-bold text-purple-600 mb-2">{stats.avgGoalsPerMatch}</div>
                 <div className="text-sm text-gray-600 font-medium">Avg Goals/Match</div>
               </div>
             </div>
 
             {/* Filters */}
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div className="bg-white/70 rounded-xl shadow-lg p-6 mb-8">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Filter Matches</h3>
               <div className="flex flex-wrap gap-4">
                 <div className="flex items-center space-x-2">
@@ -204,7 +208,7 @@ export default function MatchHistory() {
                       setSelectedTeam(e.target.value);
                       setFilter(e.target.value ? "team" : "all");
                     }}
-                    className="border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="bg-gray-100 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Filter by team</option>
                     {allTeams.map(team => (
@@ -223,7 +227,7 @@ export default function MatchHistory() {
               {filteredMatches.map((match, index) => {
                 const result = getMatchResult(match);
                 return (
-                  <div key={index} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
+                  <div key={index} className="bg-white/80 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
                     <div className="p-6">
                       <div className="flex items-center justify-between">
                         {/* Match Details */}
@@ -231,11 +235,11 @@ export default function MatchHistory() {
                           <div className="flex items-center justify-center space-x-4 mb-4">
                             {/* Team 1 */}
                             <div className={`text-right flex-1 ${
-                              result.winner === match.team1 ? "text-green-600 font-bold" : 
+                              result.winner === match.homeTeam ? "text-green-600 font-bold" : 
                               result.isDraw ? "text-yellow-600 font-semibold" : "text-gray-600"
                             }`}>
-                              <div className="text-lg font-medium">{match.team1}</div>
-                              {result.winner === match.team1 && (
+                              <div className="text-lg font-medium">{match.homeTeam}</div>
+                              {result.winner === match.homeTeam && (
                                 <div className="text-xs text-green-500">WINNER</div>
                               )}
                             </div>
@@ -243,27 +247,27 @@ export default function MatchHistory() {
                             {/* Score */}
                             <div className="flex items-center space-x-3 px-6 py-3 bg-gray-50 rounded-lg">
                               <span className={`text-2xl font-bold ${
-                                match.score1 > match.score2 ? "text-green-600" : 
-                                match.score1 === match.score2 ? "text-yellow-600" : "text-gray-600"
+                                match.homeScore > match.awayScore ? "text-green-600" : 
+                                match.homeScore === match.awayScore ? "text-yellow-600" : "text-gray-600"
                               }`}>
-                                {match.score1}
+                                {match.homeScore}
                               </span>
                               <span className="text-gray-400 text-xl">-</span>
                               <span className={`text-2xl font-bold ${
-                                match.score2 > match.score1 ? "text-green-600" : 
-                                match.score1 === match.score2 ? "text-yellow-600" : "text-gray-600"
+                                match.awayScore > match.homeScore ? "text-green-600" : 
+                                match.homeScore === match.awayScore ? "text-yellow-600" : "text-gray-600"
                               }`}>
-                                {match.score2}
+                                {match.awayScore}
                               </span>
                             </div>
 
                             {/* Team 2 */}
                             <div className={`text-left flex-1 ${
-                              result.winner === match.team2 ? "text-green-600 font-bold" : 
+                              result.winner === match.awayTeam ? "text-green-600 font-bold" : 
                               result.isDraw ? "text-yellow-600 font-semibold" : "text-gray-600"
                             }`}>
-                              <div className="text-lg font-medium">{match.team2}</div>
-                              {result.winner === match.team2 && (
+                              <div className="text-lg font-medium">{match.awayTeam}</div>
+                              {result.winner === match.awayTeam && (
                                 <div className="text-xs text-green-500">WINNER</div>
                               )}
                             </div>

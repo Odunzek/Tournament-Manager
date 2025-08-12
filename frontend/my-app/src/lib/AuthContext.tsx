@@ -14,7 +14,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Default admin password - in production, this should be in environment variables
-const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "admin123";
+const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -175,7 +175,7 @@ export function AuthModal() {
             </div>
           </form>
 
-          <div className="mt-6 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+          {/* <div className="mt-6 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
             <div className="flex items-start space-x-3">
               <span className="text-yellow-600 text-lg mt-0.5">💡</span>
               <div className="text-sm text-yellow-800">
@@ -184,7 +184,7 @@ export function AuthModal() {
                 <p className="text-xs mt-1 text-yellow-700">Change this in production by setting NEXT_PUBLIC_ADMIN_PASSWORD environment variable</p>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

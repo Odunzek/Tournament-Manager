@@ -165,10 +165,10 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
         {/* VS Indicator */}
         {team1 && team2 && (
           <div className="flex items-center justify-center py-4">
-            <div className="bg-gradient-to-r from-purple-100 to-pink-100 border border-purple-200 rounded-xl px-6 py-3">
+            <div className="bg-gradient-to-r from-indigo-100 to-indigo-200  rounded-xl px-6 py-3">
               <div className="flex items-center space-x-4 text-center">
                 <span className="font-bold text-gray-800">{team1}</span>
-                <span className="text-2xl font-bold text-purple-600">VS</span>
+                <span className="text-lg font-bold text-indigo-600">VS</span>
                 <span className="font-bold text-gray-800">{team2}</span>
               </div>
             </div>
@@ -218,10 +218,10 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
 
         {/* Match Preview */}
         {team1 && team2 && team1 !== team2 && score1 !== "" && score2 !== "" && (
-          <div className={`rounded-xl p-6 border-2 transition-all duration-300 ${
+          <div className={`rounded-xl p-6 shadow-lg transition-all duration-300 ${
             result?.result === "draw" 
-              ? "bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200" 
-              : "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"
+              ? "bg-gradient-to-r from-yellow-50 to-amber-50 " 
+              : "bg-gradient-to-r from-blue-50 to-indigo-50"
           }`}>
             <div className="text-center">
               <h4 className="text-lg font-bold text-gray-800 mb-3">Match Result Preview</h4>
@@ -246,7 +246,7 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
               <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold ${
                 result?.result === "draw" 
                   ? "bg-yellow-200 text-yellow-800" 
-                  : "bg-green-200 text-green-800"
+                  : "bg-blue-200 text-blue-800"
               }`}>
                 {result?.result === "draw" ? (
                   <>
@@ -292,7 +292,7 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
             !isFormValid || isSubmitting
               ? 'bg-gray-400 cursor-not-allowed'
               : isAuthenticated
-              ? 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 hover:scale-[1.02] shadow-lg hover:shadow-xl'
+              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 hover:scale-[1.02] shadow-lg hover:shadow-xl'
               : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 hover:scale-[1.02] shadow-lg hover:shadow-xl'
           }`}
         >

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Tournament } from '../../../lib/tournamentUtils';
+import { formatDate } from '../TournamentManager'; // Assuming you have a utility function for formatting dates
 
 interface TournamentOverviewProps {
   tournament: Tournament;
@@ -84,7 +85,7 @@ export default function TournamentOverview({
             <div className="flex items-center justify-between">
               <span className="text-gray-600">Start Date:</span>
               <span className="font-semibold text-gray-800">
-                {new Date(tournament.startDate).toLocaleDateString()}
+                {formatDate(tournament.startDate)}
               </span>
             </div>
           )}
@@ -92,7 +93,7 @@ export default function TournamentOverview({
             <div className="flex items-center justify-between">
               <span className="text-gray-600">End Date:</span>
               <span className="font-semibold text-gray-800">
-                {new Date(tournament.endDate).toLocaleDateString()}
+                {formatDate(tournament.endDate)}
               </span>
             </div>
           )}
