@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { 
   getGroupMembers, 
   GroupMember,
-  subscribeToGroupMembers  // Use real-time subscription like Tournament Manager
+  subscribeToGroupMembers
 } from "../../lib/membershipUtils";
 import LeagueCreator from './leagues/LeagueCreator';
 import LeagueList from './leagues/LeagueList';
@@ -26,7 +26,6 @@ export default function LeagueManager() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load leagues from localStorage
   useEffect(() => {
     const storedLeagues = JSON.parse(localStorage.getItem("leagueList") || "[]");
     const activeLeague = localStorage.getItem("currentLeagueName") || "";
@@ -36,29 +35,22 @@ export default function LeagueManager() {
     setIsLoaded(true);
   }, []);
 
-  // Subscribe to real-time member updates - EXACTLY LIKE TOURNAMENT MANAGER
   useEffect(() => {
     const loadData = async () => {
-      // First load members immediately
       const loadedMembers = await getGroupMembers();
       setMembers(loadedMembers.filter(m => m.isActive));
     };
 
     loadData();
     
-    // Then setup real-time listener for updates
     const unsubscribe = subscribeToGroupMembers((updatedMembers) => {
-      // Only show active members
       const activeMembers = updatedMembers.filter(m => m.isActive);
       setMembers(activeMembers);
-      console.log('League Manager - Members updated:', activeMembers.length);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
-  // Load league teams when current league changes
   useEffect(() => {
     if (currentLeague) {
       const teamsKey = `league_${currentLeague}_teams`;
@@ -118,20 +110,14 @@ export default function LeagueManager() {
   };
 
   const handleAddTeam = (memberId: string) => {
-    if (!currentLeague) {
-      console.error('No current league selected');
-      return;
-    }
+    if (!currentLeague) return;
 
-    // Find the selected member
     const selectedMember = members.find(m => m.id === memberId);
     if (!selectedMember) {
-      console.error('Member not found:', memberId);
       alert('Selected member not found');
       return;
     }
 
-    // Check if member is already in league (check by member ID, not team ID)
     if (leagueTeams.some(team => team.id === memberId || team.name === selectedMember.name)) {
       alert('Member is already in this league');
       return;
@@ -141,7 +127,7 @@ export default function LeagueManager() {
 
     try {
       const newTeam: LeagueTeam = {
-        id: selectedMember.id || memberId,  // Use member ID as team ID
+        id: selectedMember.id || memberId,
         name: selectedMember.name,
         psnId: selectedMember.psnId || selectedMember.name
       };
@@ -152,7 +138,6 @@ export default function LeagueManager() {
       const teamsKey = `league_${currentLeague}_teams`;
       localStorage.setItem(teamsKey, JSON.stringify(updatedTeams));
 
-      console.log('Team added successfully:', newTeam);
       alert(`${selectedMember.name} added to league!`);
 
     } catch (error) {
@@ -173,8 +158,6 @@ export default function LeagueManager() {
     localStorage.setItem(teamsKey, JSON.stringify(updatedTeams));
   };
 
-  // Filter available members (not already in the league)
-  // Check both by ID and by name to be safe
   const availableMembers = members.filter(member => {
     const alreadyInLeague = leagueTeams.some(team => 
       team.id === member.id || team.name === member.name
@@ -182,32 +165,21 @@ export default function LeagueManager() {
     return !alreadyInLeague;
   });
 
-  // Debug logging
-  useEffect(() => {
-    console.log('=== League Manager Debug ===');
-    console.log('Total members from DB:', members.length);
-    console.log('Members:', members.map(m => ({ id: m.id, name: m.name })));
-    console.log('Teams in current league:', leagueTeams.length);
-    console.log('League teams:', leagueTeams.map(t => ({ id: t.id, name: t.name })));
-    console.log('Available members to add:', availableMembers.length);
-    console.log('Available:', availableMembers.map(m => ({ id: m.id, name: m.name })));
-  }, [members, leagueTeams, availableMembers]);
-
   if (!isLoaded) {
     return (
       <div className="bg-white p-4 rounded-lg shadow mb-6 text-black">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-          <div className="h-32 bg-gray-200 rounded"></div>
+        <div className="animate-pulse space-y-4">
+          <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-24 bg-gray-200 rounded"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="bg-white p-4 rounded-lg shadow mb-6 text-black">
-        <h2 className="text-lg font-bold mb-3">🎮 League Manager</h2>
+    <div className="px-2 sm:px-4">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow mb-6 text-black">
+        <h2 className="text-lg sm:text-xl font-bold mb-3">🎮 League Manager</h2>
 
         <LeagueCreator 
           onCreateLeague={handleCreateLeague}
@@ -225,29 +197,14 @@ export default function LeagueManager() {
         </div>
 
         {currentLeague && (
-          <>
-            {/* Debug info - remove after testing */}
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
-              <p className="font-bold text-yellow-800">📊 Debug Info:</p>
-              <p>Total Members in System: {members.length}</p>
-              <p>Teams in Current League: {leagueTeams.length}</p>
-              <p>Available to Add: {availableMembers.length}</p>
-              {members.length === 0 && (
-                <p className="text-red-600 font-bold mt-2">
-                  ⚠️ No members found! Add members in the Players tab first.
-                </p>
-              )}
-            </div>
-            
-            <TeamManager
-              leagueName={currentLeague}
-              teams={leagueTeams}
-              availableMembers={availableMembers}
-              onAddTeam={handleAddTeam}
-              onRemoveTeam={handleRemoveTeam}
-              isLoading={isLoading}
-            />
-          </>
+          <TeamManager
+            leagueName={currentLeague}
+            teams={leagueTeams}
+            availableMembers={availableMembers}
+            onAddTeam={handleAddTeam}
+            onRemoveTeam={handleRemoveTeam}
+            isLoading={isLoading}
+          />
         )}
       </div>
 

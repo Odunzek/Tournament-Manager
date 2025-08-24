@@ -102,13 +102,17 @@ const TeamCard = ({ team, position, totalTeams }: { team: Team; position: number
               {position}
             </div>
             <div>
-              <div className="font-bold text-gray-900">{team.name}</div>
+              <div className="font-bold text-gray-900 truncate max-w-[160px] sm:max-w-none">
+                {team.name}
+              </div>
               {team.psnId && (
-                <div className="text-xs text-blue-600">{team.psnId}</div>
+                <div className="text-xs text-blue-600 truncate max-w-[160px] sm:max-w-none">
+                  {team.psnId}
+                </div>
               )}
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <div className="text-2xl font-bold text-blue-600">{team.points}</div>
             <div className="text-xs text-gray-500">POINTS</div>
           </div>
@@ -147,7 +151,7 @@ const TeamCard = ({ team, position, totalTeams }: { team: Team; position: number
               </span>
             </div>
             {team.played > 0 && (
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-1 shrink-0">
                 <span className="text-xs text-gray-500">Form</span>
                 <div className="w-12 h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div 
@@ -357,7 +361,6 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
       showToast('No league selected', 'error');
       return;
     }
-    // console.log('Current leagueId:', leagueId, 'Type:', typeof leagueId);
     const { team1, team2, score1, score2 } = data;
     setIsLoading(true);
 
@@ -523,7 +526,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       <div className="container mx-auto px-4 py-4 sm:py-8">
         {/* Header - MOBILE RESPONSIVE */}
         <div className="mb-6 sm:mb-8 text-center relative">
@@ -569,44 +572,49 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
           )}
         </div>
 
-        {/* Navigation Tabs - MOBILE RESPONSIVE */}
-        <div className="flex justify-center mb-6 sm:mb-8 overflow-x-auto">
-          <div className="p-3 sm:p-6 flex space-x-2 sm:space-x-4 min-w-max">
-            {[
-              { id: 'table', label: 'Table', icon: '/icons/leaguesTable.svg', color: 'blue', size: 30, disabled: false },
-              { id: 'add-member', label: 'Add', icon: '/icons/addplayers.svg', color: 'blue', disabled: leagueStatus === 'ended', size: 38 },
-              { id: 'add-match', label: 'Match', icon: '/icons/addmatches.svg', color: 'blue', disabled: leagueStatus === 'ended', size: 38 }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => !tab.disabled && setActiveTab(tab.id as any)}
-                disabled={isLoading || tab.disabled}
-                className={`px-4 sm:px-8 py-2 sm:py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  activeTab === tab.id
-                    ? `bg-gradient-to-r from-${tab.color}-500 to-${tab.color}-600 text-white shadow-lg scale-105`
-                    : tab.disabled
-                    ? 'text-gray-400 bg-gray-100'
-                    : 'text-white hover:text-gray-800 hover:bg-white/50'
-                }`}
-              >
-                <span className="flex flex-col sm:flex-row items-center sm:space-x-2">
-                  <div className="w-6 h-6 sm:w-auto sm:h-auto">
-                    <Image 
-                      src={tab.icon} 
-                      alt={`${tab.label} icon`} 
-                      width={tab.size} 
+        {/* Navigation Tabs - MOBILE SAFE */}
+        <div className="flex justify-center mb-6 sm:mb-8">
+          <div className="px-3 sm:px-6 max-w-full">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
+              {[
+                { id: 'table', label: 'Table', icon: '/icons/leaguesTable.svg', color: 'blue', size: 30, disabled: false },
+                { id: 'add-member', label: 'Add', icon: '/icons/addplayers.svg', color: 'blue', disabled: leagueStatus === 'ended', size: 38 },
+                { id: 'add-match', label: 'Match', icon: '/icons/addmatches.svg', color: 'blue', disabled: leagueStatus === 'ended', size: 38 }
+              ].map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => !tab.disabled && setActiveTab(tab.id as any)}
+                    disabled={isLoading || tab.disabled}
+                    className={[
+                      "relative inline-flex items-center gap-2 rounded-xl px-4 py-2 sm:px-6 sm:py-3 font-semibold",
+                      "shadow-sm ring-1 ring-white/10 shrink-0 overflow-hidden whitespace-nowrap",
+                      "transition-[background,box-shadow,transform] duration-200",
+                      "hover:scale-100 sm:hover:scale-[1.03]",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60",
+                      tab.disabled
+                        ? "text-gray-400 bg-gray-100"
+                        : isActive
+                        ? "bg-blue-600 text-white"
+                        : "bg-white/10 text-white hover:bg-white/15"
+                    ].join(" ")}
+                  >
+                    <Image
+                      src={tab.icon}
+                      alt={`${tab.label} icon`}
+                      width={tab.size}
                       height={tab.size}
-                      className="mb-1 sm:mb-0 "
+                      className="w-6 h-6 sm:w-7 sm:h-7 pointer-events-none"
                     />
-                  </div>
-                  <span className="text-xs sm:text-base hidden sm:block">{tab.label}</span>
-                  {/* Shorter labels for mobile */}
-                  <span className="text-xs sm:text-base block sm:hidden">
-                    {tab.id === 'table' ? 'Table' : tab.id === 'add-member' ? 'Add' : 'Match'}
-                  </span>
-                </span>
-              </button>
-            ))}
+                    <span className="hidden sm:inline text-base">{tab.label}</span>
+                    <span className="sm:hidden text-xs">
+                      {tab.id === 'table' ? 'Table' : tab.id === 'add-member' ? 'Add' : 'Match'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -807,14 +815,6 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                       </div>
                     )}
                   </div>
-                  {/* <Link
-                    href="/match-history"
-                    className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-800 font-bold transition-all duration-300 transform hover:scale-105 text-sm"
-                  >
-                    <span>📊</span>
-                    <span>View Match History</span>
-                    <span>→</span>
-                  </Link> */}
                 </div>
               </div>
             )}

@@ -1,3 +1,4 @@
+// src/app/page.tsx
 "use client";
 
 import Image from "next/image";
@@ -7,172 +8,194 @@ import MemberManager from "./components/MemberManager";
 import TournamentManager from "./components/TournamentManager";
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
-import { AuthProvider, AuthModal } from '../lib/AuthContext';
+import { AuthProvider, AuthModal } from "../lib/AuthContext";
 
 function HomePage() {
   const [selectedLeague, setSelectedLeague] = useState<string>("");
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>("");
   const [mounted, setMounted] = useState(false);
-  const [activeSection, setActiveSection] = useState<'leagues' | 'users' | 'tournaments'>('leagues');
+  const [activeSection, setActiveSection] = useState<"leagues" | "users" | "tournaments">("leagues");
 
-  // Handle mounting and localStorage in a single effect
+  // Mount + restore persisted league
   useEffect(() => {
     setMounted(true);
-    
-    // Only access localStorage after component is mounted
     const savedLeague = localStorage.getItem("currentLeagueName") || "";
     const savedLeagueId = localStorage.getItem("currentLeagueId") || "";
     setSelectedLeague(savedLeague);
     setSelectedLeagueId(savedLeagueId);
   }, []);
 
-  // Save the selected league whenever it changes (only after mounting)
+  // Persist selection
   useEffect(() => {
-    if (mounted && selectedLeague) {
-      localStorage.setItem("currentLeagueName", selectedLeague);
-    }
-    if (mounted && selectedLeagueId) {
-      localStorage.setItem("currentLeagueId", selectedLeagueId);
-    }
-  }, [selectedLeague, selectedLeagueId, mounted]);
+    if (!mounted) return;
+    if (selectedLeague) localStorage.setItem("currentLeagueName", selectedLeague);
+    if (selectedLeagueId) localStorage.setItem("currentLeagueId", selectedLeagueId);
+  }, [mounted, selectedLeague, selectedLeagueId]);
 
   const handleLeagueSelect = useCallback((league: string, leagueId: string) => {
     setSelectedLeague(league);
     setSelectedLeagueId(leagueId);
   }, []);
 
-  // Show nothing during SSR to prevent hydration mismatch
-  if (!mounted) {
-    return null;
-  }
+  // Avoid SSR mismatch
+  if (!mounted) return null;
 
   return (
-    <main className="min-h-screen bg-[url('/images/Fc1.jpg')] bg-cover bg-center from-slate-50 via-blue-50 to-indigo-100">
-      {/* Enhanced Header with Navigation */}
-      <div className="text-center py-12 px-4">
-        <div className="relative inline-block">
-          <h1 className="text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent mb-4">
-           EA TOURNAMENT MANAGER
-          </h1>
-          <div className="absolute -top-3 -right-3">
-            <div className="w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full animate-pulse"></div>
+    <main className="min-h-screen relative overflow-x-hidden">
+      {/* Background image + soft overlay for readability */}
+      <div className="absolute inset-0 bg-[url('/images/Fc1.jpg')] bg-cover bg-center md:bg-fixed" />
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-50/10 via-blue-50/5 to-indigo-100/1" />
+
+      <div className="relative">
+        {/* Header */}
+        <div className="text-center pt-[env(safe-area-inset-top)] py-10 px-4">
+          <div className="relative inline-block">
+            <h1
+              className="text-3xl sm:text-5xl md:text-6xl font-extrabold
+                         bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800
+                         bg-clip-text text-transparent mb-3"
+            >
+              EA TOURNAMENT MANAGER
+            </h1>
+            <div className="absolute -top-2 -right-2 sm:-top-3 sm:-right-3">
+              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full animate-pulse" />
+            </div>
+          </div>
+          <p className="text-sm sm:text-base text-gray-700 font-medium">
+            Create and manage your football leagues with style
+          </p>
+          <div className="w-24 sm:w-32 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 mx-auto rounded-full mt-3" />
+
+          {/* Tabs — fixed so hover/focus doesn't break out */}
+          <div className="flex justify-center mt-6">
+            <div className="max-w-full px-4">
+              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+                {[
+                  { id: "leagues", label: "Leagues", icon: "/icons/league.svg" },
+                  { id: "users", label: "Players", icon: "/icons/Players.svg" },
+                  { id: "tournaments", label: "Tournaments", icon: "/icons/tournaments.svg" },
+                ].map((tab) => {
+                  const isActive = activeSection === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveSection(tab.id as any)}
+                      aria-pressed={isActive}
+                      className={[
+                        "relative inline-flex items-center gap-2 rounded-2xl",
+                        "px-4 py-2 sm:px-6 sm:py-3 font-semibold",
+                        "shadow-md ring-1 ring-white/10",
+                        // prevent breakout / overflow on small screens
+                        "overflow-hidden whitespace-nowrap shrink-0",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60",
+                        "transition-[background,box-shadow,transform] duration-200",
+                        "sm:hover:scale-[1.03] will-change-transform",
+                        isActive
+                          ? "bg-blue-600 text-white ring-blue-400/20"
+                          : "bg-white/10 text-white hover:bg-white/15"
+                      ].join(" ")}
+                    >
+                      <Image
+                        src={tab.icon}
+                        alt={`${tab.label} icon`}
+                        width={28}
+                        height={28}
+                        className="w-6 h-6 sm:w-7 sm:h-7 pointer-events-none"
+                      />
+                      <span className="text-base sm:text-lg">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
-        <p className="text-xl text-gray-600 font-medium">Create and manage your football leagues with style</p>
-        <div className="w-32 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 mx-auto rounded-full mt-4"></div>
-        
-        {/* Navigation Tabs */}
-        <div className="flex justify-center mt-8">
-          <div className=" rounded  p-1 flex space-x-1  ">
-            {[
-              { id: 'leagues', label: 'Leagues', icon: '/icons/league.svg', size:64 },
-              { id: 'users', label: 'Players', icon: '/icons/Players.svg', size:64 },
-              { id: 'tournaments', label: 'Tournaments', icon: '/icons/tournaments.svg', size:64 },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveSection(tab.id as any)}
-                className={`flex items-center justify-center px-6 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-70 text-[21pt] ${
-                  activeSection === tab.id
-                    ? 'bg-blue-600 text-white shadow-lg scale-90'
-                    : 'text-gray-200 '
-                }`}
-              >
-                <span className="flex items-center space-x-2">
-                  <Image 
-                    src={tab.icon} 
-                    alt={`${tab.label} icon`} 
-                    width={tab.size} 
-                    height={tab.size}
-                  />
-                  <span>{tab.label}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      <div className="container mx-auto px-4 pb-12">
-        {/* Leagues Section */}
-        {activeSection === 'leagues' && (
-          <>
-            {/* League Selection */}
-            <LeagueSelector onLeagueSelect={handleLeagueSelect} />
+        {/* Body */}
+        <div className="container mx-auto px-4 pb-12">
+          {/* Leagues */}
+          {activeSection === "leagues" && (
+            <>
+              <LeagueSelector onLeagueSelect={handleLeagueSelect} />
 
-            {/* Main Content */}
-            {!selectedLeague ? (
-              <div className="text-center mt-12">
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-12 max-w-2xl mx-auto border border-white/20">
-                  <div className="text-8xl mb-8 animate-bounce">⚽</div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-4">
-                    Welcome to League Manager!
-                  </h2>
-                  <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                    Create your first league or select an existing one to start managing teams and matches.
-                  </p>
-                  
-                  {/* Feature Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                    {[
-                      { icon: "🏆", title: "Multiple Leagues", desc: "Create and manage unlimited leagues" },
-                      { icon: "👥", title: "Player Management", desc: "Add players and manage participants" },
-                      { icon: "⚽", title: "Match Results", desc: "Record matches with live table updates" },
-                      { icon: "📊", title: "Tournament System", desc: "Champions League style competitions" }
-                    ].map((feature, index) => (
-                      <div key={index} className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <span className="text-2xl">{feature.icon}</span>
-                          <h3 className="font-bold text-gray-800">{feature.title}</h3>
+              {!selectedLeague ? (
+                <div className="text-center mt-10">
+                  <div className="bg-white/85 backdrop-blur-sm rounded-2xl shadow-2xl p-6 sm:p-10 max-w-2xl mx-auto border border-white/40">
+                    <div className="text-7xl sm:text-8xl mb-6 animate-bounce">⚽</div>
+                    <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-3">
+                      Welcome to League Manager!
+                    </h2>
+                    <p className="text-base sm:text-lg text-gray-700 mb-6 leading-relaxed">
+                      Create your first league or select an existing one to start managing players and matches.
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-left">
+                      {[
+                        { icon: "🏆", title: "Multiple Leagues", desc: "Create and manage unlimited leagues" },
+                        { icon: "👥", title: "Player Management", desc: "Add players and manage participants" },
+                        { icon: "⚽", title: "Match Results", desc: "Record matches with live table updates" },
+                        { icon: "📊", title: "Tournament System", desc: "Champions League–style competitions" },
+                      ].map((feature, i) => (
+                        <div
+                          key={i}
+                          className="bg-gradient-to-r from-blue-50/70 to-indigo-50/70 p-5 rounded-xl border border-blue-100"
+                        >
+                          <div className="flex items-center space-x-3 mb-1.5">
+                            <span className="text-2xl">{feature.icon}</span>
+                            <h3 className="font-bold text-gray-800">{feature.title}</h3>
+                          </div>
+                          <p className="text-gray-700 text-sm">{feature.desc}</p>
                         </div>
-                        <p className="text-gray-600 text-sm">{feature.desc}</p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-8">
-                {/* Current League Display */}
+              ) : (
+                <div className="space-y-6 sm:space-y-8">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl shadow-xl p-4 sm:p-6">
+                    <LeagueTable leagueName={selectedLeague} leagueId={selectedLeagueId} />
+                  </div>
 
-
-                {/* League Table */}
-                <LeagueTable leagueName={selectedLeague} leagueId={selectedLeagueId} />
-
-                {/* Additional Links */}
-                <div className="flex justify-center pt-8">
-                  <Link
-                    href="/match-history"
-                    className="group inline-flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-xl font-bold text-lg"
-                  >
-                    <span className="text-2xl group-hover:animate-bounce"></span>
-                    <span>View Match History</span>
-                    <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
-                  </Link>
+                  <div className="flex justify-center pt-4 sm:pt-6">
+                    <Link
+                      href="/match-history"
+                      className="group inline-flex items-center space-x-3 px-6 py-3 sm:px-8 sm:py-4
+                                 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl
+                                 hover:from-blue-700 hover:to-purple-700 active:scale-95
+                                 transition-all duration-200 shadow-xl font-bold text-base sm:text-lg"
+                    >
+                      <span>View Match History</span>
+                      <span className="group-hover:translate-x-1 transition-transform duration-200">→</span>
+                    </Link>
+                  </div>
                 </div>
+              )}
+            </>
+          )}
+
+          {/* Players */}
+          {activeSection === "users" && (
+            <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+              <div className=" backdrop-blur-sm rounded-2xl shadow-xl p-3 sm:p-6">
+                <MemberManager />
               </div>
-            )}
-          </>
-        )}
+            </div>
+          )}
 
-        {/* Players Section */}
-        {activeSection === 'users' && (
-          <MemberManager />
-        )}
+          {/* Tournaments */}
+          {activeSection === "tournaments" && (
+            <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+              <div className=" backdrop-blur-sm rounded-2xl shadow-xl p-3 sm:p-6">
+                <TournamentManager />
+              </div>
+            </div>
+          )}
 
-        {/* Tournaments Section */}
-        {activeSection === 'tournaments' && (
-          <TournamentManager />
-        )}
-
-        {/*Footer */}
-        <footer className="mt-16 text-center">
-          <div className=" ">
-            <p className="text-gray-300 font-medium">
-               Created by Kachy Odunze
-            </p>
-          </div>
-        </footer>
+          {/* Footer */}
+          <footer className="mt-12 sm:mt-16 text-center">
+            <p className="text-gray-200 font-medium">Created by Kachy Odunze</p>
+          </footer>
+        </div>
       </div>
     </main>
   );

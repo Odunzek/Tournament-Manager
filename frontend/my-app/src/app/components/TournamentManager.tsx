@@ -94,9 +94,6 @@ export default function TournamentManager() {
     endDate: ''
   });
 
-
-
-
   // Add team form data
   const [teamFormData, setTeamFormData] = useState({
     name: '',
@@ -246,7 +243,7 @@ export default function TournamentManager() {
     }
   };
 
-// Handle adding member to tournament
+  // Handle adding member to tournament
   const handleAddMemberWrapper = async (selectedMemberId: string) => {
     if (!selectedTournament?.id) return;
 
@@ -457,7 +454,7 @@ export default function TournamentManager() {
       }
       
     } catch (error) {
-      console.error('Error recording knockout match:', error);
+      console.error('Error recording knockout match result:', error);
       showToast('Failed to record knockout match result', 'error');
     } finally {
       setIsLoading(false);
@@ -539,7 +536,7 @@ const handleGenerateKnockout = async () => {
   // Show loading state while data loads
   if (!isLoaded) {
     return (
-      <div className="mb-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 p-8">
+      <div className="mb-6 sm:mb-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 p-6 sm:p-8">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -563,12 +560,12 @@ const handleGenerateKnockout = async () => {
         />
       )}
 
-      <div className="mb-8 bg-white/20 backdrop-blur-2 rounded-2xl shadow-2xl  overflow-hidden">
+      <div className="mb-8 bg-white/20 backdrop-blur-2 rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-8 py-6">
-          <div className="flex items-center justify-between">
+        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-4 sm:px-8 py-4 sm:py-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12  rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                 <span className="text-2xl">
                   <Image
                     src="/icons/tournaments.svg"
@@ -579,20 +576,20 @@ const handleGenerateKnockout = async () => {
                 </span>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">Tournaments</h2>
-                <p className="text-white/80 text-sm">Create and manage football tournaments</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-white">Tournaments</h2>
+                <p className="text-white/80 text-xs sm:text-sm">Create and manage football tournaments</p>
               </div>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-xl">
-              <span className="text-white/80 text-sm font-medium">Active Tournaments:</span>
+            <div className="bg-white/20 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm">
+              <span className="text-white/80 font-medium">Active Tournaments:</span>
               <span className="text-white font-bold ml-2">{tournaments.length}</span>
             </div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="px-8 py-4 bg-gray-50 ">
-          <div className="flex space-x-1 " >
+        <div className="px-4 sm:px-8 py-3 sm:py-4 ">
+          <div className="flex space-x-2 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none]">
             {[
               { id: 'tournaments', label: 'Tournaments', icon: '/icons/league.svg', size:24 },
               { id: 'create', label: 'Create Tournament', icon: '/icons/plus.svg', size:24 },
@@ -602,10 +599,11 @@ const handleGenerateKnockout = async () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 disabled={isLoading || (tab.id === 'manage' && !selectedTournament)}
-                className={`px-6 py-3 text-white bg-purple-600 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 ${
+                className={`px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base text-white bg-purple-600 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2
+                            active:scale-95 focus:outline-none focus:ring-0 focus:ring-purple-500 focus:ring-offset-0 ${
                   activeTab === tab.id
                     ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-gray-600 hover:text-white hover:bg-indigo-600'
+                    : 'text-white hover:bg-indigo-600'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <span>
@@ -627,12 +625,12 @@ const handleGenerateKnockout = async () => {
           </div>
         </div>
 
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
           {/* Tournaments Tab */}
           {activeTab === 'tournaments' && (
             <div>
               {tournaments.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {tournaments.map((tournament) => {
                     const typeInfo = getTournamentTypeInfo(tournament.type);
                     const statusInfo = getStatusInfo(tournament.status);
@@ -640,7 +638,7 @@ const handleGenerateKnockout = async () => {
                     return (
                       <div
                         key={tournament.id}
-                        className={`group bg-white/70  rounded-xl p-6 hover:shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer relative ${
+                        className={`group bg-white/70 rounded-xl p-6 hover:shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer relative ${
                           selectedTournament?.id === tournament.id
                             ? 'border-indigo-400 bg-indigo-50'
                             : 'border-gray-200 hover:border-indigo-300'
@@ -654,8 +652,8 @@ const handleGenerateKnockout = async () => {
                               {typeInfo.icon}
                             </div>
                             <div>
-                              <h3 className="font-bold text-gray-900 text-lg">{tournament.name}</h3>
-                              <p className="text-sm text-gray-600">{typeInfo.name}</p>
+                              <h3 className="font-bold text-gray-900 text-base sm:text-lg">{tournament.name}</h3>
+                              <p className="text-xs sm:text-sm text-gray-600">{typeInfo.name}</p>
                             </div>
                           </div>
                           
@@ -714,12 +712,12 @@ const handleGenerateKnockout = async () => {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <div className="text-8xl mb-6">🏆</div>
+                  <div className="text-7xl sm:text-8xl mb-6">🏆</div>
                   <h3 className="text-2xl font-bold text-gray-800 mb-2">No Tournaments Yet</h3>
                   <p className="text-gray-600 mb-6">Create your first tournament to get started!</p>
                   <button
                     onClick={() => setActiveTab('create')}
-                    className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-8 py-3 rounded-xl hover:from-indigo-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 shadow-lg font-semibold"
+                    className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl hover:from-indigo-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 shadow-lg font-semibold"
                   >
                     Create Tournament
                   </button>
@@ -731,8 +729,8 @@ const handleGenerateKnockout = async () => {
           {/* Create Tournament Tab */}
           {activeTab === 'create' && (
             <div className="max-w-2xl mx-auto">
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 shadow-lg mb-8">
-                <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center space-x-3">
+              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 sm:p-6 shadow-lg mb-6 sm:mb-8">
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center space-x-3">
                   <span className="text-3xl">🏆</span>
                   <span>Create New Tournament</span>
                 </h3>
@@ -747,7 +745,7 @@ const handleGenerateKnockout = async () => {
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="text-black w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-300"
+                      className="text-black w-full px-3 py-2.5 sm:px-4 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-300"
                       placeholder="Enter tournament name (e.g., Champions League 2024)"
                       disabled={isLoading}
                     />
@@ -762,7 +760,7 @@ const handleGenerateKnockout = async () => {
                       <select
                         value={formData.type}
                         onChange={(e) => setFormData({ ...formData, type: e.target.value as Tournament['type'] })}
-                        className="text-black w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-300"
+                        className="text-black w-full px-3 py-2.5 sm:px-4 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-300"
                         disabled={isLoading}
                       >
                         <option value="champions_league">🏆 Champions League</option>
@@ -780,7 +778,7 @@ const handleGenerateKnockout = async () => {
                       <select
                         value={formData.maxTeams}
                         onChange={(e) => setFormData({ ...formData, maxTeams: Number(e.target.value) })}
-                        className="text-black w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-300"
+                        className="text-black w-full px-3 py-2.5 sm:px-4 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-300"
                         disabled={isLoading}
                       >
                         <option value={8}>8 Teams (2 Groups)</option>
@@ -802,7 +800,7 @@ const handleGenerateKnockout = async () => {
                         type="date"
                         value={formData.startDate}
                         onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                        className="text-black w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-300"
+                        className="text-black w-full px-3 py-2.5 sm:px-4 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-300"
                         disabled={isLoading}
                       />
                     </div>
@@ -814,7 +812,7 @@ const handleGenerateKnockout = async () => {
                         type="date"
                         value={formData.endDate}
                         onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                        className="text-black w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-300"
+                        className="text-black w-full px-3 py-2.5 sm:px-4 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-300"
                         disabled={isLoading}
                       />
                     </div>
@@ -824,7 +822,7 @@ const handleGenerateKnockout = async () => {
                   <button
                     type="submit"
                     disabled={isLoading || !formData.name.trim()}
-                    className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:cursor-not-allowed disabled:transform-none"
+                    className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:from-gray-400 disabled:to-gray-500 text-white px-5 py-3 sm:px-6 sm:py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:cursor-not-allowed disabled:transform-none"
                   >
                     {isLoading ? (
                       <div className="flex items-center justify-center space-x-2">
@@ -846,18 +844,18 @@ const handleGenerateKnockout = async () => {
           {activeTab === 'manage' && selectedTournament && (
             <div className="space-y-8">
               {/* Sub-Navigation for Manage */}
-              <div className="bg-white rounded-xl  overflow-hidden">
-                <div className="bg-blue-600 px-6 py-4">
+              <div className="bg-white rounded-xl overflow-hidden">
+                <div className="bg-blue-600 px-4 sm:px-6 py-4">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center text-white text-xl">
                       {getTournamentTypeInfo(selectedTournament.type).icon}
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-white">{selectedTournament.name}</h3>
-                      <p className="text-blue-100 text-sm">{getTournamentTypeInfo(selectedTournament.type).name}</p>
+                      <h3 className="text-lg sm:text-xl font-bold text-white">{selectedTournament.name}</h3>
+                      <p className="text-blue-100 text-xs sm:text-sm">{getTournamentTypeInfo(selectedTournament.type).name}</p>
                     </div>
                     <div className="ml-auto">
-                      <div className="bg-blue-500 px-3 py-1 rounded-lg text-white text-sm font-medium">
+                      <div className="bg-blue-500 px-3 py-1 rounded-lg text-white text-xs sm:text-sm font-medium">
                         {getStatusInfo(selectedTournament.status).text}
                       </div>
                     </div>
@@ -865,8 +863,8 @@ const handleGenerateKnockout = async () => {
                 </div>
 
                 {/* Sub-Navigation Tabs */}
-                <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
-                  <div className="flex space-x-1">
+                <div className="bg-gray-50 px-3 sm:px-6 py-2.5 sm:py-3 border-b border-gray-200">
+                  <div className="flex space-x-2 overflow-x-auto whitespace-nowrap">
                     {[
                       { id: 'overview', label: 'Overview', icon: '📊' },
                       { id: 'teams', label: 'Teams', icon: '👥' },
@@ -878,7 +876,7 @@ const handleGenerateKnockout = async () => {
                         key={tab.id}
                         onClick={() => setManageTab(tab.id as any)}
                         disabled={tab.disabled}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${
+                        className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${
                           manageTab === tab.id
                             ? 'bg-blue-600 text-white'
                             : tab.disabled 
@@ -904,60 +902,70 @@ const handleGenerateKnockout = async () => {
                 </div>
 
                 {/* Tab Content */}
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                   {/* Overview Tab */}
                   {manageTab === 'overview' && (
-                    <TournamentOverview
-                      tournament={selectedTournament}
-                      isLoading={isLoading}
-                      onGenerateGroups={handleGenerateGroups}
-                      onGenerateKnockout={handleGenerateKnockout}
-                      areGroupMatchesComplete={areGroupMatchesComplete}
-                    />
+                    <div className="overflow-x-auto">
+                      <TournamentOverview
+                        tournament={selectedTournament}
+                        isLoading={isLoading}
+                        onGenerateGroups={handleGenerateGroups}
+                        onGenerateKnockout={handleGenerateKnockout}
+                        areGroupMatchesComplete={areGroupMatchesComplete}
+                      />
+                    </div>
                   )}
 
                   {/* Teams Tab */}
                   {manageTab === 'teams' && (
-                    <TournamentTeams 
-                      tournament={selectedTournament}
-                      tournamentMembers={tournamentMembers}
-                      members={members}
-                      isLoading={isLoading}
-                      isAuthenticated={isAuthenticated}
-                      onAddMember={handleAddMemberWrapper}
-                      onRemoveMember={handleRemoveMember}
-                    />
+                    <div className="overflow-x-auto">
+                      <TournamentTeams 
+                        tournament={selectedTournament}
+                        tournamentMembers={tournamentMembers}
+                        members={members}
+                        isLoading={isLoading}
+                        isAuthenticated={isAuthenticated}
+                        onAddMember={handleAddMemberWrapper}
+                        onRemoveMember={handleRemoveMember}
+                      />
+                    </div>
                   )}
 
                   {/* Groups Tab */}
                   {manageTab === 'groups' && (
-                    <TournamentGroups
-                      tournament={selectedTournament}
-                      isLoading={isLoading}
-                      isAuthenticated={isAuthenticated}
-                      onRecordMatch={(groupId, homeTeam, awayTeam) => 
-                        setRecordingMatch({ groupId, homeTeam, awayTeam })
-                      }
-                    />
+                    <div className="overflow-x-auto">
+                      <TournamentGroups
+                        tournament={selectedTournament}
+                        isLoading={isLoading}
+                        isAuthenticated={isAuthenticated}
+                        onRecordMatch={(groupId, homeTeam, awayTeam) => 
+                          setRecordingMatch({ groupId, homeTeam, awayTeam })
+                        }
+                      />
+                    </div>
                   )}
 
                   {/* Knockout Tab */}
                   {manageTab === 'knockout' && (
-                    <TournamentKnockout
-                      tournament={selectedTournament}
-                      isLoading={isLoading}
-                      isAuthenticated={isAuthenticated}
-                      onRecordKnockoutMatch={(tieId, leg, homeTeam, awayTeam) =>
-                        setRecordingKnockoutMatch({ tieId, leg, homeTeam, awayTeam })
-                      }
-                    />
+                    <div className="overflow-x-auto">
+                      <TournamentKnockout
+                        tournament={selectedTournament}
+                        isLoading={isLoading}
+                        isAuthenticated={isAuthenticated}
+                        onRecordKnockoutMatch={(tieId, leg, homeTeam, awayTeam) =>
+                          setRecordingKnockoutMatch({ tieId, leg, homeTeam, awayTeam })
+                        }
+                      />
+                    </div>
                   )}
 
                   {/* Results Tab */}
                   {manageTab === 'results' && (
-                    <TournamentResults tournament={selectedTournament} />
+                    <div className="overflow-x-auto">
+                      <TournamentResults tournament={selectedTournament} />
+                    </div>
                   )}
-                                 </div> {/* Close Tab Content div */}
+                </div> {/* Close Tab Content div */}
               </div>
             </div> 
           )}
@@ -970,7 +978,7 @@ const handleGenerateKnockout = async () => {
               <p className="text-black mb-6">Select a tournament from the tournaments tab to manage it.</p>
               <button
                 onClick={() => setActiveTab('tournaments')}
-                className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-8 py-3 rounded-xl hover:from-indigo-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 shadow-lg font-semibold"
+                className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl hover:from-indigo-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 shadow-lg font-semibold"
               >
                 View Tournaments
               </button>
@@ -982,48 +990,51 @@ const handleGenerateKnockout = async () => {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300">
-            <div className="p-8">
-              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-red-100 rounded-full">
-                <span className="text-3xl">🗑️</span>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 text-center mb-3">
-                Delete Tournament?
-              </h3>
-              <p className="text-gray-600 text-center mb-8 leading-relaxed">
-                This will permanently delete <strong>"{showDeleteConfirm.name}"</strong> and all its teams, matches, and history. This action cannot be undone.
-              </p>
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => setShowDeleteConfirm(null)}
-                  disabled={isLoading}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleDeleteTournament(showDeleteConfirm)}
-                  disabled={isLoading}
-                  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Deleting...</span>
-                    </div>
-                  ) : (
-                    'Delete Tournament'
-                  )}
-                </button>
+          <div className="max-h-[90vh] overflow-auto rounded-2xl">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300">
+              <div className="p-8">
+                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-red-100 rounded-full">
+                  <span className="text-3xl">🗑️</span>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 text-center mb-3">
+                  Delete Tournament?
+                </h3>
+                <p className="text-gray-600 text-center mb-8 leading-relaxed">
+                  This will permanently delete <strong>"{showDeleteConfirm.name}"</strong> and all its teams, matches, and history. This action cannot be undone.
+                </p>
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => setShowDeleteConfirm(null)}
+                    disabled={isLoading}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleDeleteTournament(showDeleteConfirm)}
+                    disabled={isLoading}
+                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Deleting...</span>
+                      </div>
+                    ) : (
+                      'Delete Tournament'
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-        {/* Match Recording Modal - Handles both Group and Knockout matches */}
-        {(recordingMatch || recordingKnockoutMatch) && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      {/* Match Recording Modal - Handles both Group and Knockout matches */}
+      {(recordingMatch || recordingKnockoutMatch) && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="max-h-[90vh] overflow-auto rounded-2xl">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300">
               <div className="p-8">
                 <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-blue-100 rounded-full">
@@ -1115,7 +1126,8 @@ const handleGenerateKnockout = async () => {
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
     </div>
   );

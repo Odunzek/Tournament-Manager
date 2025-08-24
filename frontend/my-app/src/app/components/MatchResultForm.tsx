@@ -43,7 +43,6 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
 
     setIsSubmitting(true);
 
-    // Simulate brief loading for better UX
     await new Promise(resolve => setTimeout(resolve, 500));
 
     onSubmit({
@@ -53,7 +52,6 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
       score2: Number(score2),
     });
 
-    // Reset fields
     setTeam1("");
     setTeam2("");
     setScore1("");
@@ -79,7 +77,7 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
           ? 'bg-green-50 border-green-200' 
           : 'bg-yellow-50 border-yellow-200'
       }`}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center space-x-3">
             <span className="text-2xl">
               {isAuthenticated ? '🔓' : '🔐'}
@@ -121,7 +119,6 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Team Selection */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Team 1 */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-3">
               Home Team
@@ -129,7 +126,7 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
             <select
               value={team1}
               onChange={(e) => setTeam1(e.target.value)}
-              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 hover:border-gray-300"
+              className="w-full px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-300"
               disabled={isSubmitting}
             >
               <option value="">Select home team</option>
@@ -141,7 +138,6 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
             </select>
           </div>
 
-          {/* Team 2 */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-3">
               Away Team
@@ -149,7 +145,7 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
             <select
               value={team2}
               onChange={(e) => setTeam2(e.target.value)}
-              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 hover:border-gray-300"
+              className="w-full px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-300"
               disabled={isSubmitting}
             >
               <option value="">Select away team</option>
@@ -165,11 +161,11 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
         {/* VS Indicator */}
         {team1 && team2 && (
           <div className="flex items-center justify-center py-4">
-            <div className="bg-gradient-to-r from-indigo-100 to-indigo-200  rounded-xl px-6 py-3">
-              <div className="flex items-center space-x-4 text-center">
-                <span className="font-bold text-gray-800">{team1}</span>
+            <div className="bg-gradient-to-r from-indigo-100 to-indigo-200 rounded-xl px-4 sm:px-6 py-2 sm:py-3">
+              <div className="flex items-center space-x-3 sm:space-x-4 text-center text-sm sm:text-base">
+                <span className="font-bold text-gray-800 truncate max-w-[100px] sm:max-w-none">{team1}</span>
                 <span className="text-lg font-bold text-indigo-600">VS</span>
-                <span className="font-bold text-gray-800">{team2}</span>
+                <span className="font-bold text-gray-800 truncate max-w-[100px] sm:max-w-none">{team2}</span>
               </div>
             </div>
           </div>
@@ -190,7 +186,7 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
                 const value = e.target.value;
                 setScore1(value === "" ? "" : Number(value));
               }}
-              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl text-gray-900 text-center text-2xl font-bold focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 hover:border-gray-300"
+              className="w-full px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-xl text-gray-900 text-center text-xl sm:text-2xl font-bold focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-300"
               placeholder="0"
               disabled={isSubmitting}
             />
@@ -209,7 +205,7 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
                 const value = e.target.value;
                 setScore2(value === "" ? "" : Number(value));
               }}
-              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl text-gray-900 text-center text-2xl font-bold focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 hover:border-gray-300"
+              className="w-full px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-xl text-gray-900 text-center text-xl sm:text-2xl font-bold focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-300"
               placeholder="0"
               disabled={isSubmitting}
             />
@@ -218,32 +214,32 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
 
         {/* Match Preview */}
         {team1 && team2 && team1 !== team2 && score1 !== "" && score2 !== "" && (
-          <div className={`rounded-xl p-6 shadow-lg transition-all duration-300 ${
+          <div className={`rounded-xl p-4 sm:p-6 shadow-lg transition-all duration-300 ${
             result?.result === "draw" 
               ? "bg-gradient-to-r from-yellow-50 to-amber-50 " 
               : "bg-gradient-to-r from-blue-50 to-indigo-50"
           }`}>
             <div className="text-center">
-              <h4 className="text-lg font-bold text-gray-800 mb-3">Match Result Preview</h4>
-              <div className="flex items-center justify-center space-x-6 mb-4">
+              <h4 className="text-base sm:text-lg font-bold text-gray-800 mb-3">Match Result Preview</h4>
+              <div className="flex items-center justify-center space-x-4 sm:space-x-6 mb-4">
                 <div className="text-center">
-                  <div className="font-bold text-gray-900">{team1}</div>
-                  <div className={`text-3xl font-bold ${score1 > score2 ? 'text-green-600' : score1 === score2 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                  <div className="font-bold text-gray-900 truncate max-w-[100px] sm:max-w-none">{team1}</div>
+                  <div className={`text-2xl sm:text-3xl font-bold ${score1 > score2 ? 'text-green-600' : score1 === score2 ? 'text-yellow-600' : 'text-gray-600'}`}>
                     {score1}
                   </div>
                 </div>
                 
-                <div className="text-2xl font-bold text-gray-400">-</div>
+                <div className="text-xl sm:text-2xl font-bold text-gray-400">-</div>
                 
                 <div className="text-center">
-                  <div className="font-bold text-gray-900">{team2}</div>
-                  <div className={`text-3xl font-bold ${score2 > score1 ? 'text-green-600' : score1 === score2 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                  <div className="font-bold text-gray-900 truncate max-w-[100px] sm:max-w-none">{team2}</div>
+                  <div className={`text-2xl sm:text-3xl font-bold ${score2 > score1 ? 'text-green-600' : score1 === score2 ? 'text-yellow-600' : 'text-gray-600'}`}>
                     {score2}
                   </div>
                 </div>
               </div>
               
-              <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold ${
+              <div className={`inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold ${
                 result?.result === "draw" 
                   ? "bg-yellow-200 text-yellow-800" 
                   : "bg-blue-200 text-blue-800"
@@ -288,7 +284,7 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
         <button
           type="submit"
           disabled={!isFormValid || isSubmitting}
-          className={`w-full py-4 px-6 rounded-xl font-bold text-white transition-all duration-300 transform ${
+          className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-white transition-all duration-300 transform ${
             !isFormValid || isSubmitting
               ? 'bg-gray-400 cursor-not-allowed'
               : isAuthenticated
@@ -296,20 +292,20 @@ export default function MatchResultForm({ teams, onSubmit }: MatchResultFormProp
               : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 hover:scale-[1.02] shadow-lg hover:shadow-xl'
           }`}
         >
-          <div className="flex items-center justify-center space-x-3">
+          <div className="flex items-center justify-center space-x-2 sm:space-x-3 text-sm sm:text-base">
             {isSubmitting ? (
               <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 <span>Recording Match...</span>
               </>
             ) : !isAuthenticated ? (
               <>
-                <span className="text-xl">🔐</span>
+                <span className="text-lg sm:text-xl">🔐</span>
                 <span>Authenticate to Record Match</span>
               </>
             ) : (
               <>
-                <span className="text-xl">⚽</span>
+                <span className="text-lg sm:text-xl">⚽</span>
                 <span>Record Match Result</span>
               </>
             )}
