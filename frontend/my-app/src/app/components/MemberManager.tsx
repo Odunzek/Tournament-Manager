@@ -295,7 +295,7 @@ export default function WhatsAppMemberManager() {
         />
       )}
 
-      <div className="mb-8 bg-white/3 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
+      <div className="mb-8 bg-white/30 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-700 via-purple-700 to-indigo-600 px-4 sm:px-8 py-5 sm:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

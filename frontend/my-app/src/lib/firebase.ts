@@ -1,8 +1,9 @@
 // lib/firebase.ts
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
-// Firebase config using environment variables
+// All values already expected in your .env.local
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -12,39 +13,23 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// ✅ Only initialize Firebase once (important for SSR/client switching)
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
+// Avoid re-initializing during hot reloads
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-export { app, db };
+// Export db for your existing utils
+export const db = getFirestore(app);
 
-// ✅ Types for your data
-export interface League {
-  id?: string;
-  name: string;
-  createdAt: Date;
-  teams: Team[];
-}
+// 🔐 Lightweight auth: give each browser a Firebase identity (no UI change)
+export const auth = getAuth(app);
 
-export interface Team {
-  id?: string;
-  name: string;
-  played: number;
-  won: number;
-  drawn: number;
-  lost: number;
-  goalsFor: number;
-  goalsAgainst: number;
-  goalDifference: number;
-  points: number;
-}
-
-export interface Match {
-  id?: string;
-  leagueName: string;
-  homeTeam: string;
-  awayTeam: string;
-  homeScore: number;
-  awayScore: number;
-  date: Date;
+// Only run in the browser (Next.js App Router SSR guard)
+if (typeof window !== 'undefined') {
+  onAuthStateChanged(auth, (user) => {
+    // If the user has no Firebase identity yet, sign them in anonymously
+    if (!user) {
+      signInAnonymously(auth).catch((e) =>
+        console.error('Anonymous sign-in failed:', e)
+      );
+    }
+  });
 }
