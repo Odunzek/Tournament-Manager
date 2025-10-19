@@ -23,3 +23,31 @@ if (typeof window !== 'undefined') {
     }
   });
 }
+
+// ================================
+// 📘 Shared Data Models
+// ================================
+
+export interface League {
+  id: string;
+  name: string;
+  createdAt: Date;
+  teams: {
+    id: string;
+    name: string;
+    psnId?: string;
+  }[];
+  status?: 'active' | 'ended';
+  endedAt?: Date;
+}
+
+export interface Match {
+  id: string;
+  leagueId?: string;
+  leagueName: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number;
+  awayScore: number;
+  date: Date;
+}

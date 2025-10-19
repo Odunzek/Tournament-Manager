@@ -23,7 +23,8 @@ import {
   calculateOptimalBracketSize, 
   DEFAULT_CHAMPIONS_LEAGUE_SETTINGS,
   DEFAULT_CUSTOM_SETTINGS,
-  DEFAULT_KNOCKOUT_SETTINGS
+  DEFAULT_KNOCKOUT_SETTINGS,
+  removeMemberFromGroupsAndFixtures
 } from "../../lib/tournamentUtils";
 import { getGroupMembers, GroupMember } from "../../lib/membershipUtils";
 import { useAuth } from "../../lib/AuthContext";
@@ -71,7 +72,7 @@ export default function TournamentManager() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<Tournament | null>(null);
   const [activeTab, setActiveTab] = useState<'tournaments' | 'create' | 'manage'>('tournaments');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-  const { isAuthenticated, setShowAuthModal } = useAuth();
+  const { isAuthenticated, setShowAuthModal, logout } = useAuth();
   const [recordingMatch, setRecordingMatch] = useState<{groupId: string; homeTeam: string; awayTeam: string;} | null>(null);
   const [recordingKnockoutMatch, setRecordingKnockoutMatch] = useState<{
     tieId: string;
@@ -104,7 +105,7 @@ export default function TournamentManager() {
   // Show toast notification
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 4500);
   };
 
   const requireAuth = () => {
@@ -244,97 +245,111 @@ export default function TournamentManager() {
   };
 
   // Handle adding member to tournament
-  const handleAddMemberWrapper = async (selectedMemberId: string) => {
-    if (!selectedTournament?.id) return;
+const handleAddMemberWrapper = async (selectedMemberId: string) => {
+  if (!selectedTournament?.id) return;
 
-    // Find the selected member
-    const selectedMember = members.find(m => m.id === selectedMemberId);
-    if (!selectedMember) {
-      showToast('Selected member not found', 'error');
-      return;
-    }
+  const selectedMember = members.find((m) => m.id === selectedMemberId);
+  if (!selectedMember) {
+    showToast('Selected member not found', 'error');
+    return;
+  }
 
-    // Prevent exceeding max allowed
-    if (selectedTournament.currentTeams >= selectedTournament.maxTeams) {
-      showToast('Tournament is full', 'error');
-      return;
-    }
+  if (selectedTournament.currentTeams >= selectedTournament.maxTeams) {
+    showToast('Tournament is full', 'error');
+    return;
+  }
 
-    // Check if member is already in tournament
-    if (tournamentMembers.some(tm => tm.name === selectedMember.name)) {
-      showToast('Member is already in this tournament', 'error');
-      return;
-    }
+  if (tournamentMembers.some((tm) => tm.name === selectedMember.name)) {
+    showToast('Member already exists in this tournament', 'error');
+    return;
+  }
 
-    setIsLoading(true);
+  setIsLoading(true);
 
-    try {
-      // Add to Firestore
-      await addMemberToTournament(selectedTournament.id, {
-        name: selectedMember.name,
-        psnId: selectedMember.psnId || selectedMember.name
-      });
+  try {
+    // ✅ 1. Add to Firestore
+    const newMember = await addMemberToTournament(selectedTournament.id, {
+      name: selectedMember.name,
+      psnId: selectedMember.psnId || selectedMember.name,
+      groupId: null, // start unassigned until group stage
+      tournamentId: selectedTournament.id,
+      createdAt: new Date(),
+    });
 
-      showToast(`${selectedMember.name} added to tournament!`, 'success');
+    console.log('✅ Added new member:', newMember);
 
-      // Reload updated members AND tournament data
-      const updatedMembers = await getTournamentMembers(selectedTournament.id);
-      setTournamentMembers(updatedMembers);
+    // ✅ 2. Update tournament team count
+    await updateTournament(selectedTournament.id, {
+      currentTeams: (selectedTournament.currentTeams || 0) + 1,
+    });
 
-      // Update tournament data to reflect current team count
-      const updatedTournaments = await getTournaments();
-      const updatedTournament = updatedTournaments.find(t => t.id === selectedTournament.id);
-      if (updatedTournament) {
-        setSelectedTournament(updatedTournament);
-      }
+    // ✅ 3. Refresh tournament + member list
+    const [updatedTournaments, updatedMembers] = await Promise.all([
+      getTournaments(),
+      getTournamentMembers(selectedTournament.id),
+    ]);
 
-    } catch (error) {
-      console.error('Error adding member:', error);
-      showToast('Failed to add member', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const updatedTournament = updatedTournaments.find(
+      (t) => t.id === selectedTournament.id
+    );
+
+    if (updatedTournament) setSelectedTournament(updatedTournament);
+    setTournamentMembers(updatedMembers);
+
+    showToast(`${selectedMember.name} added successfully!`, 'success');
+  } catch (error) {
+    console.error('❌ Error adding member:', error);
+    showToast('Failed to add member', 'error');
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
 
   // Handle removing member from tournament
-  const handleRemoveMember = async (member: TournamentParticipant) => {
-    if (!requireAuth()) return;
-    
-    if (!selectedTournament?.id || !member.id) {
-      showToast('Cannot remove member', 'error');
-      return;
-    }
+const handleRemoveMember = async (member: TournamentParticipant) => {
+  if (!requireAuth()) return;
 
-    setIsLoading(true);
-    try {
-      // Delete from tournament_members collection
-      await deleteDoc(doc(db, 'tournament_members', member.id));
-      
-      // Update tournament current teams count
-      await updateTournament(selectedTournament.id, {
-        currentTeams: selectedTournament.currentTeams - 1
-      });
-      
-      showToast(`${member.name} removed from tournament`, 'success');
-      
-      // Reload updated members and tournament data
-      const updatedMembers = await getTournamentMembers(selectedTournament.id);
-      setTournamentMembers(updatedMembers);
-      
-      const updatedTournaments = await getTournaments();
-      const updatedTournament = updatedTournaments.find(t => t.id === selectedTournament.id);
-      if (updatedTournament) {
-        setSelectedTournament(updatedTournament);
-      }
-      
-    } catch (error) {
-      console.error('Error removing member:', error);
-      showToast('Failed to remove member', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  if (!selectedTournament?.id || !member.id) {
+    showToast('Cannot remove member', 'error');
+    return;
+  }
+
+  setIsLoading(true);
+  try {
+    // 1️⃣ Clean up this member’s standings + matches
+    await removeMemberFromGroupsAndFixtures(selectedTournament.id, member.name);
+
+    // 2️⃣ Delete from tournament_members collection
+    await deleteDoc(doc(db, 'tournament_members', member.id));
+
+    // 3️⃣ Update tournament team count
+    await updateTournament(selectedTournament.id, {
+      currentTeams: Math.max((selectedTournament.currentTeams || 1) - 1, 0),
+    });
+
+    // 4️⃣ Refresh data
+    const [updatedMembers, updatedTournaments] = await Promise.all([
+      getTournamentMembers(selectedTournament.id),
+      getTournaments(),
+    ]);
+
+    const updatedTournament = updatedTournaments.find(
+      (t) => t.id === selectedTournament.id
+    );
+    if (updatedTournament) setSelectedTournament(updatedTournament);
+
+    setTournamentMembers(updatedMembers);
+    showToast(`${member.name} fully removed from tournament`, 'success');
+  } catch (error) {
+    console.error('Error removing member:', error);
+    showToast('Failed to remove member', 'error');
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   // Handle generating groups
   const handleGenerateGroups = async () => {
@@ -919,7 +934,7 @@ const handleGenerateKnockout = async () => {
                   {/* Teams Tab */}
                   {manageTab === 'teams' && (
                     <div className="overflow-x-auto">
-                      <TournamentTeams 
+                      <TournamentTeams
                         tournament={selectedTournament}
                         tournamentMembers={tournamentMembers}
                         members={members}
@@ -927,7 +942,12 @@ const handleGenerateKnockout = async () => {
                         isAuthenticated={isAuthenticated}
                         onAddMember={handleAddMemberWrapper}
                         onRemoveMember={handleRemoveMember}
+                        showToast={showToast} //  for toast confirmations
+                        setSelectedTournament={setSelectedTournament} // for auto-refresh
+                        setTournamentMembers={setTournamentMembers} // for reloading players
+                        setIsLoading={setIsLoading}
                       />
+
                     </div>
                   )}
 
@@ -941,6 +961,7 @@ const handleGenerateKnockout = async () => {
                         onRecordMatch={(groupId, homeTeam, awayTeam) => 
                           setRecordingMatch({ groupId, homeTeam, awayTeam })
                         }
+                        setSelectedTournament={setSelectedTournament}
                       />
                     </div>
                   )}

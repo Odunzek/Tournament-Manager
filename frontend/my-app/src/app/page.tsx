@@ -1,4 +1,3 @@
-// src/app/page.tsx
 "use client";
 
 import Image from "next/image";
@@ -9,12 +8,18 @@ import TournamentManager from "./components/TournamentManager";
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { AuthProvider, AuthModal } from "../lib/AuthContext";
+import { useAuth } from "../lib/AuthContext";
 
 function HomePage() {
   const [selectedLeague, setSelectedLeague] = useState<string>("");
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>("");
   const [mounted, setMounted] = useState(false);
-  const [activeSection, setActiveSection] = useState<"leagues" | "users" | "tournaments">("leagues");
+  const [activeSection, setActiveSection] = useState<
+    "leagues" | "users" | "tournaments"
+  >("leagues");
+
+  // 🔐 Auth hook
+  const { isAuthenticated, setShowAuthModal, logout } = useAuth();
 
   // Mount + restore persisted league
   useEffect(() => {
@@ -29,7 +34,8 @@ function HomePage() {
   useEffect(() => {
     if (!mounted) return;
     if (selectedLeague) localStorage.setItem("currentLeagueName", selectedLeague);
-    if (selectedLeagueId) localStorage.setItem("currentLeagueId", selectedLeagueId);
+    if (selectedLeagueId)
+      localStorage.setItem("currentLeagueId", selectedLeagueId);
   }, [mounted, selectedLeague, selectedLeagueId]);
 
   const handleLeagueSelect = useCallback((league: string, leagueId: string) => {
@@ -42,13 +48,32 @@ function HomePage() {
 
   return (
     <main className="min-h-screen relative overflow-x-hidden">
-      {/* Background image + soft overlay for readability */}
+      {/* Background image + overlay */}
       <div className="absolute inset-0 bg-[url('/images/Fc1.jpg')] bg-cover bg-center md:bg-fixed" />
       <div className="absolute inset-0 bg-gradient-to-b from-slate-50/10 via-blue-50/5 to-indigo-100/1" />
 
       <div className="relative">
         {/* Header */}
-        <div className="text-center pt-[env(safe-area-inset-top)] py-10 px-4">
+        <div className="text-center relative pt-[env(safe-area-inset-top)] py-10 px-4">
+          {/* 🔐 Admin Login / Logout Button */}
+          <div className="absolute top-6 right-6">
+            {isAuthenticated ? (
+              <button
+                onClick={logout}
+                className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg shadow-md transition-all duration-300"
+              >
+                Logout Admin
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg shadow-md transition-all duration-300"
+              >
+                Login as Admin
+              </button>
+            )}
+          </div>
+
           <div className="relative inline-block">
             <h1
               className="text-3xl sm:text-5xl md:text-6xl font-extrabold
@@ -61,19 +86,24 @@ function HomePage() {
               <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full animate-pulse" />
             </div>
           </div>
+
           <p className="text-sm sm:text-base text-gray-700 font-medium">
             Create and manage your football leagues with style
           </p>
           <div className="w-24 sm:w-32 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 mx-auto rounded-full mt-3" />
 
-          {/* Tabs — fixed so hover/focus doesn't break out */}
+          {/* Tabs */}
           <div className="flex justify-center mt-6">
             <div className="max-w-full px-4">
               <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
                 {[
                   { id: "leagues", label: "Leagues", icon: "/icons/league.svg" },
                   { id: "users", label: "Players", icon: "/icons/Players.svg" },
-                  { id: "tournaments", label: "Tournaments", icon: "/icons/tournaments.svg" },
+                  {
+                    id: "tournaments",
+                    label: "Tournaments",
+                    icon: "/icons/tournaments.svg",
+                  },
                 ].map((tab) => {
                   const isActive = activeSection === tab.id;
                   return (
@@ -85,14 +115,13 @@ function HomePage() {
                         "relative inline-flex items-center gap-2 rounded-2xl",
                         "px-4 py-2 sm:px-6 sm:py-3 font-semibold",
                         "shadow-md ring-1 ring-white/10",
-                        // prevent breakout / overflow on small screens
                         "overflow-hidden whitespace-nowrap shrink-0",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60",
                         "transition-[background,box-shadow,transform] duration-200",
                         "sm:hover:scale-[1.03] will-change-transform",
                         isActive
                           ? "bg-blue-600 text-white ring-blue-400/20"
-                          : "bg-white/10 text-white hover:bg-white/15"
+                          : "bg-white/10 text-white hover:bg-white/15",
                       ].join(" ")}
                     >
                       <Image
@@ -126,15 +155,32 @@ function HomePage() {
                       Welcome to League Manager!
                     </h2>
                     <p className="text-base sm:text-lg text-gray-700 mb-6 leading-relaxed">
-                      Create your first league or select an existing one to start managing players and matches.
+                      Create your first league or select an existing one to start
+                      managing players and matches.
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-left">
                       {[
-                        { icon: "🏆", title: "Multiple Leagues", desc: "Create and manage unlimited leagues" },
-                        { icon: "👥", title: "Player Management", desc: "Add players and manage participants" },
-                        { icon: "⚽", title: "Match Results", desc: "Record matches with live table updates" },
-                        { icon: "📊", title: "Tournament System", desc: "Champions League–style competitions" },
+                        {
+                          icon: "🏆",
+                          title: "Multiple Leagues",
+                          desc: "Create and manage unlimited leagues",
+                        },
+                        {
+                          icon: "👥",
+                          title: "Player Management",
+                          desc: "Add players and manage participants",
+                        },
+                        {
+                          icon: "⚽",
+                          title: "Match Results",
+                          desc: "Record matches with live table updates",
+                        },
+                        {
+                          icon: "📊",
+                          title: "Tournament System",
+                          desc: "Champions League–style competitions",
+                        },
                       ].map((feature, i) => (
                         <div
                           key={i}
@@ -142,7 +188,9 @@ function HomePage() {
                         >
                           <div className="flex items-center space-x-3 mb-1.5">
                             <span className="text-2xl">{feature.icon}</span>
-                            <h3 className="font-bold text-gray-800">{feature.title}</h3>
+                            <h3 className="font-bold text-gray-800">
+                              {feature.title}
+                            </h3>
                           </div>
                           <p className="text-gray-700 text-sm">{feature.desc}</p>
                         </div>
@@ -153,7 +201,10 @@ function HomePage() {
               ) : (
                 <div className="space-y-6 sm:space-y-8">
                   <div className="bg-white/10 backdrop-blur-sm rounded-2xl shadow-xl p-4 sm:p-6">
-                    <LeagueTable leagueName={selectedLeague} leagueId={selectedLeagueId} />
+                    <LeagueTable
+                      leagueName={selectedLeague}
+                      leagueId={selectedLeagueId}
+                    />
                   </div>
 
                   <div className="flex justify-center pt-4 sm:pt-6">
@@ -165,7 +216,9 @@ function HomePage() {
                                  transition-all duration-200 shadow-xl font-bold text-base sm:text-lg"
                     >
                       <span>View Match History</span>
-                      <span className="group-hover:translate-x-1 transition-transform duration-200">→</span>
+                      <span className="group-hover:translate-x-1 transition-transform duration-200">
+                        →
+                      </span>
                     </Link>
                   </div>
                 </div>
@@ -201,6 +254,7 @@ function HomePage() {
   );
 }
 
+// ✅ wrapped with AuthProvider & AuthModal
 export default function Home() {
   return (
     <AuthProvider>
