@@ -56,23 +56,24 @@ function HomePage() {
         {/* Header */}
         <div className="text-center relative pt-[env(safe-area-inset-top)] py-10 px-4">
           {/* 🔐 Admin Login / Logout Button */}
-          <div className="absolute top-6 right-6">
+          <div className="flex justify-center sm:justify-end mb-4 sm:mb-6 px-4">
             {isAuthenticated ? (
               <button
                 onClick={logout}
-                className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg shadow-md transition-all duration-300"
+                className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-semibold px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg shadow-md transition-all duration-300"
               >
                 Logout Admin
               </button>
             ) : (
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg shadow-md transition-all duration-300"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg shadow-md transition-all duration-300"
               >
                 Login as Admin
               </button>
             )}
           </div>
+
 
           <div className="relative inline-block">
             <h1
