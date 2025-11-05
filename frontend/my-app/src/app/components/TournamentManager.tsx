@@ -3,9 +3,9 @@
 import Image from "next/image";
 import { deleteDoc, doc } from "firebase/firestore";
 import { useState, useEffect } from "react";
-import { 
-  createTournament, 
-  getTournaments, 
+import {
+  createTournament,
+  getTournaments,
   deleteTournament,
   addMemberToTournament,
   getTournamentMembers,
@@ -18,92 +18,125 @@ import {
   TournamentParticipant,
   TournamentGroup,
   GroupStanding,
-  getQualifiedTeamsForKnockout,  
-  progressToKnockoutStage,        
-  calculateOptimalBracketSize, 
+  getQualifiedTeamsForKnockout,
+  progressToKnockoutStage,
+  calculateOptimalBracketSize,
   DEFAULT_CHAMPIONS_LEAGUE_SETTINGS,
   DEFAULT_CUSTOM_SETTINGS,
   DEFAULT_KNOCKOUT_SETTINGS,
-  removeMemberFromGroupsAndFixtures
+  removeMemberFromGroupsAndFixtures,
 } from "../../lib/tournamentUtils";
 import { getGroupMembers, GroupMember } from "../../lib/membershipUtils";
 import { useAuth } from "../../lib/AuthContext";
-import { db } from '../../lib/firebase';
-import TournamentTeams from './tournaments/TournamentTeams';
-import TournamentOverview from './tournaments/TournamentOverview';
-import TournamentGroups from './tournaments/TournamentGroups';
-import TournamentKnockout from './tournaments/TournamentKnockout';
-import TournamentResults from './tournaments/TournamentResults';
+import { db } from "../../lib/firebase";
+import TournamentTeams from "./tournaments/TournamentTeams";
+import TournamentOverview from "./tournaments/TournamentOverview";
+import TournamentGroups from "./tournaments/TournamentGroups";
+import TournamentKnockout from "./tournaments/TournamentKnockout";
+import TournamentResults from "./tournaments/TournamentResults";
 
 // Toast notification component
-const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose: () => void }) => (
-  <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-2xl transform transition-all duration-500 backdrop-blur-sm ${
-    type === 'success' ? 'bg-green-500/90 text-white' : 
-    type === 'error' ? 'bg-red-500/90 text-white' : 
-    'bg-blue-500/90 text-white'
-  }`}>
+const Toast = ({
+  message,
+  type,
+  onClose,
+}: {
+  message: string;
+  type: "success" | "error" | "info";
+  onClose: () => void;
+}) => (
+  <div
+    className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-2xl transform transition-all duration-500 backdrop-blur-sm ${
+      type === "success"
+        ? "bg-green-500/90 text-white"
+        : type === "error"
+        ? "bg-red-500/90 text-white"
+        : "bg-blue-500/90 text-white"
+    }`}
+  >
     <div className="flex items-center space-x-3">
       <span className="text-xl">
-        {type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}
+        {type === "success" ? "✅" : type === "error" ? "❌" : "ℹ️"}
       </span>
       <span className="font-medium">{message}</span>
-      <button onClick={onClose} className="ml-4 text-white hover:text-gray-200 font-bold">×</button>
+      <button
+        onClick={onClose}
+        className="ml-4 text-white hover:text-gray-200 font-bold"
+      >
+        ×
+      </button>
     </div>
   </div>
 );
 
 // Put this ABOVE your component, after imports
 export const formatDate = (dateLike: any) => {
-  if (!dateLike) return 'Not set';
+  if (!dateLike) return "Not set";
   if (dateLike?.toDate) return dateLike.toDate().toLocaleDateString();
-  if (dateLike?.seconds) return new Date(dateLike.seconds * 1000).toLocaleDateString();
+  if (dateLike?.seconds)
+    return new Date(dateLike.seconds * 1000).toLocaleDateString();
   return new Date(dateLike).toLocaleDateString();
 };
-
 
 export default function TournamentManager() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [members, setMembers] = useState<GroupMember[]>([]);
-  const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
-  const [tournamentMembers, setTournamentMembers] = useState<TournamentParticipant[]>([]);
+  const [selectedTournament, setSelectedTournament] =
+    useState<Tournament | null>(null);
+  const [tournamentMembers, setTournamentMembers] = useState<
+    TournamentParticipant[]
+  >([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<Tournament | null>(null);
-  const [activeTab, setActiveTab] = useState<'tournaments' | 'create' | 'manage'>('tournaments');
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<Tournament | null>(
+    null
+  );
+  const [activeTab, setActiveTab] = useState<
+    "tournaments" | "create" | "manage"
+  >("tournaments");
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
   const { isAuthenticated, setShowAuthModal, logout } = useAuth();
-  const [recordingMatch, setRecordingMatch] = useState<{groupId: string; homeTeam: string; awayTeam: string;} | null>(null);
+  const [recordingMatch, setRecordingMatch] = useState<{
+    groupId: string;
+    homeTeam: string;
+    awayTeam: string;
+  } | null>(null);
   const [recordingKnockoutMatch, setRecordingKnockoutMatch] = useState<{
     tieId: string;
-    leg: 'first' | 'second';
-    homeTeam: string; 
+    leg: "first" | "second";
+    homeTeam: string;
     awayTeam: string;
   } | null>(null);
   const [matchScores, setMatchScores] = useState({
-    homeScore: '',
-    awayScore: ''
+    homeScore: "",
+    awayScore: "",
   });
-  const [manageTab, setManageTab] = useState<'overview' | 'teams' | 'groups' | 'knockout' | 'results'>('overview');
+  const [manageTab, setManageTab] = useState<
+    "overview" | "teams" | "groups" | "knockout" | "results"
+  >("overview");
 
   // Create tournament form data
   const [formData, setFormData] = useState({
-    name: '',
-    type: 'custom' as Tournament['type'],
+    name: "",
+    type: "custom" as Tournament["type"],
     maxTeams: 16,
-    startDate: '',
-    endDate: ''
+    startDate: "",
+    endDate: "",
   });
 
   // Add team form data
   const [teamFormData, setTeamFormData] = useState({
-    name: '',
-    country: '',
-    selectedPlayers: [] as string[]
+    name: "",
+    country: "",
+    selectedPlayers: [] as string[],
   });
 
   // Show toast notification
-  const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+  const showToast = (message: string, type: "success" | "error" | "info") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4500);
   };
@@ -123,11 +156,11 @@ export default function TournamentManager() {
 
       // Load members for team creation
       const loadedMembers = await getGroupMembers();
-      setMembers(loadedMembers.filter(m => m.isActive));
+      setMembers(loadedMembers.filter((m) => m.isActive));
     };
 
     loadData();
-    
+
     // Setup real-time listener for tournaments
     const unsubscribe = subscribeToTournaments((updatedTournaments) => {
       setTournaments(updatedTournaments);
@@ -148,7 +181,6 @@ export default function TournamentManager() {
     }
   }, [selectedTournament]);
 
-
   // Helper function to calculate knockout bracket size
   const calculateKnockoutSize = (totalGroups: number): number => {
     const top2Teams = totalGroups * 2;
@@ -163,60 +195,63 @@ export default function TournamentManager() {
     e.preventDefault();
 
     if (!requireAuth()) return;
-  
+
     if (!formData.name.trim()) {
-      showToast('Tournament name is required', 'error');
+      showToast("Tournament name is required", "error");
       return;
     }
 
     setIsLoading(true);
     try {
       let settings;
-      
+
       switch (formData.type) {
-        case 'champions_league':
+        case "champions_league":
           settings = DEFAULT_CHAMPIONS_LEAGUE_SETTINGS;
           break;
-        case 'knockout':
+        case "knockout":
           settings = DEFAULT_KNOCKOUT_SETTINGS;
           break;
-        case 'league':
+        case "league":
           settings = {
             ...DEFAULT_CUSTOM_SETTINGS,
-            hasKnockoutStage: false
+            hasKnockoutStage: false,
           };
           break;
-        case 'custom':
+        case "custom":
         default:
           settings = DEFAULT_CUSTOM_SETTINGS;
           break;
       }
 
       // Ensure maxTeams is valid
-      const maxTeams = formData.maxTeams === 0 ? 16 : Math.max(2, formData.maxTeams);
+      const maxTeams =
+        formData.maxTeams === 0 ? 16 : Math.max(2, formData.maxTeams);
 
       await createTournament({
         name: formData.name.trim(),
         type: formData.type,
         maxTeams,
-        ...(formData.startDate ? { startDate: new Date(formData.startDate) } : {}),
+        ...(formData.startDate
+          ? { startDate: new Date(formData.startDate) }
+          : {}),
         ...(formData.endDate ? { endDate: new Date(formData.endDate) } : {}),
         settings,
-        status: 'setup'
+        status: "setup",
       });
-      showToast(`${formData.name} tournament created successfully!`, 'success');
+      showToast(`${formData.name} tournament created successfully!`, "success");
       setFormData({
-        name: '',
-        type: 'custom',
+        name: "",
+        type: "custom",
         maxTeams: 16,
-        startDate: '',
-        endDate: ''
+        startDate: "",
+        endDate: "",
       });
       setShowCreateForm(false);
-      setActiveTab('tournaments');
+      setActiveTab("tournaments");
     } catch (error) {
-      console.error('Error creating tournament:', error);
-      showToast('Failed to create tournament', 'error');
+      console.error("Error creating tournament:", error);
+      showToast("Failed to create tournament", "error");
     } finally {
       setIsLoading(false);
     }
@@ -225,19 +260,19 @@ export default function TournamentManager() {
   // Handle tournament deletion
   const handleDeleteTournament = async (tournament: Tournament) => {
     if (!tournament.id) return;
-    
+
     setIsLoading(true);
     try {
       await deleteTournament(tournament.id);
-      showToast(`${tournament.name} deleted successfully`, 'success');
-      
+      showToast(`${tournament.name} deleted successfully`, "success");
+
       if (selectedTournament?.id === tournament.id) {
         setSelectedTournament(null);
         setTournamentMembers([]);
       }
     } catch (error) {
-      console.error('Error deleting tournament:', error);
-      showToast('Failed to delete tournament', 'error');
+      console.error("Error deleting tournament:", error);
+      showToast("Failed to delete tournament", "error");
     } finally {
       setIsLoading(false);
       setShowDeleteConfirm(null);
@@ -245,136 +280,138 @@ export default function TournamentManager() {
   };
 
   // Handle adding member to tournament
-const handleAddMemberWrapper = async (selectedMemberId: string) => {
-  if (!selectedTournament?.id) return;
+  const handleAddMemberWrapper = async (selectedMemberId: string) => {
+    if (!selectedTournament?.id) return;
 
-  const selectedMember = members.find((m) => m.id === selectedMemberId);
-  if (!selectedMember) {
-    showToast('Selected member not found', 'error');
-    return;
-  }
+    const selectedMember = members.find((m) => m.id === selectedMemberId);
+    if (!selectedMember) {
+      showToast("Selected member not found", "error");
+      return;
+    }
 
-  if (selectedTournament.currentTeams >= selectedTournament.maxTeams) {
-    showToast('Tournament is full', 'error');
-    return;
-  }
+    if (selectedTournament.currentTeams >= selectedTournament.maxTeams) {
+      showToast("Tournament is full", "error");
+      return;
+    }
 
-  if (tournamentMembers.some((tm) => tm.name === selectedMember.name)) {
-    showToast('Member already exists in this tournament', 'error');
-    return;
-  }
+    if (tournamentMembers.some((tm) => tm.name === selectedMember.name)) {
+      showToast("Member already exists in this tournament", "error");
+      return;
+    }
 
-  setIsLoading(true);
+    setIsLoading(true);
 
-  try {
-    // ✅ 1. Add to Firestore
-    const newMember = await addMemberToTournament(selectedTournament.id, {
-      name: selectedMember.name,
-      psnId: selectedMember.psnId || selectedMember.name,
-      groupId: null, // start unassigned until group stage
-      tournamentId: selectedTournament.id,
-      createdAt: new Date(),
-    });
+    try {
+      // ✅ 1. Add to Firestore
+      const newMember = await addMemberToTournament(selectedTournament.id, {
+        name: selectedMember.name,
+        psnId: selectedMember.psnId || selectedMember.name,
+        groupId: null, // start unassigned until group stage
+        tournamentId: selectedTournament.id,
+        createdAt: new Date(),
+      });
 
-    console.log('✅ Added new member:', newMember);
+      console.log("✅ Added new member:", newMember);
 
-    // ✅ 2. Update tournament team count
-    await updateTournament(selectedTournament.id, {
-      currentTeams: (selectedTournament.currentTeams || 0) + 1,
-    });
+      // ✅ 2. Update tournament team count
+      await updateTournament(selectedTournament.id, {
+        currentTeams: (selectedTournament.currentTeams || 0) + 1,
+      });
 
-    // ✅ 3. Refresh tournament + member list
-    const [updatedTournaments, updatedMembers] = await Promise.all([
-      getTournaments(),
-      getTournamentMembers(selectedTournament.id),
-    ]);
+      // ✅ 3. Refresh tournament + member list
+      const [updatedTournaments, updatedMembers] = await Promise.all([
+        getTournaments(),
+        getTournamentMembers(selectedTournament.id),
+      ]);
 
-    const updatedTournament = updatedTournaments.find(
-      (t) => t.id === selectedTournament.id
-    );
+      const updatedTournament = updatedTournaments.find(
+        (t) => t.id === selectedTournament.id
+      );
 
-    if (updatedTournament) setSelectedTournament(updatedTournament);
-    setTournamentMembers(updatedMembers);
+      if (updatedTournament) setSelectedTournament(updatedTournament);
+      setTournamentMembers(updatedMembers);
 
-    showToast(`${selectedMember.name} added successfully!`, 'success');
-  } catch (error) {
-    console.error('❌ Error adding member:', error);
-    showToast('Failed to add member', 'error');
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
+      showToast(`${selectedMember.name} added successfully!`, "success");
+    } catch (error) {
+      console.error("❌ Error adding member:", error);
+      showToast("Failed to add member", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Handle removing member from tournament
-const handleRemoveMember = async (member: TournamentParticipant) => {
-  if (!requireAuth()) return;
+  const handleRemoveMember = async (member: TournamentParticipant) => {
+    if (!requireAuth()) return;
 
-  if (!selectedTournament?.id || !member.id) {
-    showToast('Cannot remove member', 'error');
-    return;
-  }
+    if (!selectedTournament?.id || !member.id) {
+      showToast("Cannot remove member", "error");
+      return;
+    }
 
-  setIsLoading(true);
-  try {
-    // 1️⃣ Clean up this member’s standings + matches
-    await removeMemberFromGroupsAndFixtures(selectedTournament.id, member.name);
+    setIsLoading(true);
+    try {
+      // 1️⃣ Clean up this member’s standings + matches
+      await removeMemberFromGroupsAndFixtures(
+        selectedTournament.id,
+        member.name
+      );
 
-    // 2️⃣ Delete from tournament_members collection
-    await deleteDoc(doc(db, 'tournament_members', member.id));
+      // 2️⃣ Delete from tournament_members collection
+      await deleteDoc(doc(db, "tournament_members", member.id));
 
-    // 3️⃣ Update tournament team count
-    await updateTournament(selectedTournament.id, {
-      currentTeams: Math.max((selectedTournament.currentTeams || 1) - 1, 0),
-    });
+      // 3️⃣ Update tournament team count
+      await updateTournament(selectedTournament.id, {
+        currentTeams: Math.max((selectedTournament.currentTeams || 1) - 1, 0),
+      });
 
-    // 4️⃣ Refresh data
-    const [updatedMembers, updatedTournaments] = await Promise.all([
-      getTournamentMembers(selectedTournament.id),
-      getTournaments(),
-    ]);
+      // 4️⃣ Refresh data
+      const [updatedMembers, updatedTournaments] = await Promise.all([
+        getTournamentMembers(selectedTournament.id),
+        getTournaments(),
+      ]);
 
-    const updatedTournament = updatedTournaments.find(
-      (t) => t.id === selectedTournament.id
-    );
-    if (updatedTournament) setSelectedTournament(updatedTournament);
+      const updatedTournament = updatedTournaments.find(
+        (t) => t.id === selectedTournament.id
+      );
+      if (updatedTournament) setSelectedTournament(updatedTournament);
 
-    setTournamentMembers(updatedMembers);
-    showToast(`${member.name} fully removed from tournament`, 'success');
-  } catch (error) {
-    console.error('Error removing member:', error);
-    showToast('Failed to remove member', 'error');
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+      setTournamentMembers(updatedMembers);
+      showToast(`${member.name} fully removed from tournament`, "success");
+    } catch (error) {
+      console.error("Error removing member:", error);
+      showToast("Failed to remove member", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Handle generating groups
   const handleGenerateGroups = async () => {
     if (!requireAuth()) return;
     if (!selectedTournament?.id) return;
-    
+
     if (tournamentMembers.length < 8) {
-      showToast('Need at least 8 teams to generate groups', 'error');
+      showToast("Need at least 8 teams to generate groups", "error");
       return;
     }
 
     setIsLoading(true);
     try {
       await generateGroups(selectedTournament.id);
-      showToast('Groups generated successfully!', 'success');
-      
+      showToast("Groups generated successfully!", "success");
+
       // Reload tournament data
       const updatedTournaments = await getTournaments();
-      const updatedTournament = updatedTournaments.find(t => t.id === selectedTournament.id);
+      const updatedTournament = updatedTournaments.find(
+        (t) => t.id === selectedTournament.id
+      );
       if (updatedTournament) {
         setSelectedTournament(updatedTournament);
       }
     } catch (error) {
-      console.error('Error generating groups:', error);
-      showToast('Failed to generate groups', 'error');
+      console.error("Error generating groups:", error);
+      showToast("Failed to generate groups", "error");
     } finally {
       setIsLoading(false);
     }
@@ -383,16 +420,21 @@ const handleRemoveMember = async (member: TournamentParticipant) => {
   // Handle recording match result
   const handleRecordMatch = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!requireAuth()) return;
-    
+
     if (!selectedTournament?.id || !recordingMatch) return;
-    
+
     const homeScore = parseInt(matchScores.homeScore);
     const awayScore = parseInt(matchScores.awayScore);
-    
-    if (isNaN(homeScore) || isNaN(awayScore) || homeScore < 0 || awayScore < 0) {
-      showToast('Please enter valid scores (0 or higher)', 'error');
+
+    if (
+      isNaN(homeScore) ||
+      isNaN(awayScore) ||
+      homeScore < 0 ||
+      awayScore < 0
+    ) {
+      showToast("Please enter valid scores (0 or higher)", "error");
       return;
     }
 
@@ -406,23 +448,27 @@ const handleRemoveMember = async (member: TournamentParticipant) => {
         homeScore,
         awayScore
       );
-      
-      showToast(`Match recorded: ${recordingMatch.homeTeam} ${homeScore}-${awayScore} ${recordingMatch.awayTeam}`, 'success');
-      
+
+      showToast(
+        `Match recorded: ${recordingMatch.homeTeam} ${homeScore}-${awayScore} ${recordingMatch.awayTeam}`,
+        "success"
+      );
+
       // Reset form
       setRecordingMatch(null);
-      setMatchScores({ homeScore: '', awayScore: '' });
-      
+      setMatchScores({ homeScore: "", awayScore: "" });
+
       // Reload tournament data
       const updatedTournaments = await getTournaments();
-      const updatedTournament = updatedTournaments.find(t => t.id === selectedTournament.id);
+      const updatedTournament = updatedTournaments.find(
+        (t) => t.id === selectedTournament.id
+      );
       if (updatedTournament) {
         setSelectedTournament(updatedTournament);
       }
-      
     } catch (error) {
-      console.error('Error recording match:', error);
-      showToast('Failed to record match result', 'error');
+      console.error("Error recording match:", error);
+      showToast("Failed to record match result", "error");
     } finally {
       setIsLoading(false);
     }
@@ -430,16 +476,21 @@ const handleRemoveMember = async (member: TournamentParticipant) => {
   // Handle recording knockout match result
   const handleRecordKnockoutMatch = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!requireAuth()) return;
-    
+
     if (!selectedTournament?.id || !recordingKnockoutMatch) return;
-    
+
     const homeScore = parseInt(matchScores.homeScore);
     const awayScore = parseInt(matchScores.awayScore);
-    
-    if (isNaN(homeScore) || isNaN(awayScore) || homeScore < 0 || awayScore < 0) {
-      showToast('Please enter valid scores (0 or higher)', 'error');
+
+    if (
+      isNaN(homeScore) ||
+      isNaN(awayScore) ||
+      homeScore < 0 ||
+      awayScore < 0
+    ) {
+      showToast("Please enter valid scores (0 or higher)", "error");
       return;
     }
 
@@ -454,23 +505,27 @@ const handleRemoveMember = async (member: TournamentParticipant) => {
         homeScore,
         awayScore
       );
-      
-      showToast(`Match recorded: ${recordingKnockoutMatch.homeTeam} ${homeScore}-${awayScore} ${recordingKnockoutMatch.awayTeam}`, 'success');
-      
+
+      showToast(
+        `Match recorded: ${recordingKnockoutMatch.homeTeam} ${homeScore}-${awayScore} ${recordingKnockoutMatch.awayTeam}`,
+        "success"
+      );
+
       // Reset form
       setRecordingKnockoutMatch(null);
-      setMatchScores({ homeScore: '', awayScore: '' });
-      
+      setMatchScores({ homeScore: "", awayScore: "" });
+
       // Reload tournament data
       const updatedTournaments = await getTournaments();
-      const updatedTournament = updatedTournaments.find(t => t.id === selectedTournament.id);
+      const updatedTournament = updatedTournaments.find(
+        (t) => t.id === selectedTournament.id
+      );
       if (updatedTournament) {
         setSelectedTournament(updatedTournament);
       }
-      
     } catch (error) {
-      console.error('Error recording knockout match result:', error);
-      showToast('Failed to record knockout match result', 'error');
+      console.error("Error recording knockout match result:", error);
+      showToast("Failed to record knockout match result", "error");
     } finally {
       setIsLoading(false);
     }
@@ -480,71 +535,79 @@ const handleRemoveMember = async (member: TournamentParticipant) => {
   const areGroupMatchesComplete = (tournament: Tournament): boolean => {
     if (!tournament.groups) return false;
 
-    return tournament.groups.every(group =>
-        group.matches.every(match => match.played)
-      );
-    };
-
+    return tournament.groups.every((group) =>
+      group.matches.every((match) => match.played)
+    );
+  };
 
   // Generate knockout stage from group winners + best 3rd place teams
-const handleGenerateKnockout = async () => {
-  if (!requireAuth()) return;
-  
-  if (!selectedTournament?.id) {
-    showToast('No tournament selected', 'error');
-    return;
-  }
+  const handleGenerateKnockout = async () => {
+    if (!requireAuth()) return;
 
-  setIsLoading(true);
-  try {
-    // Use the new function that handles everything properly
-    await progressToKnockoutStage(selectedTournament.id);
-    
-    showToast('Knockout stage generated successfully!', 'success');
-    
-    // Reload tournament data
-    const updatedTournaments = await getTournaments();
-    const updatedTournament = updatedTournaments.find(t => t.id === selectedTournament.id);
-    if (updatedTournament) {
-      setSelectedTournament(updatedTournament);
+    if (!selectedTournament?.id) {
+      showToast("No tournament selected", "error");
+      return;
     }
-    
-  } catch (error) {
-    console.error('Error generating knockout stage:', error);
-    showToast('Failed to generate knockout stage', 'error');
-  } finally {
-    setIsLoading(false);
-  }
-};
+
+    setIsLoading(true);
+    try {
+      // Use the new function that handles everything properly
+      await progressToKnockoutStage(selectedTournament.id);
+
+      showToast("Knockout stage generated successfully!", "success");
+
+      // Reload tournament data
+      const updatedTournaments = await getTournaments();
+      const updatedTournament = updatedTournaments.find(
+        (t) => t.id === selectedTournament.id
+      );
+      if (updatedTournament) {
+        setSelectedTournament(updatedTournament);
+      }
+    } catch (error) {
+      console.error("Error generating knockout stage:", error);
+      showToast("Failed to generate knockout stage", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   // Get tournament type icon and color
-  const getTournamentTypeInfo = (type: Tournament['type']) => {
+  const getTournamentTypeInfo = (type: Tournament["type"]) => {
     switch (type) {
-      case 'champions_league':
-        return { icon: '🏆', color: 'bg-blue-500', name: 'Group + Knockout' };
-      case 'knockout':
-        return { icon: '🥊', color: 'bg-red-500', name: 'Knockout Tournament' };
-      case 'league':
-        return { icon: '⚽', color: 'bg-green-500', name: 'Round Robin League' };
-      case 'custom':
-        return { icon: '🎯', color: 'bg-purple-500', name: 'Custom Tournament' };
+      case "champions_league":
+        return { icon: "🏆", color: "bg-blue-500", name: "Group + Knockout" };
+      case "knockout":
+        return { icon: "🥊", color: "bg-red-500", name: "Knockout Tournament" };
+      case "league":
+        return {
+          icon: "⚽",
+          color: "bg-green-500",
+          name: "Round Robin League",
+        };
+      case "custom":
+        return {
+          icon: "🎯",
+          color: "bg-purple-500",
+          name: "Custom Tournament",
+        };
       default:
-        return { icon: '🏟️', color: 'bg-gray-500', name: 'Tournament' };
+        return { icon: "🏟️", color: "bg-gray-500", name: "Tournament" };
     }
   };
 
   // Get status color and text
-  const getStatusInfo = (status: Tournament['status']) => {
+  const getStatusInfo = (status: Tournament["status"]) => {
     switch (status) {
-      case 'setup':
-        return { color: 'bg-yellow-100 text-yellow-800', text: 'Setup' };
-      case 'group_stage':
-        return { color: 'bg-blue-100 text-blue-800', text: 'Group Stage' };
-      case 'knockout':
-        return { color: 'bg-orange-100 text-orange-800', text: 'Knockout' };
-      case 'completed':
-        return { color: 'bg-green-100 text-green-800', text: 'Completed' };
+      case "setup":
+        return { color: "bg-yellow-100 text-yellow-800", text: "Setup" };
+      case "group_stage":
+        return { color: "bg-blue-100 text-blue-800", text: "Group Stage" };
+      case "knockout":
+        return { color: "bg-orange-100 text-orange-800", text: "Knockout" };
+      case "completed":
+        return { color: "bg-green-100 text-green-800", text: "Completed" };
       default:
-        return { color: 'bg-gray-100 text-gray-800', text: 'Unknown' };
+        return { color: "bg-gray-100 text-gray-800", text: "Unknown" };
     }
   };
 
@@ -555,7 +618,7 @@ const handleGenerateKnockout = async () => {
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="h-40 bg-gray-200 rounded-xl"></div>
             ))}
           </div>
@@ -591,13 +654,21 @@ const handleGenerateKnockout = async () => {
                 </span>
               </div>
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-white">Tournaments</h2>
-                <p className="text-white/80 text-xs sm:text-sm">Create and manage football tournaments</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-white">
+                  Tournaments
+                </h2>
+                <p className="text-white/80 text-xs sm:text-sm">
+                  Create and manage football tournaments
+                </p>
               </div>
             </div>
             <div className="bg-white/20 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm">
-              <span className="text-white/80 font-medium">Active Tournaments:</span>
-              <span className="text-white font-bold ml-2">{tournaments.length}</span>
+              <span className="text-white/80 font-medium">
+                Active Tournaments:
+              </span>
+              <span className="text-white font-bold ml-2">
+                {tournaments.length}
+              </span>
             </div>
           </div>
         </div>
@@ -606,31 +677,48 @@ const handleGenerateKnockout = async () => {
         <div className="px-4 sm:px-8 py-3 sm:py-4 ">
           <div className="flex space-x-2 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none]">
             {[
-              { id: 'tournaments', label: 'Tournaments', icon: '/icons/league.svg', size:24 },
-              { id: 'create', label: 'Create Tournament', icon: '/icons/plus.svg', size:24 },
-              { id: 'manage', label: 'Manage', icon: '/icons/manage.svg', size:24 }
+              {
+                id: "tournaments",
+                label: "Tournaments",
+                icon: "/icons/league.svg",
+                size: 24,
+              },
+              {
+                id: "create",
+                label: "Create Tournament",
+                icon: "/icons/plus.svg",
+                size: 24,
+              },
+              {
+                id: "manage",
+                label: "Manage",
+                icon: "/icons/manage.svg",
+                size: 24,
+              },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                disabled={isLoading || (tab.id === 'manage' && !selectedTournament)}
+                disabled={
+                  isLoading || (tab.id === "manage" && !selectedTournament)
+                }
                 className={`px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base text-white bg-purple-600 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2
                             active:scale-95 focus:outline-none focus:ring-0 focus:ring-purple-500 focus:ring-offset-0 ${
-                  activeTab === tab.id
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-white hover:bg-indigo-600'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                              activeTab === tab.id
+                                ? "bg-blue-600 text-white shadow-md"
+                                : "text-white hover:bg-indigo-600"
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <span>
-                  <Image 
-                    src={tab.icon} 
-                    alt={`${tab.label} icon`} 
-                    width={tab.size} 
+                  <Image
+                    src={tab.icon}
+                    alt={`${tab.label} icon`}
+                    width={tab.size}
                     height={tab.size}
-                  />                  
+                  />
                 </span>
                 <span>{tab.label}</span>
-                {tab.id === 'manage' && selectedTournament && (
+                {tab.id === "manage" && selectedTournament && (
                   <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-1 rounded-full">
                     {selectedTournament.name}
                   </span>
@@ -642,36 +730,42 @@ const handleGenerateKnockout = async () => {
 
         <div className="p-4 sm:p-8">
           {/* Tournaments Tab */}
-          {activeTab === 'tournaments' && (
+          {activeTab === "tournaments" && (
             <div>
               {tournaments.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {tournaments.map((tournament) => {
                     const typeInfo = getTournamentTypeInfo(tournament.type);
                     const statusInfo = getStatusInfo(tournament.status);
-                    
+
                     return (
                       <div
                         key={tournament.id}
                         className={`group bg-white/70 rounded-xl p-6 hover:shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer relative ${
                           selectedTournament?.id === tournament.id
-                            ? 'border-indigo-400 bg-indigo-50'
-                            : 'border-gray-200 hover:border-indigo-300'
+                            ? "border-indigo-400 bg-indigo-50"
+                            : "border-gray-200 hover:border-indigo-300"
                         }`}
                         onClick={() => setSelectedTournament(tournament)}
                       >
                         {/* Tournament Header */}
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center space-x-3">
-                            <div className={`w-12 h-12 ${typeInfo.color} rounded-full flex items-center justify-center text-white text-xl shadow-lg`}>
+                            <div
+                              className={`w-12 h-12 ${typeInfo.color} rounded-full flex items-center justify-center text-white text-xl shadow-lg`}
+                            >
                               {typeInfo.icon}
                             </div>
                             <div>
-                              <h3 className="font-bold text-gray-900 text-base sm:text-lg">{tournament.name}</h3>
-                              <p className="text-xs sm:text-sm text-gray-600">{typeInfo.name}</p>
+                              <h3 className="font-bold text-gray-900 text-base sm:text-lg">
+                                {tournament.name}
+                              </h3>
+                              <p className="text-xs sm:text-sm text-gray-600">
+                                {typeInfo.name}
+                              </p>
                             </div>
                           </div>
-                          
+
                           {/* Action Buttons */}
                           <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             <button
@@ -692,21 +786,31 @@ const handleGenerateKnockout = async () => {
                         {/* Tournament Info */}
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}
+                            >
                               {statusInfo.text}
                             </span>
                             <span className="text-sm text-gray-600">
-                              {tournament.currentTeams}/{tournament.maxTeams} teams
+                              {tournament.currentTeams}/{tournament.maxTeams}{" "}
+                              teams
                             </span>
                           </div>
-                          
+
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
+                            <div
                               className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-500"
-                              style={{ width: `${Math.min((tournament.currentTeams / tournament.maxTeams) * 100, 100)}%` }}
+                              style={{
+                                width: `${Math.min(
+                                  (tournament.currentTeams /
+                                    tournament.maxTeams) *
+                                    100,
+                                  100
+                                )}%`,
+                              }}
                             ></div>
                           </div>
-                          
+
                           {tournament.startDate && (
                             <div className="text-xs text-gray-500">
                               Starts: {formatDate(tournament.startDate)}
@@ -728,10 +832,14 @@ const handleGenerateKnockout = async () => {
               ) : (
                 <div className="text-center py-12">
                   <div className="text-7xl sm:text-8xl mb-6">🏆</div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2">No Tournaments Yet</h3>
-                  <p className="text-gray-600 mb-6">Create your first tournament to get started!</p>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                    No Tournaments Yet
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    Create your first tournament to get started!
+                  </p>
                   <button
-                    onClick={() => setActiveTab('create')}
+                    onClick={() => setActiveTab("create")}
                     className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl hover:from-indigo-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 shadow-lg font-semibold"
                   >
                     Create Tournament
@@ -742,14 +850,14 @@ const handleGenerateKnockout = async () => {
           )}
 
           {/* Create Tournament Tab */}
-          {activeTab === 'create' && (
+          {activeTab === "create" && (
             <div className="max-w-2xl mx-auto">
               <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 sm:p-6 shadow-lg mb-6 sm:mb-8">
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center space-x-3">
                   <span className="text-3xl">🏆</span>
                   <span>Create New Tournament</span>
                 </h3>
-                
+
                 <form onSubmit={handleCreateTournament} className="space-y-6">
                   {/* Tournament Name */}
                   <div>
@@ -759,7 +867,9 @@ const handleGenerateKnockout = async () => {
                     <input
                       type="text"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
                       className="text-black w-full px-3 py-2.5 sm:px-4 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-300"
                       placeholder="Enter tournament name (e.g., Champions League 2024)"
                       disabled={isLoading}
@@ -774,11 +884,18 @@ const handleGenerateKnockout = async () => {
                       </label>
                       <select
                         value={formData.type}
-                        onChange={(e) => setFormData({ ...formData, type: e.target.value as Tournament['type'] })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            type: e.target.value as Tournament["type"],
+                          })
+                        }
                         className="text-black w-full px-3 py-2.5 sm:px-4 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-300"
                         disabled={isLoading}
                       >
-                        <option value="champions_league">🏆 Champions League</option>
+                        <option value="champions_league">
+                          🏆 Champions League
+                        </option>
                         <option value="knockout">🏅 Knockout Tournament</option>
                         <option value="league">⚽ League</option>
                         <option value="custom">🎯 Custom Tournament</option>
@@ -792,7 +909,12 @@ const handleGenerateKnockout = async () => {
                       </label>
                       <select
                         value={formData.maxTeams}
-                        onChange={(e) => setFormData({ ...formData, maxTeams: Number(e.target.value) })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            maxTeams: Number(e.target.value),
+                          })
+                        }
                         className="text-black w-full px-3 py-2.5 sm:px-4 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-300"
                         disabled={isLoading}
                       >
@@ -814,7 +936,12 @@ const handleGenerateKnockout = async () => {
                       <input
                         type="date"
                         value={formData.startDate}
-                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            startDate: e.target.value,
+                          })
+                        }
                         className="text-black w-full px-3 py-2.5 sm:px-4 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-300"
                         disabled={isLoading}
                       />
@@ -826,7 +953,9 @@ const handleGenerateKnockout = async () => {
                       <input
                         type="date"
                         value={formData.endDate}
-                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, endDate: e.target.value })
+                        }
                         className="text-black w-full px-3 py-2.5 sm:px-4 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-300"
                         disabled={isLoading}
                       />
@@ -856,7 +985,7 @@ const handleGenerateKnockout = async () => {
             </div>
           )}
           {/* Manage Tab */}
-          {activeTab === 'manage' && selectedTournament && (
+          {activeTab === "manage" && selectedTournament && (
             <div className="space-y-8">
               {/* Sub-Navigation for Manage */}
               <div className="bg-white rounded-xl overflow-hidden">
@@ -866,8 +995,12 @@ const handleGenerateKnockout = async () => {
                       {getTournamentTypeInfo(selectedTournament.type).icon}
                     </div>
                     <div>
-                      <h3 className="text-lg sm:text-xl font-bold text-white">{selectedTournament.name}</h3>
-                      <p className="text-blue-100 text-xs sm:text-sm">{getTournamentTypeInfo(selectedTournament.type).name}</p>
+                      <h3 className="text-lg sm:text-xl font-bold text-white">
+                        {selectedTournament.name}
+                      </h3>
+                      <p className="text-blue-100 text-xs sm:text-sm">
+                        {getTournamentTypeInfo(selectedTournament.type).name}
+                      </p>
                     </div>
                     <div className="ml-auto">
                       <div className="bg-blue-500 px-3 py-1 rounded-lg text-white text-xs sm:text-sm font-medium">
@@ -876,16 +1009,25 @@ const handleGenerateKnockout = async () => {
                     </div>
                   </div>
                 </div>
-
                 {/* Sub-Navigation Tabs */}
                 <div className="bg-gray-50 px-3 sm:px-6 py-2.5 sm:py-3 border-b border-gray-200">
                   <div className="flex space-x-2 overflow-x-auto whitespace-nowrap">
                     {[
-                      { id: 'overview', label: 'Overview', icon: '📊' },
-                      { id: 'teams', label: 'Teams', icon: '👥' },
-                      { id: 'groups', label: 'Groups', icon: '🏆', disabled: !selectedTournament.groups?.length },
-                      { id: 'knockout', label: 'Knockout', icon: '🥊', disabled: !selectedTournament.knockoutBracket?.length },
-                      { id: 'results', label: 'Results', icon: '📋' }
+                      { id: "overview", label: "Overview", icon: "📊" },
+                      { id: "teams", label: "Teams", icon: "👥" },
+                      {
+                        id: "groups",
+                        label: "Groups",
+                        icon: "🏆",
+                        disabled: !selectedTournament.groups?.length,
+                      },
+                      {
+                        id: "knockout",
+                        label: "Knockout",
+                        icon: "🥊",
+                        disabled: !selectedTournament.knockoutBracket?.length,
+                      },
+                      { id: "results", label: "Results", icon: "📋" },
                     ].map((tab) => (
                       <button
                         key={tab.id}
@@ -893,33 +1035,33 @@ const handleGenerateKnockout = async () => {
                         disabled={tab.disabled}
                         className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${
                           manageTab === tab.id
-                            ? 'bg-blue-600 text-white'
-                            : tab.disabled 
-                              ? 'text-gray-400 cursor-not-allowed'
-                              : 'text-gray-600 hover:text-gray-800 hover:bg-white'
+                            ? "bg-blue-600 text-white"
+                            : tab.disabled
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-gray-600 hover:text-gray-800 hover:bg-white"
                         }`}
                       >
                         <span>{tab.icon}</span>
                         <span>{tab.label}</span>
-                        {tab.id === 'groups' && selectedTournament.groups && (
+                        {tab.id === "groups" && selectedTournament.groups && (
                           <span className="bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded text-xs">
                             {selectedTournament.groups.length}
                           </span>
                         )}
-                        {tab.id === 'knockout' && selectedTournament.knockoutBracket && (
-                          <span className="bg-red-100 text-red-600 px-1.5 py-0.5 rounded text-xs">
-                            {selectedTournament.knockoutBracket.length}
-                          </span>
-                        )}
+                        {tab.id === "knockout" &&
+                          selectedTournament.knockoutBracket && (
+                            <span className="bg-red-100 text-red-600 px-1.5 py-0.5 rounded text-xs">
+                              {selectedTournament.knockoutBracket.length}
+                            </span>
+                          )}
                       </button>
                     ))}
                   </div>
                 </div>
-
                 {/* Tab Content */}
                 <div className="p-4 sm:p-6">
                   {/* Overview Tab */}
-                  {manageTab === 'overview' && (
+                  {manageTab === "overview" && (
                     <div className="overflow-x-auto">
                       <TournamentOverview
                         tournament={selectedTournament}
@@ -932,7 +1074,7 @@ const handleGenerateKnockout = async () => {
                   )}
 
                   {/* Teams Tab */}
-                  {manageTab === 'teams' && (
+                  {manageTab === "teams" && (
                     <div className="overflow-x-auto">
                       <TournamentTeams
                         tournament={selectedTournament}
@@ -947,18 +1089,17 @@ const handleGenerateKnockout = async () => {
                         setTournamentMembers={setTournamentMembers} // for reloading players
                         setIsLoading={setIsLoading}
                       />
-
                     </div>
                   )}
 
                   {/* Groups Tab */}
-                  {manageTab === 'groups' && (
+                  {manageTab === "groups" && (
                     <div className="overflow-x-auto">
                       <TournamentGroups
                         tournament={selectedTournament}
                         isLoading={isLoading}
                         isAuthenticated={isAuthenticated}
-                        onRecordMatch={(groupId, homeTeam, awayTeam) => 
+                        onRecordMatch={(groupId, homeTeam, awayTeam) =>
                           setRecordingMatch({ groupId, homeTeam, awayTeam })
                         }
                         setSelectedTournament={setSelectedTournament}
@@ -967,38 +1108,53 @@ const handleGenerateKnockout = async () => {
                   )}
 
                   {/* Knockout Tab */}
-                  {manageTab === 'knockout' && (
+                  {manageTab === "knockout" && (
                     <div className="overflow-x-auto">
                       <TournamentKnockout
                         tournament={selectedTournament}
                         isLoading={isLoading}
                         isAuthenticated={isAuthenticated}
-                        onRecordKnockoutMatch={(tieId, leg, homeTeam, awayTeam) =>
-                          setRecordingKnockoutMatch({ tieId, leg, homeTeam, awayTeam })
+                        onRecordKnockoutMatch={(
+                          tieId,
+                          leg,
+                          homeTeam,
+                          awayTeam
+                        ) =>
+                          setRecordingKnockoutMatch({
+                            tieId,
+                            leg,
+                            homeTeam,
+                            awayTeam,
+                          })
                         }
                       />
                     </div>
                   )}
 
                   {/* Results Tab */}
-                  {manageTab === 'results' && (
+                  {manageTab === "results" && (
                     <div className="overflow-x-auto">
                       <TournamentResults tournament={selectedTournament} />
                     </div>
                   )}
-                </div> {/* Close Tab Content div */}
+                </div>{" "}
+                {/* Close Tab Content div */}
               </div>
-            </div> 
+            </div>
           )}
 
           {/* No Tournament Selected for Manage Tab */}
-          {activeTab === 'manage' && !selectedTournament && (
+          {activeTab === "manage" && !selectedTournament && (
             <div className="text-center py-12">
               <div className="text-8xl mb-6">⚙️</div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">No Tournament Selected</h3>
-              <p className="text-black mb-6">Select a tournament from the tournaments tab to manage it.</p>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                No Tournament Selected
+              </h3>
+              <p className="text-black mb-6">
+                Select a tournament from the tournaments tab to manage it.
+              </p>
               <button
-                onClick={() => setActiveTab('tournaments')}
+                onClick={() => setActiveTab("tournaments")}
                 className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl hover:from-indigo-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 shadow-lg font-semibold"
               >
                 View Tournaments
@@ -1021,7 +1177,9 @@ const handleGenerateKnockout = async () => {
                   Delete Tournament?
                 </h3>
                 <p className="text-gray-600 text-center mb-8 leading-relaxed">
-                  This will permanently delete <strong>"{showDeleteConfirm.name}"</strong> and all its teams, matches, and history. This action cannot be undone.
+                  This will permanently delete{" "}
+                  <strong>"{showDeleteConfirm.name}"</strong> and all its teams,
+                  matches, and history. This action cannot be undone.
                 </p>
                 <div className="flex space-x-4">
                   <button
@@ -1042,7 +1200,7 @@ const handleGenerateKnockout = async () => {
                         <span>Deleting...</span>
                       </div>
                     ) : (
-                      'Delete Tournament'
+                      "Delete Tournament"
                     )}
                   </button>
                 </div>
@@ -1064,33 +1222,55 @@ const handleGenerateKnockout = async () => {
                 <h3 className="text-2xl font-bold text-gray-900 text-center mb-3">
                   Record Match Result
                 </h3>
-                
+
                 {/* Match Details */}
                 <div className="text-gray-600 text-center mb-8">
                   {recordingMatch ? (
-                    <p><strong>{recordingMatch.homeTeam}</strong> vs <strong>{recordingMatch.awayTeam}</strong></p>
+                    <p>
+                      <strong>{recordingMatch.homeTeam}</strong> vs{" "}
+                      <strong>{recordingMatch.awayTeam}</strong>
+                    </p>
                   ) : recordingKnockoutMatch ? (
                     <div>
-                      <p><strong>{recordingKnockoutMatch.homeTeam}</strong> vs <strong>{recordingKnockoutMatch.awayTeam}</strong></p>
+                      <p>
+                        <strong>{recordingKnockoutMatch.homeTeam}</strong> vs{" "}
+                        <strong>{recordingKnockoutMatch.awayTeam}</strong>
+                      </p>
                       <p className="text-sm mt-1 text-blue-600">
-                        {recordingKnockoutMatch.leg === 'first' ? '1st Leg' : '2nd Leg'}
+                        {recordingKnockoutMatch.leg === "first"
+                          ? "1st Leg"
+                          : "2nd Leg"}
                       </p>
                     </div>
                   ) : null}
                 </div>
-                
-                <form onSubmit={recordingMatch ? handleRecordMatch : handleRecordKnockoutMatch} className="space-y-6">
+
+                <form
+                  onSubmit={
+                    recordingMatch
+                      ? handleRecordMatch
+                      : handleRecordKnockoutMatch
+                  }
+                  className="space-y-6"
+                >
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center">
                       <label className="block text-sm font-bold text-gray-700 mb-2">
-                        {recordingMatch ? recordingMatch.homeTeam : recordingKnockoutMatch?.homeTeam}
+                        {recordingMatch
+                          ? recordingMatch.homeTeam
+                          : recordingKnockoutMatch?.homeTeam}
                       </label>
                       <input
                         type="number"
                         min="0"
                         max="20"
                         value={matchScores.homeScore}
-                        onChange={(e) => setMatchScores({ ...matchScores, homeScore: e.target.value })}
+                        onChange={(e) =>
+                          setMatchScores({
+                            ...matchScores,
+                            homeScore: e.target.value,
+                          })
+                        }
                         className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 text-center text-2xl font-bold text-black"
                         placeholder="0"
                         disabled={isLoading}
@@ -1099,14 +1279,21 @@ const handleGenerateKnockout = async () => {
                     </div>
                     <div className="text-center">
                       <label className="block text-sm font-bold text-gray-700 mb-2">
-                        {recordingMatch ? recordingMatch.awayTeam : recordingKnockoutMatch?.awayTeam}
+                        {recordingMatch
+                          ? recordingMatch.awayTeam
+                          : recordingKnockoutMatch?.awayTeam}
                       </label>
                       <input
                         type="number"
                         min="0"
                         max="20"
                         value={matchScores.awayScore}
-                        onChange={(e) => setMatchScores({ ...matchScores, awayScore: e.target.value })}
+                        onChange={(e) =>
+                          setMatchScores({
+                            ...matchScores,
+                            awayScore: e.target.value,
+                          })
+                        }
                         className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 text-center text-2xl font-bold text-black"
                         placeholder="0"
                         disabled={isLoading}
@@ -1114,14 +1301,14 @@ const handleGenerateKnockout = async () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="flex space-x-4">
                     <button
                       type="button"
                       onClick={() => {
                         setRecordingMatch(null);
                         setRecordingKnockoutMatch(null);
-                        setMatchScores({ homeScore: '', awayScore: '' });
+                        setMatchScores({ homeScore: "", awayScore: "" });
                       }}
                       disabled={isLoading}
                       className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
@@ -1130,7 +1317,11 @@ const handleGenerateKnockout = async () => {
                     </button>
                     <button
                       type="submit"
-                      disabled={isLoading || !matchScores.homeScore || !matchScores.awayScore}
+                      disabled={
+                        isLoading ||
+                        !matchScores.homeScore ||
+                        !matchScores.awayScore
+                      }
                       className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50"
                     >
                       {isLoading ? (
@@ -1139,7 +1330,7 @@ const handleGenerateKnockout = async () => {
                           <span>Recording...</span>
                         </div>
                       ) : (
-                        'Record Result'
+                        "Record Result"
                       )}
                     </button>
                   </div>
@@ -1149,7 +1340,6 @@ const handleGenerateKnockout = async () => {
           </div>
         </div>
       )}
-
     </div>
   );
 }

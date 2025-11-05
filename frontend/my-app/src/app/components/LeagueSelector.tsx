@@ -49,12 +49,16 @@ const Toast = ({
   </div>
 );
 
-export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) {
+export default function LeagueSelector({
+  onLeagueSelect,
+}: LeagueSelectorProps) {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [currentLeague, setCurrentLeague] = useState<League | null>(null);
   const [inputValue, setInputValue] = useState("");
   const [isCreatingNew, setIsCreatingNew] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<League | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<League | null>(
+    null
+  );
   const [editingLeague, setEditingLeague] = useState<League | null>(null);
   const [editValue, setEditValue] = useState("");
   const [error, setError] = useState("");
@@ -75,10 +79,7 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
     return true;
   };
 
-  const showToast = (
-    message: string,
-    type: "success" | "error" | "info"
-  ) => {
+  const showToast = (message: string, type: "success" | "error" | "info") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
@@ -537,7 +538,12 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
           ) : (
             <div className="flex flex-col items-center justify-center text-center mb-8 py-10">
               <div className="mb-3">
-                <Image src="/icons/trophy.svg" alt="trophy Icon" width={48} height={48} />
+                <Image
+                  src="/icons/trophy.svg"
+                  alt="trophy Icon"
+                  width={48}
+                  height={48}
+                />
               </div>
               <h3 className="text-xl sm:text-2xl font-bold text-gray-100 mb-1">
                 No Leagues Yet
@@ -553,7 +559,12 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-                  <Image src="/icons/plus.svg" alt="plus Icon" width={22} height={22} />
+                  <Image
+                    src="/icons/plus.svg"
+                    alt="plus Icon"
+                    width={22}
+                    height={22}
+                  />
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-bold text-white">
@@ -597,7 +608,9 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
                           ? "✅ Ready to create!"
                           : "Min 2 characters"}
                       </span>
-                      <span className="text-white/60">{inputValue.length}/50</span>
+                      <span className="text-white/60">
+                        {inputValue.length}/50
+                      </span>
                     </div>
                   </div>
 
@@ -664,7 +677,12 @@ export default function LeagueSelector({ onLeagueSelect }: LeagueSelectorProps) 
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4">
             <div className="p-6 sm:p-8">
               <div className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 sm:mb-6 bg-gradient-to-r from-red-500 to-red-600 rounded-full">
-                <Image src="/icons/delete.svg" alt="delete Icon" width={32} height={32} />
+                <Image
+                  src="/icons/delete.svg"
+                  alt="delete Icon"
+                  width={32}
+                  height={32}
+                />
               </div>
               <h3 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-2 sm:mb-3">
                 Delete League?

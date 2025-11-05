@@ -25,14 +25,16 @@ export default function AddTeamForm({ onAddTeam }: Props) {
 
   const validateTeamName = (name: string) => {
     if (!name.trim()) return "Team name is required";
-    if (name.trim().length < 2) return "Team name must be at least 2 characters";
-    if (name.trim().length > 30) return "Team name must be less than 30 characters";
+    if (name.trim().length < 2)
+      return "Team name must be at least 2 characters";
+    if (name.trim().length > 30)
+      return "Team name must be less than 30 characters";
     return "";
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const validationError = validateTeamName(teamName);
     if (validationError) {
       setError(validationError);
@@ -42,7 +44,7 @@ export default function AddTeamForm({ onAddTeam }: Props) {
     setIsSubmitting(true);
     setError("");
 
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     const newTeam: Team = {
       name: teamName.trim(),
@@ -63,7 +65,7 @@ export default function AddTeamForm({ onAddTeam }: Props) {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setTeamName(value);
-    
+
     if (error) setError("");
   };
 
@@ -80,9 +82,9 @@ export default function AddTeamForm({ onAddTeam }: Props) {
             onChange={handleInputChange}
             placeholder="Enter team name (e.g., Arsenal FC)"
             className={`w-full px-3 sm:px-4 py-3 sm:py-4 border-2 rounded-xl text-gray-900 placeholder-gray-400 transition-all duration-300 focus:outline-none text-sm sm:text-base ${
-              error 
-                ? 'border-red-300 focus:border-red-500 focus:ring-2 sm:focus:ring-4 focus:ring-red-100' 
-                : 'border-gray-200 focus:border-blue-500 focus:ring-2 sm:focus:ring-4 focus:ring-blue-100 hover:border-gray-300'
+              error
+                ? "border-red-300 focus:border-red-500 focus:ring-2 sm:focus:ring-4 focus:ring-red-100"
+                : "border-gray-200 focus:border-blue-500 focus:ring-2 sm:focus:ring-4 focus:ring-blue-100 hover:border-gray-300"
             }`}
             disabled={isSubmitting}
             maxLength={30}
@@ -91,14 +93,14 @@ export default function AddTeamForm({ onAddTeam }: Props) {
             {teamName.length}/30
           </div>
         </div>
-        
+
         {error && (
           <div className="mt-2 flex items-center space-x-2 text-red-600 text-xs sm:text-sm">
             <span>❌</span>
             <span className="font-medium">{error}</span>
           </div>
         )}
-        
+
         {teamName.length >= 2 && !error && (
           <div className="mt-2 flex items-center space-x-2 text-green-600 text-xs sm:text-sm">
             <span>✅</span>
@@ -112,8 +114,8 @@ export default function AddTeamForm({ onAddTeam }: Props) {
         disabled={isSubmitting || !teamName.trim() || !!error}
         className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-white text-sm sm:text-base transition-all duration-300 transform ${
           isSubmitting || !teamName.trim() || !!error
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 hover:scale-[1.02] shadow-lg hover:shadow-xl'
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 hover:scale-[1.02] shadow-lg hover:shadow-xl"
         }`}
       >
         <div className="flex items-center justify-center space-x-2 sm:space-x-3">
@@ -133,12 +135,18 @@ export default function AddTeamForm({ onAddTeam }: Props) {
 
       {teamName.trim() && !error && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-3 sm:p-4">
-          <h4 className="text-xs sm:text-sm font-bold text-gray-700 mb-2">Team Preview</h4>
+          <h4 className="text-xs sm:text-sm font-bold text-gray-700 mb-2">
+            Team Preview
+          </h4>
           <div className="flex items-center space-x-2 sm:space-x-3">
             <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full shadow-md"></div>
             <div>
-              <div className="font-bold text-gray-900 text-sm sm:text-base">{teamName.trim()}</div>
-              <div className="text-xs text-gray-500">Starting with 0 points</div>
+              <div className="font-bold text-gray-900 text-sm sm:text-base">
+                {teamName.trim()}
+              </div>
+              <div className="text-xs text-gray-500">
+                Starting with 0 points
+              </div>
             </div>
           </div>
         </div>

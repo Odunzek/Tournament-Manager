@@ -9,13 +9,14 @@ import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { AuthProvider, AuthModal } from "../lib/AuthContext";
 import { useAuth } from "../lib/AuthContext";
+import RankingManager from "./components/RankingsManager";
 
 function HomePage() {
   const [selectedLeague, setSelectedLeague] = useState<string>("");
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>("");
   const [mounted, setMounted] = useState(false);
   const [activeSection, setActiveSection] = useState<
-    "leagues" | "users" | "tournaments"
+    "leagues" | "users" | "tournaments" | "rankings"
   >("leagues");
 
   // 🔐 Auth hook
@@ -33,7 +34,8 @@ function HomePage() {
   // Persist selection
   useEffect(() => {
     if (!mounted) return;
-    if (selectedLeague) localStorage.setItem("currentLeagueName", selectedLeague);
+    if (selectedLeague)
+      localStorage.setItem("currentLeagueName", selectedLeague);
     if (selectedLeagueId)
       localStorage.setItem("currentLeagueId", selectedLeagueId);
   }, [mounted, selectedLeague, selectedLeagueId]);
@@ -74,7 +76,6 @@ function HomePage() {
             )}
           </div>
 
-
           <div className="relative inline-block">
             <h1
               className="text-3xl sm:text-5xl md:text-6xl font-extrabold
@@ -98,12 +99,21 @@ function HomePage() {
             <div className="max-w-full px-4">
               <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
                 {[
-                  { id: "leagues", label: "Leagues", icon: "/icons/league.svg" },
+                  {
+                    id: "leagues",
+                    label: "Leagues",
+                    icon: "/icons/league.svg",
+                  },
                   { id: "users", label: "Players", icon: "/icons/Players.svg" },
                   {
                     id: "tournaments",
                     label: "Tournaments",
                     icon: "/icons/tournaments.svg",
+                  },
+                  {
+                    id: "rankings",
+                    label: "P4P Rankings",
+                    icon: "/icons/p4pranking.svg"
                   },
                 ].map((tab) => {
                   const isActive = activeSection === tab.id;
@@ -151,13 +161,15 @@ function HomePage() {
               {!selectedLeague ? (
                 <div className="text-center mt-10">
                   <div className="bg-white/85 backdrop-blur-sm rounded-2xl shadow-2xl p-6 sm:p-10 max-w-2xl mx-auto border border-white/40">
-                    <div className="text-7xl sm:text-8xl mb-6 animate-bounce">⚽</div>
+                    <div className="text-7xl sm:text-8xl mb-6 animate-bounce">
+                      ⚽
+                    </div>
                     <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-3">
                       Welcome to League Manager!
                     </h2>
                     <p className="text-base sm:text-lg text-gray-700 mb-6 leading-relaxed">
-                      Create your first league or select an existing one to start
-                      managing players and matches.
+                      Create your first league or select an existing one to
+                      start managing players and matches.
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-left">
@@ -193,7 +205,9 @@ function HomePage() {
                               {feature.title}
                             </h3>
                           </div>
-                          <p className="text-gray-700 text-sm">{feature.desc}</p>
+                          <p className="text-gray-700 text-sm">
+                            {feature.desc}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -245,9 +259,18 @@ function HomePage() {
             </div>
           )}
 
+          {/* Rankings */}
+          {activeSection === "rankings" && (
+            <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+              <div className="backdrop-blur-sm rounded-2xl shadow-xl p-3 sm:p-6">
+                <RankingManager />
+              </div>
+            </div>
+          )}
+
           {/* Footer */}
           <footer className="mt-12 sm:mt-16 text-center">
-            <p className="text-gray-200 font-medium">Created by Kachy Odunze</p>
+            <p className="text-gray-200 font-medium">Created by Kempyre Group</p>
           </footer>
         </div>
       </div>

@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  getGroupMembers, 
+import {
+  getGroupMembers,
   GroupMember,
-  subscribeToGroupMembers
+  subscribeToGroupMembers,
 } from "../../lib/membershipUtils";
-import LeagueCreator from './leagues/LeagueCreator';
-import LeagueList from './leagues/LeagueList';
-import TeamManager from './leagues/TeamManager';
-import DeleteConfirmModal from './leagues/DeleteConfirmModal';
+import LeagueCreator from "./leagues/LeagueCreator";
+import LeagueList from "./leagues/LeagueList";
+import TeamManager from "./leagues/TeamManager";
+import DeleteConfirmModal from "./leagues/DeleteConfirmModal";
 
 interface LeagueTeam {
   id: string;
@@ -20,14 +20,18 @@ interface LeagueTeam {
 export default function LeagueManager() {
   const [leagues, setLeagues] = useState<string[]>([]);
   const [currentLeague, setCurrentLeague] = useState("");
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(
+    null
+  );
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [leagueTeams, setLeagueTeams] = useState<LeagueTeam[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const storedLeagues = JSON.parse(localStorage.getItem("leagueList") || "[]");
+    const storedLeagues = JSON.parse(
+      localStorage.getItem("leagueList") || "[]"
+    );
     const activeLeague = localStorage.getItem("currentLeagueName") || "";
 
     setLeagues(storedLeagues);
@@ -38,13 +42,13 @@ export default function LeagueManager() {
   useEffect(() => {
     const loadData = async () => {
       const loadedMembers = await getGroupMembers();
-      setMembers(loadedMembers.filter(m => m.isActive));
+      setMembers(loadedMembers.filter((m) => m.isActive));
     };
 
     loadData();
-    
+
     const unsubscribe = subscribeToGroupMembers((updatedMembers) => {
-      const activeMembers = updatedMembers.filter(m => m.isActive);
+      const activeMembers = updatedMembers.filter((m) => m.isActive);
       setMembers(activeMembers);
     });
 
@@ -64,7 +68,7 @@ export default function LeagueManager() {
   const handleCreateLeague = (name: string) => {
     const trimmed = name.trim();
     if (!trimmed || leagues.includes(trimmed)) {
-      alert('Invalid league name or league already exists');
+      alert("Invalid league name or league already exists");
       return;
     }
 
@@ -84,16 +88,16 @@ export default function LeagueManager() {
   };
 
   const handleDeleteLeague = (leagueName: string) => {
-    const updatedLeagues = leagues.filter(league => league !== leagueName);
+    const updatedLeagues = leagues.filter((league) => league !== leagueName);
     setLeagues(updatedLeagues);
-    
+
     const teamsKey = `league_${leagueName}_teams`;
     const historyKey = `league_${leagueName}_history`;
     localStorage.removeItem(teamsKey);
     localStorage.removeItem(historyKey);
-    
+
     localStorage.setItem("leagueList", JSON.stringify(updatedLeagues));
-    
+
     if (currentLeague === leagueName) {
       if (updatedLeagues.length > 0) {
         const newCurrent = updatedLeagues[0];
@@ -105,21 +109,25 @@ export default function LeagueManager() {
       }
       window.location.reload();
     }
-    
+
     setShowDeleteConfirm(null);
   };
 
   const handleAddTeam = (memberId: string) => {
     if (!currentLeague) return;
 
-    const selectedMember = members.find(m => m.id === memberId);
+    const selectedMember = members.find((m) => m.id === memberId);
     if (!selectedMember) {
-      alert('Selected member not found');
+      alert("Selected member not found");
       return;
     }
 
-    if (leagueTeams.some(team => team.id === memberId || team.name === selectedMember.name)) {
-      alert('Member is already in this league');
+    if (
+      leagueTeams.some(
+        (team) => team.id === memberId || team.name === selectedMember.name
+      )
+    ) {
+      alert("Member is already in this league");
       return;
     }
 
@@ -129,7 +137,7 @@ export default function LeagueManager() {
       const newTeam: LeagueTeam = {
         id: selectedMember.id || memberId,
         name: selectedMember.name,
-        psnId: selectedMember.psnId || selectedMember.name
+        psnId: selectedMember.psnId || selectedMember.name,
       };
 
       const updatedTeams = [...leagueTeams, newTeam];
@@ -139,10 +147,9 @@ export default function LeagueManager() {
       localStorage.setItem(teamsKey, JSON.stringify(updatedTeams));
 
       alert(`${selectedMember.name} added to league!`);
-
     } catch (error) {
-      console.error('Error adding team:', error);
-      alert('Failed to add team');
+      console.error("Error adding team:", error);
+      alert("Failed to add team");
     } finally {
       setIsLoading(false);
     }
@@ -151,16 +158,16 @@ export default function LeagueManager() {
   const handleRemoveTeam = (teamId: string) => {
     if (!currentLeague) return;
 
-    const updatedTeams = leagueTeams.filter(team => team.id !== teamId);
+    const updatedTeams = leagueTeams.filter((team) => team.id !== teamId);
     setLeagueTeams(updatedTeams);
 
     const teamsKey = `league_${currentLeague}_teams`;
     localStorage.setItem(teamsKey, JSON.stringify(updatedTeams));
   };
 
-  const availableMembers = members.filter(member => {
-    const alreadyInLeague = leagueTeams.some(team => 
-      team.id === member.id || team.name === member.name
+  const availableMembers = members.filter((member) => {
+    const alreadyInLeague = leagueTeams.some(
+      (team) => team.id === member.id || team.name === member.name
     );
     return !alreadyInLeague;
   });
@@ -181,7 +188,7 @@ export default function LeagueManager() {
       <div className="bg-white p-4 sm:p-6 rounded-lg shadow mb-6 text-black">
         <h2 className="text-lg sm:text-xl font-bold mb-3">🎮 League Manager</h2>
 
-        <LeagueCreator 
+        <LeagueCreator
           onCreateLeague={handleCreateLeague}
           isLoading={isLoading}
         />
