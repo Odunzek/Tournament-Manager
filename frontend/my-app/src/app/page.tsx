@@ -104,7 +104,9 @@ function HomePage() {
                     label: "Leagues",
                     icon: "/icons/league.svg",
                   },
-                  { id: "users", label: "Players", icon: "/icons/Players.svg" },
+                  { id: "users", 
+                    label: "Players", 
+                    icon: "/icons/Players.svg" },
                   {
                     id: "tournaments",
                     label: "Tournaments",
