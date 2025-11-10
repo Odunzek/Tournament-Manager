@@ -402,12 +402,15 @@ export async function editLeagueMatch(
   leagueId: string,
   matchId: string,
   newHomeScore: number,
-  newAwayScore: number
+  newAwayScore: number,
+  newHomeTeam: string,
+  newAwayTeam: string
 ) {
+  // 1. Update the match document
   const matchRef = doc(db, "matches", matchId);
-
-  // 1. Update match document
   await updateDoc(matchRef, {
+    homeTeam: newHomeTeam,
+    awayTeam: newAwayTeam,
     homeScore: newHomeScore,
     awayScore: newAwayScore,
     editedAt: new Date(),
@@ -417,10 +420,18 @@ export async function editLeagueMatch(
   const q = query(collection(db, "matches"), where("leagueId", "==", leagueId));
   const snap = await getDocs(q);
 
-  // Aggregate stats from all matches
+  // 3. Aggregate stats from all matches
   const stats: Record<
     string,
-    { played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number }
+    {
+      played: number;
+      won: number;
+      drawn: number;
+      lost: number;
+      gf: number;
+      ga: number;
+      points: number;
+    }
   > = {};
 
   snap.forEach((d) => {
@@ -429,7 +440,15 @@ export async function editLeagueMatch(
 
     [homeTeam, awayTeam].forEach((team) => {
       if (!stats[team]) {
-        stats[team] = { played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, points: 0 };
+        stats[team] = {
+          played: 0,
+          won: 0,
+          drawn: 0,
+          lost: 0,
+          gf: 0,
+          ga: 0,
+          points: 0,
+        };
       }
     });
 
@@ -456,7 +475,7 @@ export async function editLeagueMatch(
     }
   });
 
-  // 3. Push recalculated stats to teams collection
+  // 4. Push recalculated stats back to teams
   const teamsSnap = await getDocs(
     query(collection(db, "teams"), where("leagueId", "==", leagueId))
   );
@@ -487,6 +506,3 @@ export async function editLeagueMatch(
 
   await Promise.all(updates);
 }
-
-
-export type { League, Match };

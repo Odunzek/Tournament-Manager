@@ -26,10 +26,12 @@ import {
   GroupMember,
 } from "../../lib/membershipUtils";
 import { useAuth } from "../../lib/AuthContext";
+import { deleteDoc, doc, getDocs, writeBatch } from "firebase/firestore";
 
-// -----------------------------
+
+
 // Types
-// -----------------------------
+
 type Team = {
   id?: string;
   memberId: string;
@@ -53,9 +55,7 @@ interface LeagueTableProps {
   leagueId: string;
 }
 
-// -----------------------------
 // Toast notification
-// -----------------------------
 const Toast = ({
   message,
   type,
@@ -89,9 +89,7 @@ const Toast = ({
   </div>
 );
 
-// -----------------------------
 // Loading skeleton
-// -----------------------------
 const TableSkeleton = () => (
   <div className="bg-white rounded-xl shadow-xl overflow-hidden">
     <div className="bg-gradient-to-r from-gray-200 to-gray-300 px-4 sm:px-6 py-3 sm:py-4">
@@ -113,9 +111,7 @@ const TableSkeleton = () => (
   </div>
 );
 
-// -----------------------------
 // Mobile team card (original nicer UI)
-// -----------------------------
 const TeamCard = ({
   team,
   position,
@@ -126,8 +122,7 @@ const TeamCard = ({
   totalTeams: number;
 }) => {
   const goalDiff = team.gf - team.ga;
-  const winPercentage =
-    team.played === 0 ? 0 : (team.won / team.played) * 100;
+  const winPercentage = team.played === 0 ? 0 : (team.won / team.played) * 100;
 
   return (
     <div
@@ -246,10 +241,11 @@ const TeamCard = ({
   );
 };
 
-// -----------------------------
 // MAIN COMPONENT
-// -----------------------------
-export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) {
+export default function LeagueTable({
+  leagueName,
+  leagueId,
+}: LeagueTableProps) {
   const { isAuthenticated, setShowAuthModal } = useAuth();
 
   const [teams, setTeams] = useState<Team[]>([]);
@@ -309,19 +305,15 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     return true;
   };
 
-  // -----------------------------
-  // Load league status
-  // -----------------------------
-  useEffect(() => {
+    // Load league status
+    useEffect(() => {
     const status =
       localStorage.getItem(`league_${leagueId}_status`) || "active";
     setLeagueStatus(status as LeagueStatus);
   }, [leagueId]);
 
-  // -----------------------------
-  // Load all leagues to enforce member uniqueness
-  // -----------------------------
-  useEffect(() => {
+    // Load all leagues to enforce member uniqueness
+    useEffect(() => {
     const allLeagues = JSON.parse(localStorage.getItem("leagueList") || "[]");
     const leaguesData = allLeagues.map((name: string) => {
       const teamsKey = `league_${name}_teams`;
@@ -333,10 +325,8 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     setOtherLeagues(leaguesData);
   }, []);
 
-  // -----------------------------
-  // Members subscription
-  // -----------------------------
-  useEffect(() => {
+    // Members subscription
+    useEffect(() => {
     const loadMembers = async () => {
       const loadedMembers = await getGroupMembers();
       setMembers(loadedMembers.filter((m) => m.isActive));
@@ -352,10 +342,8 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     return () => unsubscribe();
   }, []);
 
-  // -----------------------------
-  // Teams subscription
-  // -----------------------------
-  useEffect(() => {
+    // Teams subscription
+    useEffect(() => {
     if (!leagueId) {
       setIsLoaded(true);
       return;
@@ -391,10 +379,8 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     return () => unsubscribe();
   }, [leagueId]);
 
-  // -----------------------------
-  // NEW: subscribe to matches
-  // -----------------------------
-  useEffect(() => {
+    // NEW: subscribe to matches
+    useEffect(() => {
     if (!leagueId) return;
 
     const q = query(
@@ -408,13 +394,11 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
           const data = d.data();
           const rawDate = data.date;
           const date =
-            rawDate?.toDate?.() ??
-            (rawDate ? new Date(rawDate) : new Date());
+            rawDate?.toDate?.() ?? (rawDate ? new Date(rawDate) : new Date());
           return { id: d.id, ...data, date };
         })
         .sort(
-          (a, b) =>
-            (b.date as Date).getTime() - (a.date as Date).getTime()
+          (a, b) => (b.date as Date).getTime() - (a.date as Date).getTime()
         );
       setMatches(rows);
     });
@@ -422,10 +406,8 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     return () => unsubscribe();
   }, [leagueId]);
 
-  // -----------------------------
-  // Helpers
-  // -----------------------------
-  const getWinPercentage = (team: Team) =>
+    // Helpers
+    const getWinPercentage = (team: Team) =>
     team.played === 0 ? 0 : (team.won / team.played) * 100;
 
   const sortedTeams = [...teams].sort((a, b) => {
@@ -463,10 +445,8 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     return !inOtherActive;
   });
 
-  // -----------------------------
-  // Actions
-  // -----------------------------
-  const handleAddMember = async () => {
+    // Actions
+    const handleAddMember = async () => {
     if (!requireAuth()) return;
 
     if (!selectedMemberId) {
@@ -660,10 +640,8 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     }
   };
 
-  // -----------------------------
-  // Render
-  // -----------------------------
-  if (!isLoaded) {
+    // Render
+    if (!isLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         <div className="container mx-auto px-4 py-4 sm:py-8">
@@ -910,28 +888,66 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                           </div>
                         </td>
                         <td className="px-4 py-6 whitespace-nowrap">
-                          <div className="flex items-center space-x-3">
-                            <div
-                              className="w-4 h-4 rounded-full shadow-md"
-                              style={{
-                                backgroundColor: team.color || "#3B82F6",
-                              }}
-                            ></div>
-                            <div>
-                              <div className="text-sm font-bold text-gray-900 flex items-center">
-                                {team.name}
-                                {getPositionChange(team.name, position)}
-                              </div>
-                              {team.played > 0 && (
-                                <div className="w-16 h-1 bg-gray-200 rounded-full mt-1">
-                                  <div
-                                    className="h-1 bg-gradient-to-r from-green-400 to-green-500 rounded-full transition-all duration-500"
-                                    style={{ width: `${winPct}%` }}
-                                  ></div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+<div className="flex items-center space-x-3">
+  <div
+    className="w-4 h-4 rounded-full shadow-md"
+    style={{
+      backgroundColor: team.color || "#3B82F6",
+    }}
+  ></div>
+  <div>
+    <div className="text-sm font-bold text-gray-900 flex items-center">
+      {team.name}
+      {getPositionChange(team.name, position)}
+      {isAuthenticated && (
+        <button
+          onClick={async () => {
+            const confirmDelete = confirm(`Remove ${team.name} and their matches from league?`);
+            if (!confirmDelete) return;
+
+            try {
+              // Step 1: Delete the team
+              await deleteDoc(doc(db, "teams", team.id));
+
+              // Step 2: Delete matches involving this player
+              const matchesRef = collection(db, "matches");
+              const q = query(
+                matchesRef,
+                where("leagueId", "==", leagueId)
+              );
+              const snap = await getDocs(q);
+
+              const batch = writeBatch(db);
+              snap.forEach((matchDoc) => {
+                const match = matchDoc.data();
+                if (match.homeTeam === team.name || match.awayTeam === team.name) {
+                  batch.delete(matchDoc.ref);
+                }
+              });
+              await batch.commit();
+
+              showToast(`${team.name} and related matches removed`, "success");
+            } catch (error) {
+              console.error("Error deleting player:", error);
+              showToast("Failed to delete player and matches", "error");
+            }
+          }}
+          className="ml-3 text-red-500 hover:text-red-700 text-xs font-semibold"
+        >
+          🗑️ Remove
+        </button>
+      )}
+    </div>
+    {team.played > 0 && (
+      <div className="w-16 h-1 bg-gray-200 rounded-full mt-1">
+        <div
+          className="h-1 bg-gradient-to-r from-green-400 to-green-500 rounded-full transition-all duration-500"
+          style={{ width: `${winPct}%` }}
+        ></div>
+      </div>
+    )}
+  </div>
+</div>
                         </td>
                         <td className="px-4 py-6 whitespace-nowrap text-center text-sm text-blue-600 font-medium">
                           {team.psnId || "-"}
@@ -1202,14 +1218,10 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                               onClick={() => {
                                 setEditingMatch(m);
                                 setNewHomeScore(
-                                  m.homeScore != null
-                                    ? String(m.homeScore)
-                                    : ""
+                                  m.homeScore != null ? String(m.homeScore) : ""
                                 );
                                 setNewAwayScore(
-                                  m.awayScore != null
-                                    ? String(m.awayScore)
-                                    : ""
+                                  m.awayScore != null ? String(m.awayScore) : ""
                                 );
                               }}
                               className="text-xs sm:text-sm bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg font-medium"
@@ -1236,20 +1248,55 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
               <h3 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-2">
                 Edit Result
               </h3>
-              <p className="text-sm sm:text-base text-center text-gray-700 mb-4">
-                {editingMatch.homeTeam} vs {editingMatch.awayTeam}
-              </p>
-              <div className="flex items-center justify-center gap-3 mb-6">
+              {/* Select teams */}
+              <div className="flex justify-between gap-3 mb-4">
+                <select
+                  value={editingMatch.homeTeam}
+                  onChange={(e) =>
+                    setEditingMatch({
+                      ...editingMatch,
+                      homeTeam: e.target.value,
+                    })
+                  }
+                  className="flex-1 border-2 border-gray-300 rounded-lg py-2 text-sm font-medium text-gray-800"
+                >
+                  {teams.map((t) => (
+                    <option key={t.name} value={t.name}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+
+                <span className="text-lg font-bold text-gray-700 self-center">
+                  vs
+                </span>
+
+                <select
+                  value={editingMatch.awayTeam}
+                  onChange={(e) =>
+                    setEditingMatch({
+                      ...editingMatch,
+                      awayTeam: e.target.value,
+                    })
+                  }
+                  className="flex-1 border-2 border-gray-300 rounded-lg py-2 text-sm font-medium text-gray-800"
+                >
+                  {teams.map((t) => (
+                    <option key={t.name} value={t.name}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Edit scores */}
+              <div className="flex justify-center gap-3 mb-6">
                 <input
                   type="number"
                   min={0}
                   value={newHomeScore}
                   onChange={(e) => setNewHomeScore(e.target.value)}
-                  placeholder={
-                    editingMatch.homeScore != null
-                      ? String(editingMatch.homeScore)
-                      : "Home"
-                  }
+                  placeholder={editingMatch.homeScore?.toString() || "Home"}
                   className="w-20 sm:w-24 text-center border-2 border-gray-300 rounded-lg py-2 text-lg font-bold text-gray-900"
                 />
                 <span className="text-xl font-bold">-</span>
@@ -1258,14 +1305,11 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                   min={0}
                   value={newAwayScore}
                   onChange={(e) => setNewAwayScore(e.target.value)}
-                  placeholder={
-                    editingMatch.awayScore != null
-                      ? String(editingMatch.awayScore)
-                      : "Away"
-                  }
+                  placeholder={editingMatch.awayScore?.toString() || "Away"}
                   className="w-20 sm:w-24 text-center border-2 border-gray-300 rounded-lg py-2 text-lg font-bold text-gray-900"
                 />
               </div>
+
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => {
@@ -1290,12 +1334,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                         ? editingMatch.awayScore
                         : parseInt(newAwayScore, 10);
 
-                    if (
-                      isNaN(home) ||
-                      isNaN(away) ||
-                      home < 0 ||
-                      away < 0
-                    ) {
+                    if (isNaN(home) || isNaN(away) || home < 0 || away < 0) {
                       showToast("Enter valid scores", "error");
                       return;
                     }
@@ -1306,7 +1345,9 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                         leagueId,
                         editingMatch.id,
                         home,
-                        away
+                        away,
+                          editingMatch.homeTeam,
+                          editingMatch.awayTeam
                       );
                       setEditingMatch(null);
                       setNewHomeScore("");
