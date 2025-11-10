@@ -398,4 +398,95 @@ export const subscribeToMatchesByLeagueName = (
   });
 };
 
+export async function editLeagueMatch(
+  leagueId: string,
+  matchId: string,
+  newHomeScore: number,
+  newAwayScore: number
+) {
+  const matchRef = doc(db, "matches", matchId);
+
+  // 1. Update match document
+  await updateDoc(matchRef, {
+    homeScore: newHomeScore,
+    awayScore: newAwayScore,
+    editedAt: new Date(),
+  });
+
+  // 2. Fetch all matches for this league
+  const q = query(collection(db, "matches"), where("leagueId", "==", leagueId));
+  const snap = await getDocs(q);
+
+  // Aggregate stats from all matches
+  const stats: Record<
+    string,
+    { played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number }
+  > = {};
+
+  snap.forEach((d) => {
+    const m = d.data();
+    const { homeTeam, awayTeam, homeScore, awayScore } = m;
+
+    [homeTeam, awayTeam].forEach((team) => {
+      if (!stats[team]) {
+        stats[team] = { played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, points: 0 };
+      }
+    });
+
+    stats[homeTeam].played++;
+    stats[awayTeam].played++;
+    stats[homeTeam].gf += homeScore;
+    stats[homeTeam].ga += awayScore;
+    stats[awayTeam].gf += awayScore;
+    stats[awayTeam].ga += homeScore;
+
+    if (homeScore > awayScore) {
+      stats[homeTeam].won++;
+      stats[awayTeam].lost++;
+      stats[homeTeam].points += 3;
+    } else if (awayScore > homeScore) {
+      stats[awayTeam].won++;
+      stats[homeTeam].lost++;
+      stats[awayTeam].points += 3;
+    } else {
+      stats[homeTeam].drawn++;
+      stats[awayTeam].drawn++;
+      stats[homeTeam].points++;
+      stats[awayTeam].points++;
+    }
+  });
+
+  // 3. Push recalculated stats to teams collection
+  const teamsSnap = await getDocs(
+    query(collection(db, "teams"), where("leagueId", "==", leagueId))
+  );
+
+  const updates = teamsSnap.docs.map((teamDoc) => {
+    const team = teamDoc.data();
+    const teamStats = stats[team.name] || {
+      played: 0,
+      won: 0,
+      drawn: 0,
+      lost: 0,
+      gf: 0,
+      ga: 0,
+      points: 0,
+    };
+
+    return updateDoc(doc(db, "teams", teamDoc.id), {
+      played: teamStats.played,
+      won: teamStats.won,
+      drawn: teamStats.drawn,
+      lost: teamStats.lost,
+      goalsFor: teamStats.gf,
+      goalsAgainst: teamStats.ga,
+      goalDifference: teamStats.gf - teamStats.ga,
+      points: teamStats.points,
+    });
+  });
+
+  await Promise.all(updates);
+}
+
+
 export type { League, Match };

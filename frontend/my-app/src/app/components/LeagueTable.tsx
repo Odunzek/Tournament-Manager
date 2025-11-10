@@ -1,24 +1,35 @@
 "use client";
+
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import MatchResultForm from "./MatchResultForm";
-import Link from "next/link";
-import { 
-  createTeam, 
-  updateTeamStats, 
-  saveMatch, 
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+  DocumentData,
+} from "firebase/firestore";
+import { db } from "../../lib/firebase";
+import {
+  createTeam,
+  updateTeamStats,
+  saveMatch,
   subscribeToTeams,
   deleteLeague,
-  updateLeague
+  updateLeague,
+  editLeagueMatch,
 } from "../../lib/firebaseutils";
-import { 
+import {
   getGroupMembers,
   subscribeToGroupMembers,
-  GroupMember 
+  GroupMember,
 } from "../../lib/membershipUtils";
 import { useAuth } from "../../lib/AuthContext";
 
-// Team type
+// -----------------------------
+// Types
+// -----------------------------
 type Team = {
   id?: string;
   memberId: string;
@@ -35,31 +46,52 @@ type Team = {
   leagueId?: string;
 };
 
-type LeagueStatus = 'active' | 'ended';
+type LeagueStatus = "active" | "ended";
 
 interface LeagueTableProps {
   leagueName: string;
   leagueId: string;
 }
 
-// Toast notification component - MOBILE RESPONSIVE
-const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose: () => void }) => (
-  <div className={`fixed top-4 right-4 left-4 sm:left-auto z-50 px-4 sm:px-6 py-3 sm:py-4 rounded-lg shadow-2xl transform transition-all duration-500 max-w-sm sm:max-w-md ${
-    type === 'success' ? 'bg-green-500 text-white' : 
-    type === 'error' ? 'bg-red-500 text-white' :
-    'bg-blue-500 text-white'
-  }`}>
+// -----------------------------
+// Toast notification
+// -----------------------------
+const Toast = ({
+  message,
+  type,
+  onClose,
+}: {
+  message: string;
+  type: "success" | "error" | "info";
+  onClose: () => void;
+}) => (
+  <div
+    className={`fixed top-4 right-4 left-4 sm:left-auto z-50 px-4 sm:px-6 py-3 sm:py-4 rounded-lg shadow-2xl transform transition-all duration-500 max-w-sm sm:max-w-md ${
+      type === "success"
+        ? "bg-green-500 text-white"
+        : type === "error"
+        ? "bg-red-500 text-white"
+        : "bg-blue-500 text-white"
+    }`}
+  >
     <div className="flex items-center space-x-3">
       <span className="text-lg sm:text-xl">
-        {type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}
+        {type === "success" ? "✅" : type === "error" ? "❌" : "ℹ️"}
       </span>
       <span className="font-medium text-sm sm:text-base flex-1">{message}</span>
-      <button onClick={onClose} className="ml-4 text-white hover:text-gray-200 text-xl">×</button>
+      <button
+        onClick={onClose}
+        className="ml-4 text-white hover:text-gray-200 text-xl"
+      >
+        ×
+      </button>
     </div>
   </div>
 );
 
-// Loading skeleton - MOBILE RESPONSIVE
+// -----------------------------
+// Loading skeleton
+// -----------------------------
 const TableSkeleton = () => (
   <div className="bg-white rounded-xl shadow-xl overflow-hidden">
     <div className="bg-gradient-to-r from-gray-200 to-gray-300 px-4 sm:px-6 py-3 sm:py-4">
@@ -67,7 +99,10 @@ const TableSkeleton = () => (
     </div>
     <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="flex items-center space-x-3 sm:space-x-4 animate-pulse">
+        <div
+          key={i}
+          className="flex items-center space-x-3 sm:space-x-4 animate-pulse"
+        >
           <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-200 rounded-full"></div>
           <div className="flex-1 h-3 sm:h-4 bg-gray-200 rounded"></div>
           <div className="w-6 h-3 sm:w-8 sm:h-4 bg-gray-200 rounded"></div>
@@ -78,27 +113,49 @@ const TableSkeleton = () => (
   </div>
 );
 
-// Mobile Team Card Component - NEW FOR MOBILE
-const TeamCard = ({ team, position, totalTeams }: { team: Team; position: number; totalTeams: number }) => {
+// -----------------------------
+// Mobile team card (original nicer UI)
+// -----------------------------
+const TeamCard = ({
+  team,
+  position,
+  totalTeams,
+}: {
+  team: Team;
+  position: number;
+  totalTeams: number;
+}) => {
   const goalDiff = team.gf - team.ga;
-  const winPercentage = team.played === 0 ? 0 : (team.won / team.played) * 100;
-  
+  const winPercentage =
+    team.played === 0 ? 0 : (team.won / team.played) * 100;
+
   return (
-    <div className={`bg-white rounded-xl shadow-lg overflow-hidden mb-4 border-l-4 ${
-      position === 1 ? 'border-yellow-400' :
-      position <= 4 ? 'border-green-400' :
-      position >= totalTeams - 1 && totalTeams > 4 ? 'border-red-400' : 'border-gray-300'
-    }`}>
+    <div
+      className={`bg-white rounded-xl shadow-lg overflow-hidden mb-4 border-l-4 ${
+        position === 1
+          ? "border-yellow-400"
+          : position <= 4
+          ? "border-green-400"
+          : position >= totalTeams - 1 && totalTeams > 4
+          ? "border-red-400"
+          : "border-gray-300"
+      }`}
+    >
       <div className="p-4">
-        {/* Header with Position and Points */}
+        {/* Header */}
         <div className="flex justify-between items-start mb-3">
           <div className="flex items-center space-x-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-lg ${
-              position === 1 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white' :
-              position <= 4 ? 'bg-gradient-to-r from-green-400 to-green-500 text-white' :
-              position >= totalTeams - 1 && totalTeams > 4 ? 'bg-gradient-to-r from-red-400 to-red-500 text-white' :
-              'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-700'
-            }`}>
+            <div
+              className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-lg ${
+                position === 1
+                  ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-white"
+                  : position <= 4
+                  ? "bg-gradient-to-r from-green-400 to-green-500 text-white"
+                  : position >= totalTeams - 1 && totalTeams > 4
+                  ? "bg-gradient-to-r from-red-400 to-red-500 text-white"
+                  : "bg-gradient-to-r from-gray-300 to-gray-400 text-gray-700"
+              }`}
+            >
               {position}
             </div>
             <div>
@@ -113,12 +170,14 @@ const TeamCard = ({ team, position, totalTeams }: { team: Team; position: number
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div className="text-2xl font-bold text-blue-600">{team.points}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {team.points}
+            </div>
             <div className="text-xs text-gray-500">POINTS</div>
           </div>
         </div>
-        
-        {/* Stats Grid */}
+
+        {/* Stats grid */}
         <div className="grid grid-cols-4 gap-2 text-center">
           <div className="bg-gray-50 rounded-lg p-2">
             <div className="text-xs text-gray-500">P</div>
@@ -130,35 +189,50 @@ const TeamCard = ({ team, position, totalTeams }: { team: Team; position: number
           </div>
           <div className="bg-yellow-50 rounded-lg p-2">
             <div className="text-xs text-gray-500">D</div>
-            <div className="font-bold text-sm text-yellow-600">{team.drawn}</div>
+            <div className="font-bold text-sm text-yellow-600">
+              {team.drawn}
+            </div>
           </div>
           <div className="bg-red-50 rounded-lg p-2">
             <div className="text-xs text-gray-500">L</div>
             <div className="font-bold text-sm text-red-600">{team.lost}</div>
           </div>
         </div>
-        
-        {/* Goals and Form */}
+
+        {/* Goals & form */}
         <div className="mt-3 pt-3 border-t border-gray-100">
           <div className="flex justify-between items-center">
             <div className="flex space-x-4 text-sm">
-              <span className="text-gray-600">GF: <span className="font-bold">{team.gf}</span></span>
-              <span className="text-gray-600">GA: <span className="font-bold">{team.ga}</span></span>
-              <span className={`font-bold ${
-                goalDiff > 0 ? 'text-green-600' : goalDiff < 0 ? 'text-red-600' : 'text-gray-700'
-              }`}>
-                GD: {goalDiff > 0 ? '+' : ''}{goalDiff}
+              <span className="text-gray-600">
+                GF: <span className="font-bold">{team.gf}</span>
+              </span>
+              <span className="text-gray-600">
+                GA: <span className="font-bold">{team.ga}</span>
+              </span>
+              <span
+                className={`font-bold ${
+                  goalDiff > 0
+                    ? "text-green-600"
+                    : goalDiff < 0
+                    ? "text-red-600"
+                    : "text-gray-700"
+                }`}
+              >
+                GD: {goalDiff > 0 ? "+" : ""}
+                {goalDiff}
               </span>
             </div>
             {team.played > 0 && (
               <div className="flex items-center space-x-1 shrink-0">
                 <span className="text-xs text-gray-500">Form</span>
                 <div className="w-12 h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className={`h-full rounded-full transition-all duration-500 ${
-                      winPercentage >= 70 ? 'bg-green-500' :
-                      winPercentage >= 40 ? 'bg-yellow-500' :
-                      'bg-red-500'
+                      winPercentage >= 70
+                        ? "bg-green-500"
+                        : winPercentage >= 40
+                        ? "bg-yellow-500"
+                        : "bg-red-500"
                     }`}
                     style={{ width: `${winPercentage}%` }}
                   ></div>
@@ -172,34 +246,61 @@ const TeamCard = ({ team, position, totalTeams }: { team: Team; position: number
   );
 };
 
+// -----------------------------
+// MAIN COMPONENT
+// -----------------------------
 export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) {
   const { isAuthenticated, setShowAuthModal } = useAuth();
+
   const [teams, setTeams] = useState<Team[]>([]);
   const [members, setMembers] = useState<GroupMember[]>([]);
-  const [activeTab, setActiveTab] = useState<'table' | 'add-member' | 'add-match'>('table');
+  const [activeTab, setActiveTab] = useState<
+    "table" | "add-member" | "add-match"
+  >("table");
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
-  const [leagueStatus, setLeagueStatus] = useState<LeagueStatus>('active');
+  const [leagueStatus, setLeagueStatus] = useState<LeagueStatus>("active");
   const [isLoaded, setIsLoaded] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-  const [previousPositions, setPreviousPositions] = useState<{[key: string]: number}>({});
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
+  const [previousPositions, setPreviousPositions] = useState<{
+    [key: string]: number;
+  }>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedMemberId, setSelectedMemberId] = useState('');
+  const [selectedMemberId, setSelectedMemberId] = useState("");
   const [otherLeagues, setOtherLeagues] = useState<any[]>([]);
 
-  // Team colors palette
+  // NEW: matches + edit state
+  const [matches, setMatches] = useState<DocumentData[]>([]);
+  const [editingMatch, setEditingMatch] = useState<DocumentData | null>(null);
+  const [newHomeScore, setNewHomeScore] = useState("");
+  const [newAwayScore, setNewAwayScore] = useState("");
+
+  // Colors for team dots
   const teamColors = [
-    '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6',
-    '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16'
+    "#3B82F6",
+    "#EF4444",
+    "#10B981",
+    "#F59E0B",
+    "#8B5CF6",
+    "#EC4899",
+    "#14B8A6",
+    "#F97316",
+    "#6366F1",
+    "#84CC16",
   ];
 
-  // Show toast notification
-  const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+  const showToast = (
+    message: string,
+    type: "success" | "error" | "info" = "success"
+  ) => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
 
-  // Check authentication - KEEPING YOUR ORIGINAL SIMPLE VERSION
   const requireAuth = () => {
     if (!isAuthenticated) {
       setShowAuthModal(true);
@@ -208,147 +309,209 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     return true;
   };
 
-  // Load league status from localStorage
+  // -----------------------------
+  // Load league status
+  // -----------------------------
   useEffect(() => {
-    const status = localStorage.getItem(`league_${leagueId}_status`) || 'active';
+    const status =
+      localStorage.getItem(`league_${leagueId}_status`) || "active";
     setLeagueStatus(status as LeagueStatus);
   }, [leagueId]);
 
-  // Load all leagues to check member availability
+  // -----------------------------
+  // Load all leagues to enforce member uniqueness
+  // -----------------------------
   useEffect(() => {
-    const allLeagues = JSON.parse(localStorage.getItem('leagueList') || '[]');
-    const leaguesData = allLeagues.map((leagueName: string) => {
-      const teamsKey = `league_${leagueName}_teams`;
-      const statusKey = `league_${leagueName}_status`;
-      const teams = JSON.parse(localStorage.getItem(teamsKey) || '[]');
-      const status = localStorage.getItem(statusKey) || 'active';
-      return { name: leagueName, teams, status };
+    const allLeagues = JSON.parse(localStorage.getItem("leagueList") || "[]");
+    const leaguesData = allLeagues.map((name: string) => {
+      const teamsKey = `league_${name}_teams`;
+      const statusKey = `league_${name}_status`;
+      const teams = JSON.parse(localStorage.getItem(teamsKey) || "[]");
+      const status = localStorage.getItem(statusKey) || "active";
+      return { name, teams, status };
     });
     setOtherLeagues(leaguesData);
   }, []);
 
-  // Subscribe to members
+  // -----------------------------
+  // Members subscription
+  // -----------------------------
   useEffect(() => {
     const loadMembers = async () => {
       const loadedMembers = await getGroupMembers();
-      setMembers(loadedMembers.filter(m => m.isActive));
+      setMembers(loadedMembers.filter((m) => m.isActive));
     };
-    
+
     loadMembers();
-    
+
     const unsubscribe = subscribeToGroupMembers((updatedMembers) => {
-      const activeMembers = updatedMembers.filter(m => m.isActive);
-      setMembers(activeMembers);
+      const active = updatedMembers.filter((m) => m.isActive);
+      setMembers(active);
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Load teams from Firebase
+  // -----------------------------
+  // Teams subscription
+  // -----------------------------
   useEffect(() => {
     if (!leagueId) {
       setIsLoaded(true);
       return;
     }
 
-    const unsubscribe = subscribeToTeams(leagueId, (firebaseTeams) => {
-      const formattedTeams = firebaseTeams.map((team, index) => ({
+    const unsubscribe = subscribeToTeams(leagueId, (firebaseTeams: any[]) => {
+      const formatted: Team[] = firebaseTeams.map((team, index) => ({
         id: team.id,
         memberId: team.memberId || team.id,
         name: team.name,
         psnId: team.psnId,
-        played: team.played,
-        won: team.won,
-        drawn: team.drawn,
-        lost: team.lost,
-        gf: team.goalsFor,
-        ga: team.goalsAgainst,
-        points: team.points,
+        played: team.played || 0,
+        won: team.won || 0,
+        drawn: team.drawn || 0,
+        lost: team.lost || 0,
+        gf: team.goalsFor || 0,
+        ga: team.goalsAgainst || 0,
+        points: team.points || 0,
         color: teamColors[index % teamColors.length],
-        leagueId: team.leagueId
+        leagueId: team.leagueId,
       }));
 
-      const positions: {[key: string]: number} = {};
-      formattedTeams.forEach((team, index) => {
-        positions[team.name] = index + 1;
+      const positions: { [key: string]: number } = {};
+      formatted.forEach((t, i) => {
+        positions[t.name] = i + 1;
       });
+
       setPreviousPositions(positions);
-      
-      setTeams(formattedTeams);
+      setTeams(formatted);
       setIsLoaded(true);
     });
 
     return () => unsubscribe();
   }, [leagueId]);
 
-  // Get available members
-  const getAvailableMembers = () => {
-    return members.filter(member => {
-      const inCurrentLeague = teams.some(team => 
-        team.memberId === member.id || team.name === member.name
-      );
-      
-      const inOtherActiveLeague = otherLeagues.some(league => {
-        if (league.name === leagueName) return false;
-        if (league.status === 'ended') return false;
-        
-        return league.teams.some((team: any) => 
-          team.id === member.id || team.name === member.name
+  // -----------------------------
+  // NEW: subscribe to matches
+  // -----------------------------
+  useEffect(() => {
+    if (!leagueId) return;
+
+    const q = query(
+      collection(db, "matches"),
+      where("leagueId", "==", leagueId)
+    );
+
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const rows: DocumentData[] = snap.docs
+        .map((d) => {
+          const data = d.data();
+          const rawDate = data.date;
+          const date =
+            rawDate?.toDate?.() ??
+            (rawDate ? new Date(rawDate) : new Date());
+          return { id: d.id, ...data, date };
+        })
+        .sort(
+          (a, b) =>
+            (b.date as Date).getTime() - (a.date as Date).getTime()
         );
-      });
-      
-      return !inCurrentLeague && !inOtherActiveLeague;
+      setMatches(rows);
     });
+
+    return () => unsubscribe();
+  }, [leagueId]);
+
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+  const getWinPercentage = (team: Team) =>
+    team.played === 0 ? 0 : (team.won / team.played) * 100;
+
+  const sortedTeams = [...teams].sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    const gdA = a.gf - a.ga;
+    const gdB = b.gf - b.ga;
+    if (gdB !== gdA) return gdB - gdA;
+    return b.gf - a.gf;
+  });
+
+  const getPositionChange = (name: string, currentPos: number) => {
+    const prev = previousPositions[name];
+    if (!prev || prev === currentPos) return null;
+    return prev > currentPos ? (
+      <span className="text-green-500 text-xs ml-1">↗</span>
+    ) : (
+      <span className="text-red-500 text-xs ml-1">↘</span>
+    );
   };
 
-  // Handle adding a member - USING YOUR ORIGINAL requireAuth()
+  const availableMembers = members.filter((member) => {
+    const inCurrent = teams.some(
+      (t) => t.memberId === member.id || t.name === member.name
+    );
+    if (inCurrent) return false;
+
+    const inOtherActive = otherLeagues.some((league) => {
+      if (league.name === leagueName) return false;
+      if (league.status === "ended") return false;
+      return league.teams.some(
+        (t: any) => t.id === member.id || t.name === member.name
+      );
+    });
+
+    return !inOtherActive;
+  });
+
+  // -----------------------------
+  // Actions
+  // -----------------------------
   const handleAddMember = async () => {
     if (!requireAuth()) return;
-    
+
     if (!selectedMemberId) {
-      showToast('Please select a member', 'error');
+      showToast("Please select a member", "error");
       return;
     }
 
     if (!leagueId) {
-      showToast('No league selected', 'error');
+      showToast("No league selected", "error");
       return;
     }
 
-    const selectedMember = members.find(m => m.id === selectedMemberId);
-    if (!selectedMember) {
-      showToast('Member not found', 'error');
+    const member = members.find((m) => m.id === selectedMemberId);
+    if (!member) {
+      showToast("Member not found", "error");
       return;
     }
 
     setIsLoading(true);
     try {
-      await createTeam(leagueId, selectedMember.name, {
-        memberId: selectedMember.id,
-        psnId: selectedMember.psnId
+      await createTeam(leagueId, member.name, {
+        memberId: member.id,
+        psnId: member.psnId,
       });
-      
+
       const teamsKey = `league_${leagueName}_teams`;
-      const currentTeams = JSON.parse(localStorage.getItem(teamsKey) || '[]');
+      const currentTeams = JSON.parse(localStorage.getItem(teamsKey) || "[]");
       currentTeams.push({
-        id: selectedMember.id,
-        memberId: selectedMember.id,
-        name: selectedMember.name,
-        psnId: selectedMember.psnId
+        id: member.id,
+        memberId: member.id,
+        name: member.name,
+        psnId: member.psnId,
       });
       localStorage.setItem(teamsKey, JSON.stringify(currentTeams));
-      
-      setSelectedMemberId('');
-      showToast(`${selectedMember.name} added to league!`, 'success');
-    } catch (error) {
-      console.error('Error adding member:', error);
-      showToast('Failed to add member', 'error');
+
+      setSelectedMemberId("");
+      showToast(`${member.name} added to league!`, "success");
+    } catch (e) {
+      console.error(e);
+      showToast("Failed to add member", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle match results - USING YOUR ORIGINAL requireAuth()
   const handleMatchSubmit = async (data: {
     team1: string;
     team2: string;
@@ -356,161 +519,150 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
     score2: number;
   }) => {
     if (!requireAuth()) return;
-    
+
     if (!leagueId) {
-      showToast('No league selected', 'error');
+      showToast("No league selected", "error");
       return;
     }
-    const { team1, team2, score1, score2 } = data;
-    setIsLoading(true);
 
+    const { team1, team2, score1, score2 } = data;
+
+    const t1 = teams.find((t) => t.name === team1);
+    const t2 = teams.find((t) => t.name === team2);
+
+    if (!t1 || !t2 || !t1.id || !t2.id) {
+      showToast("Teams not found", "error");
+      return;
+    }
+
+    setIsLoading(true);
     try {
+      // Save match document
       await saveMatch({
-        leagueName,
         leagueId,
+        leagueName,
         homeTeam: team1,
         awayTeam: team2,
         homeScore: score1,
         awayScore: score2,
-        date: new Date()
+        date: new Date(),
       });
 
-      const team1Data = teams.find(t => t.name === team1);
-      const team2Data = teams.find(t => t.name === team2);
+      // Update stats
+      const t1GF = t1.gf + score1;
+      const t1GA = t1.ga + score2;
+      const t1Won = t1.won + (score1 > score2 ? 1 : 0);
+      const t1Drawn = t1.drawn + (score1 === score2 ? 1 : 0);
+      const t1Lost = t1.lost + (score1 < score2 ? 1 : 0);
+      const t1Pts =
+        t1.points + (score1 > score2 ? 3 : score1 === score2 ? 1 : 0);
 
-      if (!team1Data || !team2Data || !team1Data.id || !team2Data.id) {
-        throw new Error('Teams not found');
-      }
-
-      // Calculate stats
-      const team1GoalsFor = team1Data.gf + score1;
-      const team1GoalsAgainst = team1Data.ga + score2;
-      const team1Won = team1Data.won + (score1 > score2 ? 1 : 0);
-      const team1Drawn = team1Data.drawn + (score1 === score2 ? 1 : 0);
-      const team1Lost = team1Data.lost + (score1 < score2 ? 1 : 0);
-      const team1Points = team1Data.points + (score1 > score2 ? 3 : score1 === score2 ? 1 : 0);
-
-      const team2GoalsFor = team2Data.gf + score2;
-      const team2GoalsAgainst = team2Data.ga + score1;
-      const team2Won = team2Data.won + (score2 > score1 ? 1 : 0);
-      const team2Drawn = team2Data.drawn + (score1 === score2 ? 1 : 0);
-      const team2Lost = team2Data.lost + (score2 < score1 ? 1 : 0);
-      const team2Points = team2Data.points + (score2 > score1 ? 3 : score1 === score2 ? 1 : 0);
+      const t2GF = t2.gf + score2;
+      const t2GA = t2.ga + score1;
+      const t2Won = t2.won + (score2 > score1 ? 1 : 0);
+      const t2Drawn = t2.drawn + (score1 === score2 ? 1 : 0);
+      const t2Lost = t2.lost + (score2 < score1 ? 1 : 0);
+      const t2Pts =
+        t2.points + (score2 > score1 ? 3 : score1 === score2 ? 1 : 0);
 
       await Promise.all([
-        updateTeamStats(team1Data.id, {
-          played: team1Data.played + 1,
-          won: team1Won,
-          drawn: team1Drawn,
-          lost: team1Lost,
-          goalsFor: team1GoalsFor,
-          goalsAgainst: team1GoalsAgainst,
-          goalDifference: team1GoalsFor - team1GoalsAgainst,
-          points: team1Points
+        updateTeamStats(t1.id, {
+          played: t1.played + 1,
+          won: t1Won,
+          drawn: t1Drawn,
+          lost: t1Lost,
+          goalsFor: t1GF,
+          goalsAgainst: t1GA,
+          goalDifference: t1GF - t1GA,
+          points: t1Pts,
         }),
-        updateTeamStats(team2Data.id, {
-          played: team2Data.played + 1,
-          won: team2Won,
-          drawn: team2Drawn,
-          lost: team2Lost,
-          goalsFor: team2GoalsFor,
-          goalsAgainst: team2GoalsAgainst,
-          goalDifference: team2GoalsFor - team2GoalsAgainst,
-          points: team2Points
-        })
+        updateTeamStats(t2.id, {
+          played: t2.played + 1,
+          won: t2Won,
+          drawn: t2Drawn,
+          lost: t2Lost,
+          goalsFor: t2GF,
+          goalsAgainst: t2GA,
+          goalDifference: t2GF - t2GA,
+          points: t2Pts,
+        }),
       ]);
 
-      
-      const result = score1 === score2 ? 'Draw' : 
-                    score1 > score2 ? `${team1} wins` : `${team2} wins`;
-      showToast(`Match result recorded: ${result}`, 'success');
-    } catch (error) {
-      console.error('Error saving match:', error);
-      showToast('Failed to save match result', 'error');
+      const result =
+        score1 === score2
+          ? "Draw"
+          : score1 > score2
+          ? `${team1} wins`
+          : `${team2} wins`;
+      showToast(`Match result recorded: ${result}`, "success");
+    } catch (e) {
+      console.error(e);
+      showToast("Failed to save match result", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle ending league - USING YOUR ORIGINAL requireAuth()
   const handleEndLeague = async () => {
     if (!requireAuth()) return;
-    
+
     setIsLoading(true);
     try {
-      localStorage.setItem(`league_${leagueId}_status`, 'ended');
-      setLeagueStatus('ended');
-      
+      localStorage.setItem(`league_${leagueId}_status`, "ended");
+      setLeagueStatus("ended");
+
       if (leagueId) {
-        await updateLeague(leagueId, { status: 'ended', endedAt: new Date() });
+        await updateLeague(leagueId, {
+          status: "ended",
+          endedAt: new Date(),
+        });
       }
-      
+
       setShowEndConfirm(false);
-      showToast('League ended successfully. Members are now available for other leagues.', 'success');
-    } catch (error) {
-      console.error('Error ending league:', error);
-      showToast('Failed to end league', 'error');
+      showToast(
+        "League ended. Members are now available for other leagues.",
+        "success"
+      );
+    } catch (e) {
+      console.error(e);
+      showToast("Failed to end league", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle deleting league - USING YOUR ORIGINAL requireAuth()
   const handleClearLeague = async () => {
     if (!requireAuth()) return;
-    
+
     if (!leagueId) {
-      showToast('No league selected', 'error');
+      showToast("No league selected", "error");
       return;
     }
 
     setIsLoading(true);
     try {
       await deleteLeague(leagueId);
-      
+
       localStorage.removeItem(`league_${leagueName}_teams`);
       localStorage.removeItem(`league_${leagueId}_status`);
-      
+
       setTeams([]);
       setShowDeleteConfirm(false);
-      setActiveTab('table');
-      showToast('League deleted successfully', 'success');
-      
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Error deleting league:', error);
-      showToast('Failed to delete league', 'error');
+      setActiveTab("table");
+      showToast("League deleted successfully", "success");
+
+      window.location.href = "/";
+    } catch (e) {
+      console.error(e);
+      showToast("Failed to delete league", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const sortedTeams = teams.sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    const goalDiffA = a.gf - a.ga;
-    const goalDiffB = b.gf - b.ga;
-    if (goalDiffB !== goalDiffA) return goalDiffB - goalDiffA;
-    return b.gf - a.gf;
-  });
-
-  const getPositionChange = (teamName: string, currentPos: number) => {
-    const prevPos = previousPositions[teamName];
-    if (!prevPos || prevPos === currentPos) return null;
-    
-    if (prevPos > currentPos) {
-      return <span className="text-green-500 text-xs ml-1">↗</span>;
-    } else {
-      return <span className="text-red-500 text-xs ml-1">↘</span>;
-    }
-  };
-
-  const getWinPercentage = (team: Team) => {
-    if (team.played === 0) return 0;
-    return (team.won / team.played) * 100;
-  };
-
-  const availableMembers = getAvailableMembers();
-
+  // -----------------------------
+  // Render
+  // -----------------------------
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -528,28 +680,27 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
   return (
     <div className="min-h-screen overflow-x-hidden">
       <div className="container mx-auto px-4 py-4 sm:py-8">
-        {/* Header - MOBILE RESPONSIVE */}
+        {/* HEADER */}
         <div className="mb-6 sm:mb-8 text-center relative">
           <div className="relative">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-white bg-clip-text text-transparent mb-3 sm:mb-4 leading-snug px-4">
               {leagueName || "League"} Table
             </h1>
-            {leagueStatus === 'ended' && (
+            {leagueStatus === "ended" && (
               <span className="absolute -top-2 -right-2 sm:top-0 sm:-right-20 bg-gray-500 text-white px-2 py-1 sm:px-3 rounded-full text-xs sm:text-sm font-bold">
                 ENDED
               </span>
             )}
           </div>
 
-          {/* Action Buttons - MOBILE RESPONSIVE */}
+          {/* HEADER ACTIONS */}
           {teams.length > 0 && (
             <div className="mt-4 sm:mt-0 sm:absolute sm:top-0 sm:right-0 flex flex-col sm:flex-row gap-2">
-              {leagueStatus === 'active' && (
+              {leagueStatus === "active" && (
                 <button
                   onClick={() => setShowEndConfirm(true)}
                   disabled={isLoading}
                   className="group bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50"
-                  title="End league and release members"
                 >
                   <span className="flex items-center justify-center space-x-2">
                     <span>🏁</span>
@@ -561,10 +712,11 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={isLoading}
                 className="group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50"
-                title="Delete league permanently"
               >
                 <span className="flex items-center justify-center space-x-2">
-                  <span className="group-hover:rotate-12 transition-transform duration-300">🗑️</span>
+                  <span className="group-hover:rotate-12 transition-transform duration-300">
+                    🗑️
+                  </span>
                   <span>Clear League</span>
                 </span>
               </button>
@@ -572,14 +724,32 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
           )}
         </div>
 
-        {/* Navigation Tabs - MOBILE SAFE */}
+        {/* TABS */}
         <div className="flex justify-center mb-6 sm:mb-8">
           <div className="px-3 sm:px-6 max-w-full">
             <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
               {[
-                { id: 'table', label: 'Table', icon: '/icons/leaguesTable.svg', color: 'blue', size: 30, disabled: false },
-                { id: 'add-member', label: 'Add', icon: '/icons/addplayers.svg', color: 'blue', disabled: leagueStatus === 'ended', size: 38 },
-                { id: 'add-match', label: 'Match', icon: '/icons/addmatches.svg', color: 'blue', disabled: leagueStatus === 'ended', size: 38 }
+                {
+                  id: "table",
+                  label: "Table",
+                  icon: "/icons/leaguesTable.svg",
+                  size: 30,
+                  disabled: false,
+                },
+                {
+                  id: "add-member",
+                  label: "Add",
+                  icon: "/icons/addplayers.svg",
+                  size: 38,
+                  disabled: leagueStatus === "ended",
+                },
+                {
+                  id: "add-match",
+                  label: "Match",
+                  icon: "/icons/addmatches.svg",
+                  size: 38,
+                  disabled: leagueStatus === "ended",
+                },
               ].map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -597,7 +767,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                         ? "text-gray-400 bg-gray-100"
                         : isActive
                         ? "bg-blue-600 text-white"
-                        : "bg-white/10 text-white hover:bg-white/15"
+                        : "bg-white/10 text-white hover:bg-white/15",
                     ].join(" ")}
                   >
                     <Image
@@ -607,9 +777,15 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                       height={tab.size}
                       className="w-6 h-6 sm:w-7 sm:h-7 pointer-events-none"
                     />
-                    <span className="hidden sm:inline text-base">{tab.label}</span>
+                    <span className="hidden sm:inline text-base">
+                      {tab.label}
+                    </span>
                     <span className="sm:hidden text-xs">
-                      {tab.id === 'table' ? 'Table' : tab.id === 'add-member' ? 'Add' : 'Match'}
+                      {tab.id === "table"
+                        ? "Table"
+                        : tab.id === "add-member"
+                        ? "Add"
+                        : "Match"}
                     </span>
                   </button>
                 );
@@ -618,10 +794,10 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
           </div>
         </div>
 
-        {/* Table Content */}
-        {activeTab === 'table' && (
+        {/* TABLE TAB */}
+        {activeTab === "table" && (
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
-            {/* Table Header */}
+            {/* table header */}
             <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 px-4 sm:px-8 py-4 sm:py-6">
               <div className="flex flex-col sm:flex-row items-center justify-between">
                 <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-0">
@@ -630,30 +806,35 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                 </h2>
                 {teams.length > 0 && (
                   <div className="text-white/80 text-xs sm:text-sm">
-                    {teams.length} Members • {teams.reduce((sum, team) => sum + team.played, 0)} Matches
+                    {teams.length} Members •{" "}
+                    {teams.reduce((sum, t) => sum + t.played, 0)} Matches
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Mobile Cards View - NEW */}
+            {/* mobile cards */}
             <div className="block md:hidden p-4">
               {sortedTeams.map((team, index) => (
-                <TeamCard 
-                  key={team.id || team.name} 
-                  team={team} 
-                  position={index + 1} 
+                <TeamCard
+                  key={team.id || team.name}
+                  team={team}
+                  position={index + 1}
                   totalTeams={sortedTeams.length}
                 />
               ))}
               {teams.length === 0 && (
                 <div className="py-12 text-center">
                   <div className="text-6xl mb-4 animate-bounce">⚽</div>
-                  <p className="text-xl font-bold text-gray-800 mb-2">No members added yet</p>
-                  <p className="text-sm text-gray-600 mb-6">Add members to get started!</p>
-                  {leagueStatus === 'active' && (
+                  <p className="text-xl font-bold text-gray-800 mb-2">
+                    No members added yet
+                  </p>
+                  <p className="text-sm text-gray-600 mb-6">
+                    Add members to get started!
+                  </p>
+                  {leagueStatus === "active" && (
                     <button
-                      onClick={() => setActiveTab('add-member')}
+                      onClick={() => setActiveTab("add-member")}
                       disabled={isLoading}
                       className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50"
                     >
@@ -664,13 +845,29 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
               )}
             </div>
 
-            {/* Desktop Table View - YOUR ORIGINAL */}
+            {/* desktop table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>
-                    {['Pos', 'Member', 'PSN ID', 'P', 'W', 'D', 'L', 'GF', 'GA', 'GD', 'Form', 'Pts'].map((header) => (
-                      <th key={header} className="px-4 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200">
+                    {[
+                      "Pos",
+                      "Member",
+                      "PSN ID",
+                      "P",
+                      "W",
+                      "D",
+                      "L",
+                      "GF",
+                      "GA",
+                      "GD",
+                      "Form",
+                      "Pts",
+                    ].map((header) => (
+                      <th
+                        key={header}
+                        className="px-4 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-b-2 border-gray-200"
+                      >
                         {header}
                       </th>
                     ))}
@@ -680,32 +877,45 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                   {sortedTeams.map((team, index) => {
                     const goalDiff = team.gf - team.ga;
                     const position = index + 1;
-                    const winPercentage = getWinPercentage(team);
-                    
+                    const winPct = getWinPercentage(team);
+
                     return (
                       <tr
                         key={team.id || team.name}
                         className={`hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 transition-all duration-300 transform hover:scale-[1.02] ${
-                          position === 1 ? 'bg-gradient-to-r from-yellow-50 via-amber-50 to-yellow-100 border-l-4 border-yellow-400' :
-                          position <= 4 ? 'bg-gradient-to-r from-green-50 via-emerald-50 to-green-100 border-l-4 border-green-400' :
-                          position >= sortedTeams.length - 2 && sortedTeams.length > 4 ? 'bg-gradient-to-r from-red-50 via-rose-50 to-red-100 border-l-4 border-red-400' : 'hover:bg-gray-50'
+                          position === 1
+                            ? "bg-gradient-to-r from-yellow-50 via-amber-50 to-yellow-100 border-l-4 border-yellow-400"
+                            : position <= 4
+                            ? "bg-gradient-to-r from-green-50 via-emerald-50 to-green-100 border-l-4 border-green-400"
+                            : position >= sortedTeams.length - 2 &&
+                              sortedTeams.length > 4
+                            ? "bg-gradient-to-r from-red-50 via-rose-50 to-red-100 border-l-4 border-red-400"
+                            : "hover:bg-gray-50"
                         }`}
                       >
                         <td className="px-4 py-6 whitespace-nowrap">
-                          <div className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold shadow-lg ${
-                            position === 1 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white' :
-                            position <= 4 ? 'bg-gradient-to-r from-green-400 to-green-500 text-white' :
-                            position >= sortedTeams.length - 2 && sortedTeams.length > 4 ? 'bg-gradient-to-r from-red-400 to-red-500 text-white' :
-                            'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-700'
-                          }`}>
+                          <div
+                            className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold shadow-lg ${
+                              position === 1
+                                ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-white"
+                                : position <= 4
+                                ? "bg-gradient-to-r from-green-400 to-green-500 text-white"
+                                : position >= sortedTeams.length - 2 &&
+                                  sortedTeams.length > 4
+                                ? "bg-gradient-to-r from-red-400 to-red-500 text-white"
+                                : "bg-gradient-to-r from-gray-300 to-gray-400 text-gray-700"
+                            }`}
+                          >
                             {position}
                           </div>
                         </td>
                         <td className="px-4 py-6 whitespace-nowrap">
                           <div className="flex items-center space-x-3">
-                            <div 
+                            <div
                               className="w-4 h-4 rounded-full shadow-md"
-                              style={{ backgroundColor: team.color || '#3B82F6' }}
+                              style={{
+                                backgroundColor: team.color || "#3B82F6",
+                              }}
                             ></div>
                             <div>
                               <div className="text-sm font-bold text-gray-900 flex items-center">
@@ -714,9 +924,9 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                               </div>
                               {team.played > 0 && (
                                 <div className="w-16 h-1 bg-gray-200 rounded-full mt-1">
-                                  <div 
+                                  <div
                                     className="h-1 bg-gradient-to-r from-green-400 to-green-500 rounded-full transition-all duration-500"
-                                    style={{ width: `${winPercentage}%` }}
+                                    style={{ width: `${winPct}%` }}
                                   ></div>
                                 </div>
                               )}
@@ -724,7 +934,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                           </div>
                         </td>
                         <td className="px-4 py-6 whitespace-nowrap text-center text-sm text-blue-600 font-medium">
-                          {team.psnId || '-'}
+                          {team.psnId || "-"}
                         </td>
                         <td className="px-3 py-6 whitespace-nowrap text-center text-sm text-gray-700 font-medium">
                           {team.played}
@@ -744,21 +954,30 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                         <td className="px-3 py-6 whitespace-nowrap text-center text-sm text-gray-700 font-medium">
                           {team.ga}
                         </td>
-                        <td className={`px-3 py-6 whitespace-nowrap text-center text-sm font-bold ${
-                          goalDiff > 0 ? 'text-green-600' : goalDiff < 0 ? 'text-red-600' : 'text-gray-700'
-                        }`}>
-                          {goalDiff > 0 ? '+' : ''}{goalDiff}
+                        <td
+                          className={`px-3 py-6 whitespace-nowrap text-center text-sm font-bold ${
+                            goalDiff > 0
+                              ? "text-green-600"
+                              : goalDiff < 0
+                              ? "text-red-600"
+                              : "text-gray-700"
+                          }`}
+                        >
+                          {goalDiff > 0 ? "+" : ""}
+                          {goalDiff}
                         </td>
                         <td className="px-3 py-6 whitespace-nowrap text-center">
                           <div className="flex items-center justify-center">
                             <div className="w-12 h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
+                              <div
                                 className={`h-full rounded-full transition-all duration-500 ${
-                                  winPercentage >= 70 ? 'bg-gradient-to-r from-green-400 to-green-500' :
-                                  winPercentage >= 40 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' :
-                                  'bg-gradient-to-r from-red-400 to-red-500'
+                                  winPct >= 70
+                                    ? "bg-gradient-to-r from-green-400 to-green-500"
+                                    : winPct >= 40
+                                    ? "bg-gradient-to-r from-yellow-400 to-yellow-500"
+                                    : "bg-gradient-to-r from-red-400 to-red-500"
                                 }`}
-                                style={{ width: `${winPercentage}%` }}
+                                style={{ width: `${winPct}%` }}
                               ></div>
                             </div>
                           </div>
@@ -773,14 +992,21 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                   })}
                   {teams.length === 0 && (
                     <tr>
-                      <td colSpan={12} className="px-6 py-16 text-center text-gray-500">
+                      <td
+                        colSpan={12}
+                        className="px-6 py-16 text-center text-gray-500"
+                      >
                         <div className="flex flex-col items-center">
                           <div className="text-8xl mb-6 animate-bounce">⚽</div>
-                          <p className="text-2xl font-bold text-gray-800 mb-2">No members added yet</p>
-                          <p className="text-gray-600 mb-6">Add members to get started with your league!</p>
-                          {leagueStatus === 'active' && (
+                          <p className="text-2xl font-bold text-gray-800 mb-2">
+                            No members added yet
+                          </p>
+                          <p className="text-gray-600 mb-6">
+                            Add members to get started with your league!
+                          </p>
+                          {leagueStatus === "active" && (
                             <button
-                              onClick={() => setActiveTab('add-member')}
+                              onClick={() => setActiveTab("add-member")}
                               disabled={isLoading}
                               className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-3 rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50"
                             >
@@ -795,7 +1021,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
               </table>
             </div>
 
-            {/* Footer - MOBILE RESPONSIVE */}
+            {/* legend footer */}
             {teams.length > 0 && (
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 sm:px-8 py-4 sm:py-6 border-t border-gray-200">
                 <div className="flex flex-col sm:flex-row flex-wrap items-center justify-between gap-4">
@@ -821,8 +1047,8 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
           </div>
         )}
 
-        {/* Add Member Tab - MOBILE RESPONSIVE */}
-        {activeTab === 'add-member' && (
+        {/* ADD MEMBER TAB */}
+        {activeTab === "add-member" && (
           <div className="max-w-lg mx-auto px-4 sm:px-0">
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
               <div className="bg-blue-600 px-6 sm:px-8 py-4 sm:py-6">
@@ -852,13 +1078,16 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                       disabled={isLoading || availableMembers.length === 0}
                     >
                       <option value="">
-                        {availableMembers.length === 0 
-                          ? "No available members" 
+                        {availableMembers.length === 0
+                          ? "No available members"
                           : "Select a member..."}
                       </option>
                       {availableMembers.map((member) => (
                         <option key={member.id} value={member.id}>
-                          {member.name} {member.psnId && member.psnId !== member.name ? `(${member.psnId})` : ''}
+                          {member.name}{" "}
+                          {member.psnId && member.psnId !== member.name
+                            ? `(${member.psnId})`
+                            : ""}
                         </option>
                       ))}
                     </select>
@@ -867,7 +1096,8 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                   {members.length === 0 && (
                     <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-6 text-center">
                       <p className="text-blue-800 font-medium text-sm">
-                        No members found. Please add members in the Players tab first.
+                        No members found. Please add members in the Players tab
+                        first.
                       </p>
                     </div>
                   )}
@@ -883,7 +1113,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                         <span>Adding Member...</span>
                       </div>
                     ) : (
-                      'Add Member to League'
+                      "Add Member to League"
                     )}
                   </button>
                 </div>
@@ -892,8 +1122,8 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
           </div>
         )}
 
-        {/* Add Match Tab - MOBILE RESPONSIVE */}
-        {activeTab === 'add-match' && (
+        {/* ADD MATCH TAB */}
+        {activeTab === "add-match" && (
           <div className="max-w-lg mx-auto px-4 sm:px-0">
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
               <div className="bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 px-6 sm:px-8 py-4 sm:py-6">
@@ -910,7 +1140,10 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
               </div>
               <div className="p-6 sm:p-8">
                 {teams.length >= 2 ? (
-                  <MatchResultForm teams={teams.map((t) => t.name)} onSubmit={handleMatchSubmit} />
+                  <MatchResultForm
+                    teams={teams.map((t) => t.name)}
+                    onSubmit={handleMatchSubmit}
+                  />
                 ) : (
                   <div className="text-center py-8 sm:py-12">
                     <div className="flex justify-center mb-4 sm:mb-6">
@@ -922,11 +1155,15 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                         className="animate-bounce drop-shadow-lg sm:w-14 sm:h-14"
                       />
                     </div>
-                    <p className="text-lg sm:text-xl text-gray-700 font-semibold mb-2">Need More Members</p>
-                    <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">You need at least 2 members to record a match result.</p>
-                    {leagueStatus === 'active' && (
+                    <p className="text-lg sm:text-xl text-gray-700 font-semibold mb-2">
+                      Need More Members
+                    </p>
+                    <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">
+                      You need at least 2 members to record a match result.
+                    </p>
+                    {leagueStatus === "active" && (
                       <button
-                        onClick={() => setActiveTab('add-member')}
+                        onClick={() => setActiveTab("add-member")}
                         disabled={isLoading}
                         className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg font-semibold disabled:opacity-50 text-sm sm:text-base"
                       >
@@ -935,13 +1172,164 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                     )}
                   </div>
                 )}
+
+                {/* PAST RESULTS + EDIT */}
+                {matches.length > 0 && (
+                  <div className="mt-8 border-t border-gray-200 pt-4">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+                      <span>🕓</span>
+                      <span>Recent Results</span>
+                    </h3>
+                    <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                      {matches.map((m) => (
+                        <div
+                          key={m.id}
+                          className="flex items-center justify-between bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-gray-800">
+                              {m.homeTeam} {m.homeScore} - {m.awayScore}{" "}
+                              {m.awayTeam}
+                            </span>
+                            {m.date && (
+                              <span className="text-[11px] sm:text-xs text-gray-500">
+                                {new Date(m.date as Date).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                          {isAuthenticated && (
+                            <button
+                              onClick={() => {
+                                setEditingMatch(m);
+                                setNewHomeScore(
+                                  m.homeScore != null
+                                    ? String(m.homeScore)
+                                    : ""
+                                );
+                                setNewAwayScore(
+                                  m.awayScore != null
+                                    ? String(m.awayScore)
+                                    : ""
+                                );
+                              }}
+                              className="text-xs sm:text-sm bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg font-medium"
+                            >
+                              ✏️ Edit
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* End League Modal - MOBILE RESPONSIVE */}
+      {/* EDIT MATCH MODAL */}
+      {editingMatch && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300">
+            <div className="p-6 sm:p-8">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-2">
+                Edit Result
+              </h3>
+              <p className="text-sm sm:text-base text-center text-gray-700 mb-4">
+                {editingMatch.homeTeam} vs {editingMatch.awayTeam}
+              </p>
+              <div className="flex items-center justify-center gap-3 mb-6">
+                <input
+                  type="number"
+                  min={0}
+                  value={newHomeScore}
+                  onChange={(e) => setNewHomeScore(e.target.value)}
+                  placeholder={
+                    editingMatch.homeScore != null
+                      ? String(editingMatch.homeScore)
+                      : "Home"
+                  }
+                  className="w-20 sm:w-24 text-center border-2 border-gray-300 rounded-lg py-2 text-lg font-bold text-gray-900"
+                />
+                <span className="text-xl font-bold">-</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={newAwayScore}
+                  onChange={(e) => setNewAwayScore(e.target.value)}
+                  placeholder={
+                    editingMatch.awayScore != null
+                      ? String(editingMatch.awayScore)
+                      : "Away"
+                  }
+                  className="w-20 sm:w-24 text-center border-2 border-gray-300 rounded-lg py-2 text-lg font-bold text-gray-900"
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => {
+                    setEditingMatch(null);
+                    setNewHomeScore("");
+                    setNewAwayScore("");
+                  }}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm sm:text-base font-semibold transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!requireAuth()) return;
+
+                    const home =
+                      newHomeScore.trim() === ""
+                        ? editingMatch.homeScore
+                        : parseInt(newHomeScore, 10);
+                    const away =
+                      newAwayScore.trim() === ""
+                        ? editingMatch.awayScore
+                        : parseInt(newAwayScore, 10);
+
+                    if (
+                      isNaN(home) ||
+                      isNaN(away) ||
+                      home < 0 ||
+                      away < 0
+                    ) {
+                      showToast("Enter valid scores", "error");
+                      return;
+                    }
+
+                    try {
+                      setIsLoading(true);
+                      await editLeagueMatch(
+                        leagueId,
+                        editingMatch.id,
+                        home,
+                        away
+                      );
+                      setEditingMatch(null);
+                      setNewHomeScore("");
+                      setNewAwayScore("");
+                      showToast("Match updated", "success");
+                    } catch (e) {
+                      console.error(e);
+                      showToast("Failed to update match", "error");
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm sm:text-base font-semibold transition-all"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* END LEAGUE MODAL */}
       {showEndConfirm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
@@ -953,8 +1341,9 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                 End League?
               </h3>
               <p className="text-sm sm:text-base text-gray-600 text-center mb-6 sm:mb-8 leading-relaxed px-4">
-                This will end <strong>"{leagueName}"</strong> and release all members to join other leagues. 
-                The league history and standings will be preserved.
+                This will end <strong>"{leagueName}"</strong> and release all
+                members to join other leagues. The league history and standings
+                will be preserved.
               </p>
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                 <button
@@ -975,7 +1364,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                       <span>Ending...</span>
                     </div>
                   ) : (
-                    'End League'
+                    "End League"
                   )}
                 </button>
               </div>
@@ -984,7 +1373,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
         </div>
       )}
 
-      {/* Delete League Modal - MOBILE RESPONSIVE */}
+      {/* DELETE LEAGUE MODAL */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
@@ -1004,8 +1393,9 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                 Delete League?
               </h3>
               <p className="text-sm sm:text-base text-gray-600 text-center mb-6 sm:mb-8 leading-relaxed px-4">
-                This will permanently delete <strong>"{leagueName}"</strong> and all its teams, matches, and history. 
-                This action cannot be undone.
+                This will permanently delete <strong>"{leagueName}"</strong> and
+                all its teams, matches, and history. This action cannot be
+                undone.
               </p>
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                 <button
@@ -1026,7 +1416,7 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
                       <span>Deleting...</span>
                     </div>
                   ) : (
-                    'Delete League'
+                    "Delete League"
                   )}
                 </button>
               </div>
@@ -1035,12 +1425,12 @@ export default function LeagueTable({ leagueName, leagueId }: LeagueTableProps) 
         </div>
       )}
 
-      {/* Toast Notification */}
+      {/* TOAST */}
       {toast && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast(null)} 
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </div>
