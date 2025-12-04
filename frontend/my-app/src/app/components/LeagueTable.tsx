@@ -28,8 +28,6 @@ import {
 import { useAuth } from "../../lib/AuthContext";
 import { deleteDoc, doc, getDocs, writeBatch } from "firebase/firestore";
 
-
-
 // Types
 
 type Team = {
@@ -305,15 +303,15 @@ export default function LeagueTable({
     return true;
   };
 
-    // Load league status
-    useEffect(() => {
+  // Load league status
+  useEffect(() => {
     const status =
       localStorage.getItem(`league_${leagueId}_status`) || "active";
     setLeagueStatus(status as LeagueStatus);
   }, [leagueId]);
 
-    // Load all leagues to enforce member uniqueness
-    useEffect(() => {
+  // Load all leagues to enforce member uniqueness
+  useEffect(() => {
     const allLeagues = JSON.parse(localStorage.getItem("leagueList") || "[]");
     const leaguesData = allLeagues.map((name: string) => {
       const teamsKey = `league_${name}_teams`;
@@ -325,8 +323,8 @@ export default function LeagueTable({
     setOtherLeagues(leaguesData);
   }, []);
 
-    // Members subscription
-    useEffect(() => {
+  // Members subscription
+  useEffect(() => {
     const loadMembers = async () => {
       const loadedMembers = await getGroupMembers();
       setMembers(loadedMembers.filter((m) => m.isActive));
@@ -342,8 +340,8 @@ export default function LeagueTable({
     return () => unsubscribe();
   }, []);
 
-    // Teams subscription
-    useEffect(() => {
+  // Teams subscription
+  useEffect(() => {
     if (!leagueId) {
       setIsLoaded(true);
       return;
@@ -379,8 +377,8 @@ export default function LeagueTable({
     return () => unsubscribe();
   }, [leagueId]);
 
-    // NEW: subscribe to matches
-    useEffect(() => {
+  // NEW: subscribe to matches
+  useEffect(() => {
     if (!leagueId) return;
 
     const q = query(
@@ -406,8 +404,8 @@ export default function LeagueTable({
     return () => unsubscribe();
   }, [leagueId]);
 
-    // Helpers
-    const getWinPercentage = (team: Team) =>
+  // Helpers
+  const getWinPercentage = (team: Team) =>
     team.played === 0 ? 0 : (team.won / team.played) * 100;
 
   const sortedTeams = [...teams].sort((a, b) => {
@@ -445,8 +443,8 @@ export default function LeagueTable({
     return !inOtherActive;
   });
 
-    // Actions
-    const handleAddMember = async () => {
+  // Actions
+  const handleAddMember = async () => {
     if (!requireAuth()) return;
 
     if (!selectedMemberId) {
@@ -640,8 +638,8 @@ export default function LeagueTable({
     }
   };
 
-    // Render
-    if (!isLoaded) {
+  // Render
+  if (!isLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         <div className="container mx-auto px-4 py-4 sm:py-8">
@@ -888,66 +886,85 @@ export default function LeagueTable({
                           </div>
                         </td>
                         <td className="px-4 py-6 whitespace-nowrap">
-<div className="flex items-center space-x-3">
-  <div
-    className="w-4 h-4 rounded-full shadow-md"
-    style={{
-      backgroundColor: team.color || "#3B82F6",
-    }}
-  ></div>
-  <div>
-    <div className="text-sm font-bold text-gray-900 flex items-center">
-      {team.name}
-      {getPositionChange(team.name, position)}
-      {isAuthenticated && (
-        <button
-          onClick={async () => {
-            const confirmDelete = confirm(`Remove ${team.name} and their matches from league?`);
-            if (!confirmDelete) return;
+                          <div className="flex items-center space-x-3">
+                            <div
+                              className="w-4 h-4 rounded-full shadow-md"
+                              style={{
+                                backgroundColor: team.color || "#3B82F6",
+                              }}
+                            ></div>
+                            <div>
+                              <div className="text-sm font-bold text-gray-900 flex items-center">
+                                {team.name}
+                                {getPositionChange(team.name, position)}
+                                {isAuthenticated && (
+                                  <button
+                                    onClick={async () => {
+                                      const confirmDelete = confirm(
+                                        `Remove ${team.name} and their matches from league?`
+                                      );
+                                      if (!confirmDelete) return;
 
-            try {
-              // Step 1: Delete the team
-              await deleteDoc(doc(db, "teams", team.id));
+                                      try {
+                                        // Step 1: Delete the team
+                                        await deleteDoc(
+                                          doc(db, "teams", team.id)
+                                        );
 
-              // Step 2: Delete matches involving this player
-              const matchesRef = collection(db, "matches");
-              const q = query(
-                matchesRef,
-                where("leagueId", "==", leagueId)
-              );
-              const snap = await getDocs(q);
+                                        // Step 2: Delete matches involving this player
+                                        const matchesRef = collection(
+                                          db,
+                                          "matches"
+                                        );
+                                        const q = query(
+                                          matchesRef,
+                                          where("leagueId", "==", leagueId)
+                                        );
+                                        const snap = await getDocs(q);
 
-              const batch = writeBatch(db);
-              snap.forEach((matchDoc) => {
-                const match = matchDoc.data();
-                if (match.homeTeam === team.name || match.awayTeam === team.name) {
-                  batch.delete(matchDoc.ref);
-                }
-              });
-              await batch.commit();
+                                        const batch = writeBatch(db);
+                                        snap.forEach((matchDoc) => {
+                                          const match = matchDoc.data();
+                                          if (
+                                            match.homeTeam === team.name ||
+                                            match.awayTeam === team.name
+                                          ) {
+                                            batch.delete(matchDoc.ref);
+                                          }
+                                        });
+                                        await batch.commit();
 
-              showToast(`${team.name} and related matches removed`, "success");
-            } catch (error) {
-              console.error("Error deleting player:", error);
-              showToast("Failed to delete player and matches", "error");
-            }
-          }}
-          className="ml-3 text-red-500 hover:text-red-700 text-xs font-semibold"
-        >
-          🗑️ Remove
-        </button>
-      )}
-    </div>
-    {team.played > 0 && (
-      <div className="w-16 h-1 bg-gray-200 rounded-full mt-1">
-        <div
-          className="h-1 bg-gradient-to-r from-green-400 to-green-500 rounded-full transition-all duration-500"
-          style={{ width: `${winPct}%` }}
-        ></div>
-      </div>
-    )}
-  </div>
-</div>
+                                        showToast(
+                                          `${team.name} and related matches removed`,
+                                          "success"
+                                        );
+                                      } catch (error) {
+                                        console.error(
+                                          "Error deleting player:",
+                                          error
+                                        );
+                                        showToast(
+                                          "Failed to delete player and matches",
+                                          "error"
+                                        );
+                                      }
+                                    }}
+                                    className="ml-3 text-red-500 hover:text-red-700 text-xs font-semibold"
+                                  >
+                                    🗑️ Remove
+                                  </button>
+                                )}
+                              </div>
+                              {team.played > 0 && (
+                                <div className="w-16 h-1 bg-gray-200 rounded-full mt-1">
+                                  <div
+                                    className="h-1 bg-gradient-to-r from-green-400 to-green-500 rounded-full transition-all duration-500"
+                                    style={{ width: `${winPct}%` }}
+                                  ></div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </td>
                         <td className="px-4 py-6 whitespace-nowrap text-center text-sm text-blue-600 font-medium">
                           {team.psnId || "-"}
@@ -1346,8 +1363,8 @@ export default function LeagueTable({
                         editingMatch.id,
                         home,
                         away,
-                          editingMatch.homeTeam,
-                          editingMatch.awayTeam
+                        editingMatch.homeTeam,
+                        editingMatch.awayTeam
                       );
                       setEditingMatch(null);
                       setNewHomeScore("");

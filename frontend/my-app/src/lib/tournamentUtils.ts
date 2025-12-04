@@ -38,7 +38,7 @@ const removeUndefinedValues = (obj: any): any => {
   return obj;
 };
 
-// Replace your existing isRoundComplete function with this fixed version:
+// Helper function to check if a knockout round is complete
 
 const isRoundComplete = (bracket: KnockoutTie[], round: string): boolean => {
   // Get all original ties for this round (exclude replays)
@@ -628,28 +628,46 @@ export const generateGroups = async (tournamentId: string): Promise<void> => {
   }
 };
 
-const generateGroupMatches = (teams: TournamentParticipant[], groupIndex: number): GroupMatch[] => {
+const generateGroupMatches = (
+  teams: TournamentParticipant[],
+  groupIndex: number
+): GroupMatch[] => {
+
+  const groupLetter = ['A','B','C','D','E','F','G','H'][groupIndex];
+
   const matches: GroupMatch[] = [];
-  let matchNumber = 1;
-  
-  // Generate DOUBLE round-robin matches (each team plays each other team TWICE)
-  for (let i = 0; i < teams.length; i++) {
-    for (let j = 0; j < teams.length; j++) {
-      if (i !== j) { // Don't play against yourself
-        matches.push({
-          groupId: `group_${['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][groupIndex]}`,
-          homeTeam: teams[i].name,
-          awayTeam: teams[j].name,
-          played: false,
-          matchday: Math.ceil(matchNumber / teams.length)
-        });
-        matchNumber++;
-      }
+  let matchday = 1;
+
+  for (let i = 0; i < teams.length - 1; i++) {
+    for (let j = i + 1; j < teams.length; j++) {
+
+      // First fixture
+      matches.push({
+        id: uuidv4(),
+        groupId: `group_${groupLetter}`,
+        homeTeam: teams[i].name,
+        awayTeam: teams[j].name,
+        played: false,
+        matchday,
+      });
+
+      // Reverse fixture
+      matches.push({
+        id: uuidv4(),
+        groupId: `group_${groupLetter}`,
+        homeTeam: teams[j].name,
+        awayTeam: teams[i].name,
+        played: false,
+        matchday: matchday + 1,
+      });
+
+      matchday += 2;
     }
   }
-  
+
   return matches;
 };
+
 
 const initializeGroupStandings = (teams: TournamentParticipant[]): GroupStanding[] => {
   return teams.map(team => ({
