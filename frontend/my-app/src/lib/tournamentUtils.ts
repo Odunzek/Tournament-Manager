@@ -362,8 +362,8 @@ export const deleteTournament = async (tournamentId: string): Promise<void> => {
   }
 };
 
-// 🧹 Clean up member from all groups (standings + matches)
-// ✅ Auto-generate new fixtures for a member who just joined or moved to a group
+//  Clean up member from all groups (standings + matches)
+//  Auto-generate new fixtures for a member who just joined or moved to a group
 export async function generateMissingGroupFixtures(
   tournamentId: string,
   groupId: string,
@@ -1060,112 +1060,83 @@ export const getQualifiedTeamsForKnockout = (groups: TournamentGroup[]): Tournam
 };
 
 // NEW: Generate knockout bracket with proper sizing (NO BYES, NO PRELIMINARY ROUNDS)
-export const generateKnockoutBracket = (qualifiedTeams: TournamentParticipant[]): KnockoutTie[] => {
-  const knockoutBracket: KnockoutTie[] = [];
-  const numTeams = qualifiedTeams.length;
-  
-  console.log(`Generating knockout bracket for ${numTeams} teams`);
-  
-  // Determine starting round based on number of teams
-  let startingRound: 'round_16' | 'quarter_final' | 'semi_final' | 'final';
-  
-  if (numTeams === 16) {
-    startingRound = 'round_16';
-  } else if (numTeams === 8) {
-    startingRound = 'quarter_final';
-  } else if (numTeams === 4) {
-    startingRound = 'semi_final';
-  } else if (numTeams === 2) {
-    startingRound = 'final';
-  } else {
-    // This should never happen with proper qualification logic
-    console.error(`Invalid number of teams for knockout: ${numTeams}. Must be 2, 4, 8, or 16.`);
-    return knockoutBracket;
+export const generateKnockoutBracket = (
+  qualifiedTeams: TournamentParticipant[]
+): KnockoutTie[] => {
+  const bracket: KnockoutTie[] = [];
+
+  // 1️⃣ Separate by qualification rank
+  const winners = qualifiedTeams.filter(t => t.qualificationRank === 1);
+  const runnersUp = qualifiedTeams.filter(t => t.qualificationRank === 2);
+  const others = qualifiedTeams.filter(t => t.qualificationRank && t.qualificationRank > 2);
+
+  // Shuffle runners-up to randomize draw
+  const shuffle = <T,>(arr: T[]) => [...arr].sort(() => Math.random() - 0.5);
+  let availableRunners = shuffle(runnersUp);
+
+  const pairs: [TournamentParticipant, TournamentParticipant][] = [];
+
+  for (const winner of winners) {
+    // Find a runner-up NOT from same group
+    let opponentIndex = availableRunners.findIndex(
+      r => r.groupName !== winner.groupName
+    );
+
+    // If impossible (edge case), allow same-group
+    if (opponentIndex === -1) opponentIndex = 0;
+
+    const opponent = availableRunners[opponentIndex];
+    availableRunners.splice(opponentIndex, 1);
+
+    pairs.push([winner, opponent]);
   }
-  
-  console.log(`Starting round: ${startingRound}`);
-  
-  // Sort teams by overall performance (best teams get better matchups)
-  const sortedTeams = [...qualifiedTeams].sort((a, b) => {
-    // First by qualification rank (1st place > 2nd place > 3rd place)
-    if (a.qualificationRank !== b.qualificationRank) {
-      return (a.qualificationRank || 999) - (b.qualificationRank || 999);
+
+  // Add remaining teams (best 3rd etc.)
+  const leftovers = [...availableRunners, ...others];
+  for (let i = 0; i < leftovers.length; i += 2) {
+    if (leftovers[i + 1]) {
+      pairs.push([leftovers[i], leftovers[i + 1]]);
     }
-    
-    // Then by points
-    if ((b.finalPoints || 0) !== (a.finalPoints || 0)) {
-      return (b.finalPoints || 0) - (a.finalPoints || 0);
-    }
-    
-    // Then by goal difference
-    if ((b.finalGoalDifference || 0) !== (a.finalGoalDifference || 0)) {
-      return (b.finalGoalDifference || 0) - (a.finalGoalDifference || 0);
-    }
-    
-    // Finally by goals scored
-    return (b.finalGoalsFor || 0) - (a.finalGoalsFor || 0);
-  });
-  
-  console.log('Sorted teams:', sortedTeams.map(t => `${t.name} (${t.qualificationRank}, ${t.finalPoints}pts)`));
-  
-  // Create bracket with strategic seeding
-  // Best teams get easier first opponents
-  const bracket: string[] = [];
-  
-  if (numTeams === 4) {
-    // Semi-final: 1 vs 4, 2 vs 3
-    bracket.push(sortedTeams[0].name, sortedTeams[3].name);
-    bracket.push(sortedTeams[1].name, sortedTeams[2].name);
-  } else if (numTeams === 8) {
-    // Quarter-final: 1v8, 2v7, 3v6, 4v5
-    bracket.push(sortedTeams[0].name, sortedTeams[7].name);
-    bracket.push(sortedTeams[1].name, sortedTeams[6].name);
-    bracket.push(sortedTeams[2].name, sortedTeams[5].name);
-    bracket.push(sortedTeams[3].name, sortedTeams[4].name);
-  } else if (numTeams === 16) {
-    // Round of 16: 1v16, 2v15, 3v14, etc.
-    for (let i = 0; i < 8; i++) {
-      bracket.push(sortedTeams[i].name, sortedTeams[15 - i].name);
-    }
-  } else if (numTeams === 2) {
-    // Final
-    bracket.push(sortedTeams[0].name, sortedTeams[1].name);
   }
-  
-  // Generate ties from bracket
-  for (let i = 0; i < bracket.length; i += 2) {
-    const tieNumber = (i / 2) + 1;
-    const tieId = `${startingRound}_tie_${tieNumber}`;
-    
-    const tie: KnockoutTie = {
+
+  // 2️⃣ Determine round
+  const round =
+    pairs.length === 8 ? "round_16" :
+    pairs.length === 4 ? "quarter_final" :
+    pairs.length === 2 ? "semi_final" :
+    "final";
+
+  // 3️⃣ Create ties
+  pairs.forEach(([a, b], i) => {
+    const tieId = `${round}_tie_${i + 1}`;
+
+    bracket.push({
       id: tieId,
-      round: startingRound,
-      team1: bracket[i],
-      team2: bracket[i + 1],
+      round,
+      team1: a.name,
+      team2: b.name,
       firstLeg: {
         id: `${tieId}_leg1`,
-        leg: 'first',
-        homeTeam: bracket[i],
-        awayTeam: bracket[i + 1],
+        leg: "first",
+        homeTeam: a.name,
+        awayTeam: b.name,
         played: false
       },
       secondLeg: {
         id: `${tieId}_leg2`,
-        leg: 'second',
-        homeTeam: bracket[i + 1],
-        awayTeam: bracket[i],
+        leg: "second",
+        homeTeam: b.name,
+        awayTeam: a.name,
         played: false
       },
       completed: false,
-      tieNumber: tieNumber
-    };
-    
-    knockoutBracket.push(tie);
-  }
-  
-  console.log(`Generated ${knockoutBracket.length} ties for ${startingRound}`);
-  return knockoutBracket;
+      tieNumber: i + 1
+    });
+  });
+
+  return bracket;
 };
+
 
 // 🧹 Remove a member completely from all groups and fixtures
 export const removeMemberFromGroupsAndFixtures = async (
