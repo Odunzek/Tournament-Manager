@@ -1,3 +1,18 @@
+/**
+ * Tournament Overview Section
+ *
+ * Displays tournament statistics, status, and admin actions.
+ * Integrates with Firebase for real-time tournament data.
+ *
+ * @component
+ * @features
+ * - Tournament stats display (teams, groups, matches, etc.)
+ * - Progress indicators
+ * - Admin actions (Generate Groups, Generate Knockout)
+ * - Tournament status display
+ * - Responsive design with cyber theme
+ */
+
 "use client";
 
 import React, { useState } from 'react';
@@ -7,65 +22,78 @@ import {
   Users,
   Target,
   BarChart3,
-  Edit,
+  Trophy,
+  TrendingUp,
   Trash2,
-  Flag
+  CheckCircle,
 } from 'lucide-react';
-import { TournamentSectionProps } from '@/types/tournament';
+import { Tournament, convertTimestamp } from '@/lib/tournamentUtils';
 import Card from '../../ui/Card';
 import Button from '../../ui/Button';
 import StatusBadge from '../StatusBadge';
 
-// Mock data - replace with Firebase data later
-const mockTournament = {
-  id: '1',
-  name: 'Champions League 2024',
-  type: 'groups_knockout' as const,
-  status: 'active' as const,
-  startDate: new Date('2024-09-01'),
-  endDate: new Date('2024-12-15'),
-  numberOfTeams: 32,
-  numberOfGroups: 8,
-  currentRound: 'Group Stage - Matchday 3',
-  createdAt: new Date('2024-08-15'),
-  updatedAt: new Date('2024-10-15'),
+interface OverviewProps {
+  tournament: Tournament;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  onGenerateGroups: () => Promise<void>;
+  onGenerateKnockout: () => Promise<void>;
+  areGroupMatchesComplete: (tournament: Tournament) => boolean;
+  onDeleteTournament?: () => Promise<void>;
+  onCompleteTournament?: () => Promise<void>;
+}
+
+/**
+ * Format date for display
+ */
+const formatDate = (date: any) => {
+  if (!date) return 'Not set';
+  const jsDate = convertTimestamp(date);
+  return jsDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 };
 
-const mockStats = {
-  totalTeams: 32,
-  totalMatches: 96,
-  matchesPlayed: 24,
-  matchesRemaining: 72,
-  totalGoals: 68,
-  averageGoalsPerMatch: 2.8,
+/**
+ * Get tournament type label
+ */
+const getTournamentTypeLabel = (type: string) => {
+  switch (type) {
+    case 'league':
+      return 'League Format';
+    case 'knockout':
+      return 'Knockout Format';
+    case 'champions_league':
+      return 'Champions League Format';
+    case 'custom':
+      return 'Custom Format';
+    default:
+      return 'Tournament';
+  }
 };
 
-export default function Overview({ tournamentId }: TournamentSectionProps) {
-  const [tournament] = useState(mockTournament);
-  const [stats] = useState(mockStats);
+export default function Overview({
+  tournament,
+  isAuthenticated,
+  isLoading,
+  onGenerateGroups,
+  onGenerateKnockout,
+  areGroupMatchesComplete,
+  onDeleteTournament,
+  onCompleteTournament,
+}: OverviewProps) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Calculate stats
+  const totalGroupMatches = tournament.groups?.reduce((total, group) =>
+    total + group.matches.length, 0) || 0;
+  const playedGroupMatches = tournament.groups?.reduce((total, group) =>
+    total + group.matches.filter(m => m.played).length, 0) || 0;
+  const totalKnockoutMatches = tournament.knockoutBracket?.reduce((total, tie) =>
+    total + (tie.firstLeg ? 1 : 0) + (tie.secondLeg ? 1 : 0), 0) || 0;
+  const playedKnockoutMatches = tournament.knockoutBracket?.reduce((total, tie) =>
+    total + (tie.firstLeg?.played ? 1 : 0) + (tie.secondLeg?.played ? 1 : 0), 0) || 0;
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const getTournamentTypeLabel = () => {
-    switch (tournament.type) {
-      case 'league':
-        return 'League Format';
-      case 'knockout':
-        return 'Knockout Format';
-      case 'groups_knockout':
-        return 'Groups + Knockout Format';
-      default:
-        return 'Tournament';
-    }
-  };
-
-  const progress = (stats.matchesPlayed / stats.totalMatches) * 100;
+  const totalMatches = totalGroupMatches + totalKnockoutMatches;
+  const playedMatches = playedGroupMatches + playedKnockoutMatches;
+  const progress = totalMatches > 0 ? (playedMatches / totalMatches) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -78,174 +106,255 @@ export default function Overview({ tournamentId }: TournamentSectionProps) {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold text-white">{tournament.name}</h1>
-                <StatusBadge status={tournament.status} />
+                <Trophy className="w-6 h-6 text-cyber-400" />
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">{tournament.name}</h1>
               </div>
-              <p className="text-gray-400 mb-4">{getTournamentTypeLabel()}</p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2 text-gray-300">
-                  <Calendar className="w-4 h-4 text-cyber-400" />
-                  <span>
-                    {formatDate(tournament.startDate)} - {formatDate(tournament.endDate)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-300">
-                  <Users className="w-4 h-4 text-electric-400" />
-                  <span>{tournament.numberOfTeams} Teams</span>
-                </div>
-              </div>
-
-              {tournament.status === 'active' && tournament.currentRound && (
-                <div className="mt-4 p-3 bg-cyber-500/20 border border-cyber-500/30 rounded-lg">
-                  <p className="text-sm text-cyber-300 font-semibold">
-                    🔴 Current: {tournament.currentRound}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Quick Actions */}
-            <div className="flex flex-row sm:flex-col gap-2">
-              <Button variant="outline" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
-                Edit
-              </Button>
-              <Button variant="ghost" size="sm" leftIcon={<Trash2 className="w-4 h-4" />}>
-                Delete
-              </Button>
-              {tournament.status === 'active' && (
-                <Button variant="danger" size="sm" leftIcon={<Flag className="w-4 h-4" />}>
-                  End
-                </Button>
-              )}
+              <p className="text-gray-400 mb-3">{getTournamentTypeLabel(tournament.type)}</p>
+              <StatusBadge status={tournament.status} />
             </div>
           </div>
         </Card>
       </motion.div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          {
-            label: 'Total Matches',
-            value: stats.totalMatches,
-            icon: <Target className="w-6 h-6 text-cyber-400" />,
-            color: 'cyber',
-          },
-          {
-            label: 'Matches Played',
-            value: stats.matchesPlayed,
-            icon: <BarChart3 className="w-6 h-6 text-green-400" />,
-            color: 'green',
-          },
-          {
-            label: 'Remaining',
-            value: stats.matchesRemaining,
-            icon: <Calendar className="w-6 h-6 text-electric-400" />,
-            color: 'electric',
-          },
-          {
-            label: 'Total Goals',
-            value: stats.totalGoals,
-            icon: <Flag className="w-6 h-6 text-pink-400" />,
-            color: 'pink',
-          },
-        ].map((stat, index) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card variant="glass">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyber-500/20 to-electric-500/20 flex items-center justify-center">
-                  {stat.icon}
-                </div>
-                <p className="text-sm text-gray-400">{stat.label}</p>
-              </div>
-              <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyber-400 to-electric-500 bg-clip-text text-transparent">
-                {stat.value}
-              </p>
-            </Card>
-          </motion.div>
-        ))}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Card variant="glass">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-tech bg-cyber-500/20 flex items-center justify-center">
+              <Users className="w-6 h-6 text-cyber-400" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">Teams</p>
+              <p className="text-xl font-bold text-white">{tournament.currentTeams}/{tournament.maxTeams}</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card variant="glass">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-tech bg-electric-500/20 flex items-center justify-center">
+              <Target className="w-6 h-6 text-electric-400" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">Groups</p>
+              <p className="text-xl font-bold text-white">{tournament.groups?.length || 0}</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card variant="glass">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-tech bg-pink-500/20 flex items-center justify-center">
+              <Trophy className="w-6 h-6 text-pink-400" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">Knockout Ties</p>
+              <p className="text-xl font-bold text-white">{tournament.knockoutBracket?.length || 0}</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card variant="glass">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-tech bg-purple-500/20 flex items-center justify-center">
+              <BarChart3 className="w-6 h-6 text-purple-400" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">Matches Played</p>
+              <p className="text-xl font-bold text-white">{playedMatches}</p>
+            </div>
+          </div>
+        </Card>
       </div>
 
-      {/* Progress Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-      >
-        <Card variant="glass">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-white">Tournament Progress</h3>
-            <span className="text-sm text-gray-400">{Math.round(progress)}%</span>
+      {/* Progress Section */}
+      <Card variant="glass">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-cyber-400" />
+            <span className="text-sm font-semibold text-white">Tournament Progress</span>
           </div>
-          <div className="w-full h-3 bg-dark-200 rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 1, delay: 0.5 }}
-              className="h-full bg-gradient-to-r from-cyber-500 to-electric-600 rounded-full shadow-glow"
-            />
+          <span className="text-sm text-gray-400">
+            {Math.round(progress)}% Complete
+          </span>
+        </div>
+        <div className="w-full bg-dark-200 rounded-full h-3">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className="bg-gradient-to-r from-cyber-500 to-electric-500 h-3 rounded-full"
+          />
+        </div>
+      </Card>
+
+      {/* Tournament Details */}
+      <Card variant="glass">
+        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-cyber-400" />
+          Tournament Details
+        </h3>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">Current Phase:</span>
+            <span className="font-semibold text-white capitalize">
+              {tournament.status.replace('_', ' ')}
+            </span>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-gray-400">Matches Completed</p>
-              <p className="text-white font-semibold">
-                {stats.matchesPlayed} / {stats.totalMatches}
+          {tournament.startDate && (
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400">Start Date:</span>
+              <span className="font-semibold text-white">
+                {formatDate(tournament.startDate)}
+              </span>
+            </div>
+          )}
+          {tournament.endDate && (
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400">End Date:</span>
+              <span className="font-semibold text-white">
+                {formatDate(tournament.endDate)}
+              </span>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Admin Actions */}
+      {isAuthenticated && (
+        <Card variant="gradient">
+          <h3 className="text-lg font-bold text-white mb-4">Admin Actions</h3>
+
+          {/* Setup Phase - Generate Groups */}
+          {tournament.status === 'setup' && (
+            <div className="space-y-4">
+              {tournament.currentTeams >= 8 ? (
+                <Button
+                  variant="primary"
+                  onClick={onGenerateGroups}
+                  disabled={isLoading}
+                  isLoading={isLoading}
+                  glow
+                  className="w-full"
+                >
+                  Generate Groups ({tournament.currentTeams} teams)
+                </Button>
+              ) : (
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-tech p-4">
+                  <p className="text-yellow-400 font-semibold mb-1">Need More Teams</p>
+                  <p className="text-yellow-300/70 text-sm">
+                    Add at least {Math.max(0, 8 - tournament.currentTeams)} more teams to generate groups
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Group Stage - Generate Knockout */}
+          {tournament.status === 'group_stage' && (
+            <div className="space-y-4">
+              {areGroupMatchesComplete(tournament) ? (
+                <Button
+                  variant="secondary"
+                  onClick={onGenerateKnockout}
+                  disabled={isLoading}
+                  isLoading={isLoading}
+                  glow
+                  className="w-full"
+                >
+                  Generate Knockout Stage
+                </Button>
+              ) : (
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-tech p-4">
+                  <p className="text-blue-400 font-semibold mb-1">Complete Group Matches</p>
+                  <p className="text-blue-300/70 text-sm">
+                    Finish all group stage matches ({playedGroupMatches}/{totalGroupMatches}) to progress to knockout
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Knockout Phase */}
+          {tournament.status === 'knockout' && (
+            <div className="bg-green-500/10 border border-green-500/20 rounded-tech p-4">
+              <p className="text-green-400 font-semibold mb-1">Knockout Stage Active</p>
+              <p className="text-green-300/70 text-sm">
+                {playedKnockoutMatches}/{totalKnockoutMatches} knockout matches completed
               </p>
             </div>
-            <div>
-              <p className="text-gray-400">Avg Goals/Match</p>
-              <p className="text-white font-semibold">{stats.averageGoalsPerMatch}</p>
-            </div>
-          </div>
-        </Card>
-      </motion.div>
+          )}
 
-      {/* Recent Highlights */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-      >
-        <Card variant="glass">
-          <h3 className="text-lg font-bold text-white mb-4">Recent Highlights</h3>
-          <div className="space-y-3">
-            {[
-              {
-                text: 'Group A: Team X defeated Team Y 3-1',
-                time: '2 hours ago',
-              },
-              {
-                text: 'Matchday 3 completed across all groups',
-                time: '1 day ago',
-              },
-              {
-                text: 'Top scorer: Player Z with 8 goals',
-                time: '2 days ago',
-              },
-            ].map((highlight, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.7 + index * 0.1 }}
-                className="flex items-start gap-3 p-3 bg-dark-200/50 rounded-lg border border-white/5"
+          {/* Completed */}
+          {tournament.status === 'completed' && (
+            <div className="bg-purple-500/10 border border-purple-500/20 rounded-tech p-4">
+              <p className="text-purple-400 font-semibold mb-1">Tournament Completed!</p>
+              <p className="text-purple-300/70 text-sm">
+                All matches have been played
+              </p>
+            </div>
+          )}
+
+          {/* Complete Tournament */}
+          {tournament.status !== 'completed' && onCompleteTournament && (
+            <div className="mt-6">
+              <Button
+                variant="outline"
+                leftIcon={<CheckCircle className="w-4 h-4" />}
+                onClick={onCompleteTournament}
+                disabled={isLoading}
+                className="w-full text-green-400 hover:bg-green-500/10 border-2 border-green-500/30"
               >
-                <div className="w-2 h-2 rounded-full bg-cyber-400 mt-2 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-white text-sm">{highlight.text}</p>
-                  <p className="text-xs text-gray-500 mt-1">{highlight.time}</p>
+                Mark Tournament as Completed
+              </Button>
+            </div>
+          )}
+
+          {/* Delete Tournament */}
+          {onDeleteTournament && (
+            <div className="mt-6 pt-6 border-t border-white/10">
+              <h4 className="text-sm font-semibold text-red-400 mb-3">Danger Zone</h4>
+              {!showDeleteConfirm ? (
+                <Button
+                  variant="ghost"
+                  leftIcon={<Trash2 className="w-4 h-4" />}
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="w-full text-red-400 hover:bg-red-500/10 border border-red-500/20"
+                >
+                  Delete Tournament
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  <div className="bg-red-500/10 border border-red-500/20 rounded-tech p-4">
+                    <p className="text-red-400 font-semibold mb-1">Are you sure?</p>
+                    <p className="text-red-300/70 text-sm">
+                      This will permanently delete the tournament and all its data. This action cannot be undone.
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={onDeleteTournament}
+                      disabled={isLoading}
+                      isLoading={isLoading}
+                      className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                    >
+                      Delete Permanently
+                    </Button>
+                  </div>
                 </div>
-              </motion.div>
-            ))}
-          </div>
+              )}
+            </div>
+          )}
         </Card>
-      </motion.div>
+      )}
     </div>
   );
 }

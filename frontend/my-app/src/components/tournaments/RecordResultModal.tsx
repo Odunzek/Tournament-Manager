@@ -1,141 +1,211 @@
+/**
+ * Record Result Modal Component
+ *
+ * Modal dialog for recording or editing match results.
+ * Used for both group stage and knockout matches.
+ *
+ * @component
+ * @features
+ * - Score input with validation
+ * - Optional notes field
+ * - Edit mode support (pre-fill scores)
+ * - Loading state during submission
+ * - Cyber-themed UI
+ */
+
 "use client";
 
-import React, { useState } from 'react';
-import { Save } from 'lucide-react';
-import { RecordResultModalProps, MatchResult } from '@/types/tournament';
-import Modal from '../ui/Modal';
-import Input from '../ui/Input';
+import React, { useState, useEffect } from 'react';
+import { X, Save } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../ui/Button';
+import Input from '../ui/Input';
+
+interface RecordResultModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (homeScore: number, awayScore: number) => Promise<void>;
+  homeTeam: string;
+  awayTeam: string;
+  initialHomeScore?: number;
+  initialAwayScore?: number;
+  title?: string;
+}
 
 export default function RecordResultModal({
   isOpen,
   onClose,
-  match,
-  onSubmit
+  onSubmit,
+  homeTeam,
+  awayTeam,
+  initialHomeScore,
+  initialAwayScore,
+  title = 'Record Match Result',
 }: RecordResultModalProps) {
-  const [homeScore, setHomeScore] = useState<string>('');
-  const [awayScore, setAwayScore] = useState<string>('');
-  const [notes, setNotes] = useState('');
+  const [homeScore, setHomeScore] = useState<string>(initialHomeScore?.toString() || '');
+  const [awayScore, setAwayScore] = useState<string>(initialAwayScore?.toString() || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
+  // Update scores when initial values change (for edit mode)
+  useEffect(() => {
+    if (initialHomeScore !== undefined) setHomeScore(initialHomeScore.toString());
+    if (initialAwayScore !== undefined) setAwayScore(initialAwayScore.toString());
+  }, [initialHomeScore, initialAwayScore]);
+
+  /**
+   * Handle form submission
+   */
   const handleSubmit = async () => {
+    setError('');
+
+    // Validate scores
     const homeScoreNum = parseInt(homeScore, 10);
     const awayScoreNum = parseInt(awayScore, 10);
 
     if (isNaN(homeScoreNum) || isNaN(awayScoreNum)) {
-      alert('Please enter valid scores');
+      setError('Please enter valid scores');
       return;
     }
 
     if (homeScoreNum < 0 || awayScoreNum < 0) {
-      alert('Scores cannot be negative');
+      setError('Scores cannot be negative');
       return;
     }
 
     setIsSubmitting(true);
 
-    const result: MatchResult = {
-      matchId: match.id,
-      homeScore: homeScoreNum,
-      awayScore: awayScoreNum,
-      notes: notes || undefined,
-    };
-
     try {
-      await onSubmit(result);
+      await onSubmit(homeScoreNum, awayScoreNum);
       handleClose();
-    } catch (error) {
-      console.error('Error submitting result:', error);
+    } catch (err) {
+      console.error('Error submitting result:', err);
+      setError('Failed to record result. Please try again.');
       setIsSubmitting(false);
     }
   };
 
+  /**
+   * Reset form and close modal
+   */
   const handleClose = () => {
     setHomeScore('');
     setAwayScore('');
-    setNotes('');
+    setError('');
     setIsSubmitting(false);
     onClose();
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title="Record Match Result"
-      size="md"
-      footer={
+    <AnimatePresence>
+      {isOpen && (
         <>
-          <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSubmit}
-            isLoading={isSubmitting}
-            leftIcon={<Save className="w-4 h-4" />}
-          >
-            Save Result
-          </Button>
-        </>
-      }
-    >
-      <div className="space-y-6">
-        {/* Match Info */}
-        <div className="text-center p-4 bg-dark-200/50 rounded-lg border border-white/10">
-          <div className="flex items-center justify-center gap-4 mb-2">
-            <span className="text-lg font-bold text-white">{match.homeTeamName}</span>
-            <span className="text-gray-500">vs</span>
-            <span className="text-lg font-bold text-white">{match.awayTeamName}</span>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            onClick={handleClose}
+          />
+
+          {/* Modal */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-dark-100 rounded-tech-lg border border-white/10 shadow-glow max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="border-b border-white/10 p-6 flex items-center justify-between">
+                <h3 className="text-xl font-bold text-white">{title}</h3>
+                <button
+                  onClick={handleClose}
+                  disabled={isSubmitting}
+                  className="text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-6">
+                {/* Error Message */}
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/20 rounded-tech p-4">
+                    <p className="text-red-400 text-sm">{error}</p>
+                  </div>
+                )}
+
+                {/* Match Info */}
+                <div className="text-center p-4 bg-dark-200/50 rounded-tech border border-white/10">
+                  <div className="flex items-center justify-center gap-4">
+                    <span className="text-lg font-bold text-white">{homeTeam}</span>
+                    <span className="text-gray-500 font-semibold">vs</span>
+                    <span className="text-lg font-bold text-white">{awayTeam}</span>
+                  </div>
+                </div>
+
+                {/* Score Inputs */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2 text-center">
+                      {homeTeam}
+                    </label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={homeScore}
+                      onChange={(e) => setHomeScore(e.target.value)}
+                      className="text-center text-3xl font-bold"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2 text-center">
+                      {awayTeam}
+                    </label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={awayScore}
+                      onChange={(e) => setAwayScore(e.target.value)}
+                      className="text-center text-3xl font-bold"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="border-t border-white/10 p-6 flex gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={handleClose}
+                  disabled={isSubmitting}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleSubmit}
+                  isLoading={isSubmitting}
+                  leftIcon={<Save className="w-4 h-4" />}
+                  glow
+                  className="flex-1"
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Result'}
+                </Button>
+              </div>
+            </motion.div>
           </div>
-          {match.round && (
-            <p className="text-sm text-gray-400">{match.round}</p>
-          )}
-        </div>
-
-        {/* Score Inputs */}
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            label={match.homeTeamName}
-            type="number"
-            min="0"
-            placeholder="0"
-            value={homeScore}
-            onChange={(e) => setHomeScore(e.target.value)}
-            className="text-center text-2xl font-bold"
-          />
-          <Input
-            label={match.awayTeamName}
-            type="number"
-            min="0"
-            placeholder="0"
-            value={awayScore}
-            onChange={(e) => setAwayScore(e.target.value)}
-            className="text-center text-2xl font-bold"
-          />
-        </div>
-
-        {/* Notes */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Notes (optional)
-          </label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Add any notes about the match..."
-            rows={3}
-            className="w-full px-4 py-2.5 bg-dark-100/50 backdrop-blur-sm border-2 border-white/10 rounded-tech text-gray-100 placeholder-gray-500 focus:outline-none focus:border-cyber-500 focus:ring-2 focus:ring-cyber-500/20 transition-all duration-200 resize-none"
-          />
-        </div>
-
-        {/* Quick Score Tips */}
-        <div className="p-3 bg-cyber-500/10 border border-cyber-500/30 rounded-lg">
-          <p className="text-xs text-cyber-300">
-            💡 Tip: You can add goal scorers and match details later from the results section
-          </p>
-        </div>
-      </div>
-    </Modal>
+        </>
+      )}
+    </AnimatePresence>
   );
 }

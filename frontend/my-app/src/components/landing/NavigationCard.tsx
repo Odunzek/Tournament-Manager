@@ -12,7 +12,7 @@ interface NavigationCardProps {
   icon: string;
   route: string;
   stats?: string;
-  gradient?: 'cyber' | 'electric' | 'neon' | 'tech';
+  gradient?: 'cyber' | 'electric' | 'neon' | 'tech' | 'gold';
   delay?: number;
 }
 
@@ -21,6 +21,7 @@ const gradientClasses = {
   electric: 'from-electric-500/20 to-electric-600/20 hover:from-electric-500/30 hover:to-electric-600/30 border-electric-500/30',
   neon: 'from-pink-500/20 to-purple-600/20 hover:from-pink-500/30 hover:to-purple-600/30 border-pink-500/30',
   tech: 'from-blue-500/20 to-purple-600/20 hover:from-blue-500/30 hover:to-purple-600/30 border-blue-500/30',
+  gold: 'from-yellow-500/20 to-amber-600/20 hover:from-yellow-500/30 hover:to-amber-600/30 border-yellow-500/30',
 };
 
 const glowClasses = {
@@ -28,6 +29,7 @@ const glowClasses = {
   electric: 'hover:shadow-glow-purple',
   neon: 'hover:shadow-glow-pink',
   tech: 'hover:shadow-glow',
+  gold: 'hover:shadow-[0_0_20px_rgba(234,179,8,0.4)]',
 };
 
 export default function NavigationCard({

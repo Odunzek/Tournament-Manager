@@ -101,8 +101,9 @@ const config: Config = {
         },
       },
       borderRadius: {
-        'tech': '0.75rem',
-        'tech-lg': '1.25rem',
+        'tech': '1.25rem',      // 20px - more pronounced rounded corners
+        'tech-lg': '2rem',      // 32px - even more rounded for larger elements
+        'tech-xl': '2.5rem',    // 40px - extra rounded for hero sections
       },
       backdropBlur: {
         xs: '2px',

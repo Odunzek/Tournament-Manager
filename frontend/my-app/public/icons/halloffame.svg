@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns="http://www.w3.org/2000/svg"
+   viewBox="0 0 512 512"
+   width="512"
+   height="512"
+   version="1.1">
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff16b;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#ffd321;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ffaf00;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Crown Base -->
+  <path
+     d="M 80 320 L 120 180 L 180 220 L 256 140 L 332 220 L 392 180 L 432 320 Z"
+     fill="url(#goldGradient)"
+     stroke="#ffaf00"
+     stroke-width="8" />
+
+  <!-- Crown Points -->
+  <circle cx="120" cy="180" r="25" fill="#fff16b" stroke="#ffd321" stroke-width="4" />
+  <circle cx="180" cy="220" r="25" fill="#fff16b" stroke="#ffd321" stroke-width="4" />
+  <circle cx="256" cy="140" r="30" fill="#fff16b" stroke="#ffd321" stroke-width="4" />
+  <circle cx="332" cy="220" r="25" fill="#fff16b" stroke="#ffd321" stroke-width="4" />
+  <circle cx="392" cy="180" r="25" fill="#fff16b" stroke="#ffd321" stroke-width="4" />
+
+  <!-- Crown Band -->
+  <rect x="80" y="320" width="352" height="60" fill="#ffd321" stroke="#ffaf00" stroke-width="6" />
+  <rect x="80" y="340" width="352" height="20" fill="#ffaf00" opacity="0.5" />
+
+  <!-- Center Star -->
+  <path
+     d="M 256 200 L 270 235 L 308 240 L 282 265 L 289 303 L 256 285 L 223 303 L 230 265 L 204 240 L 242 235 Z"
+     fill="#fff"
+     stroke="#ffd321"
+     stroke-width="3" />
+
+  <!-- Decorative Gems on Crown Band -->
+  <circle cx="150" cy="350" r="12" fill="#ff6b6b" stroke="#fff" stroke-width="2" />
+  <circle cx="220" cy="350" r="12" fill="#4ecdc4" stroke="#fff" stroke-width="2" />
+  <circle cx="256" cy="350" r="15" fill="#95e1d3" stroke="#fff" stroke-width="2" />
+  <circle cx="292" cy="350" r="12" fill="#4ecdc4" stroke="#fff" stroke-width="2" />
+  <circle cx="362" cy="350" r="12" fill="#ff6b6b" stroke="#fff" stroke-width="2" />
+
+  <!-- Ribbon/Banner at Bottom -->
+  <path
+     d="M 120 400 L 100 480 L 140 460 L 180 490 L 200 400 Z"
+     fill="#e74c3c"
+     stroke="#c0392b"
+     stroke-width="3" />
+  <path
+     d="M 312 400 L 332 490 L 372 460 L 412 480 L 392 400 Z"
+     fill="#e74c3c"
+     stroke="#c0392b"
+     stroke-width="3" />
+
+  <!-- Text Banner -->
+  <rect x="120" y="400" width="272" height="50" fill="#2c3e50" stroke="#34495e" stroke-width="3" />
+  <rect x="120" y="410" width="272" height="15" fill="#34495e" opacity="0.6" />
+
+  <!-- Decorative Lines on Banner -->
+  <line x1="130" y1="415" x2="382" y2="415" stroke="#ffd321" stroke-width="2" />
+  <line x1="130" y1="435" x2="382" y2="435" stroke="#ffd321" stroke-width="2" />
+
+  <!-- Small Stars Around Crown -->
+  <path d="M 50 250 L 54 258 L 63 259 L 56 265 L 58 274 L 50 269 L 42 274 L 44 265 L 37 259 L 46 258 Z" fill="#fff16b" />
+  <path d="M 462 250 L 466 258 L 475 259 L 468 265 L 470 274 L 462 269 L 454 274 L 456 265 L 449 259 L 458 258 Z" fill="#fff16b" />
+  <path d="M 90 120 L 94 128 L 103 129 L 96 135 L 98 144 L 90 139 L 82 144 L 84 135 L 77 129 L 86 128 Z" fill="#fff16b" />
+  <path d="M 422 120 L 426 128 L 435 129 L 428 135 L 430 144 L 422 139 L 414 144 L 416 135 L 409 129 L 418 128 Z" fill="#fff16b" />
+</svg>

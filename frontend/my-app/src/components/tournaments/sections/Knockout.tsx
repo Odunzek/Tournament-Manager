@@ -1,240 +1,515 @@
+/**
+ * Tournament Knockout Section
+ *
+ * Displays knockout bracket with match results and recording.
+ * Integrates with Firebase for real-time updates.
+ *
+ * @component
+ * @features
+ * - Knockout bracket visualization
+ * - Round-by-round display (Round of 16, QF, SF, Final)
+ * - Admin-only match recording (first & second leg)
+ * - Aggregate score calculation
+ * - Real-time updates
+ * - Cyber-themed UI with round-specific colors
+ */
+
 "use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Trophy } from 'lucide-react';
-import { TournamentSectionProps, Match, KnockoutRound } from '@/types/tournament';
-import MatchCard from '../MatchCard';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trophy, Calendar, ChevronDown } from 'lucide-react';
+import { Tournament, KnockoutTie, updateTournament, getTournamentById } from '@/lib/tournamentUtils';
+import Card from '../../ui/Card';
+import RecordResultModal from '../RecordResultModal';
 
-// Mock knockout matches
-const mockKnockoutMatches: Match[] = [
-  // Round of 16
-  {
-    id: 'ko-1',
-    tournamentId: '1',
-    homeTeamId: '1',
-    homeTeamName: 'Manchester City',
-    awayTeamId: '8',
-    awayTeamName: 'Atletico Madrid',
-    homeScore: 2,
-    awayScore: 1,
-    status: 'completed',
-    scheduledDate: new Date('2024-11-01T20:00:00'),
-    round: 'Round of 16 - 1st Leg',
-    knockoutRound: 'round_of_16',
-    isFirstLeg: true,
-  },
-  {
-    id: 'ko-2',
-    tournamentId: '1',
-    homeTeamId: '8',
-    awayTeamId: '1',
-    homeTeamName: 'Atletico Madrid',
-    awayTeamName: 'Manchester City',
-    status: 'scheduled',
-    scheduledDate: new Date('2024-11-08T20:00:00'),
-    round: 'Round of 16 - 2nd Leg',
-    knockoutRound: 'round_of_16',
-    isSecondLeg: true,
-  },
-  // Quarter Finals
-  {
-    id: 'ko-3',
-    tournamentId: '1',
-    homeTeamId: '5',
-    homeTeamName: 'Barcelona',
-    awayTeamId: '2',
-    awayTeamName: 'Real Madrid',
-    status: 'scheduled',
-    scheduledDate: new Date('2024-11-20T20:00:00'),
-    round: 'Quarter Final - 1st Leg',
-    knockoutRound: 'quarter_final',
-    isFirstLeg: true,
-  },
-  // Semi Finals
-  {
-    id: 'ko-4',
-    tournamentId: '1',
-    homeTeamId: '1',
-    homeTeamName: 'Manchester City',
-    awayTeamId: '5',
-    awayTeamName: 'Barcelona',
-    status: 'scheduled',
-    scheduledDate: new Date('2024-12-01T20:00:00'),
-    round: 'Semi Final - 1st Leg',
-    knockoutRound: 'semi_final',
-    isFirstLeg: true,
-  },
-];
+interface KnockoutProps {
+  tournament: Tournament;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  setTournament: (tournament: Tournament) => void;
+}
 
-const roundLabels: Record<KnockoutRound, string> = {
-  round_of_16: 'Round of 16',
-  quarter_final: 'Quarter Finals',
-  semi_final: 'Semi Finals',
-  final: 'Final',
-};
+export default function Knockout({
+  tournament,
+  isAuthenticated,
+  isLoading,
+  setTournament,
+}: KnockoutProps) {
+  const [recordingMatch, setRecordingMatch] = useState<{
+    tieId: string;
+    leg: 'first' | 'second';
+    homeTeam: string;
+    awayTeam: string;
+  } | null>(null);
 
-const roundOrder: KnockoutRound[] = ['round_of_16', 'quarter_final', 'semi_final', 'final'];
+  const [expandedRounds, setExpandedRounds] = useState<Set<string>>(new Set());
+  const [isMobile, setIsMobile] = useState(false);
 
-export default function Knockout({ tournamentId }: TournamentSectionProps) {
-  const [matches] = useState(mockKnockoutMatches);
-  const [selectedRound, setSelectedRound] = useState<KnockoutRound>('round_of_16');
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
 
-  // Group matches by round
-  const matchesByRound = matches.reduce((acc, match) => {
-    if (match.knockoutRound) {
-      if (!acc[match.knockoutRound]) {
-        acc[match.knockoutRound] = [];
-      }
-      acc[match.knockoutRound].push(match);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Initialize expanded rounds (all expanded on desktop, final only on mobile)
+  useEffect(() => {
+    if (!tournament.knockoutBracket) return;
+
+    const roundOrder = ['round_16', 'quarter_final', 'semi_final', 'final'];
+    const tiesByRound = tournament.knockoutBracket.reduce((acc, tie) => {
+      if (!acc[tie.round]) acc[tie.round] = [];
+      acc[tie.round].push(tie);
+      return acc;
+    }, {} as Record<string, KnockoutTie[]>);
+
+    const availableRounds = roundOrder.filter(round => tiesByRound[round]);
+
+    if (!isMobile) {
+      setExpandedRounds(new Set(availableRounds));
+    } else {
+      // On mobile, expand only the final or most recent round
+      setExpandedRounds(new Set([availableRounds[availableRounds.length - 1]]));
     }
-    return acc;
-  }, {} as Record<KnockoutRound, Match[]>);
+  }, [isMobile, tournament.knockoutBracket]);
 
-  const availableRounds = roundOrder.filter(round => matchesByRound[round]?.length > 0);
+  const toggleRound = (roundKey: string) => {
+    setExpandedRounds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(roundKey)) {
+        newSet.delete(roundKey);
+      } else {
+        newSet.add(roundKey);
+      }
+      return newSet;
+    });
+  };
+
+  /**
+   * Handle recording knockout match result
+   */
+  const handleMatchResultSubmit = async (homeScore: number, awayScore: number) => {
+    if (!recordingMatch) return;
+
+    try {
+      const freshTournament = await getTournamentById(tournament.id!);
+      if (!freshTournament?.knockoutBracket) return;
+
+      const updatedBracket = freshTournament.knockoutBracket.map((tie) => {
+        if (tie.id !== recordingMatch.tieId) return tie;
+
+        // Update the appropriate leg
+        if (recordingMatch.leg === 'first') {
+          return {
+            ...tie,
+            firstLeg: {
+              id: tie.firstLeg?.id || `${tie.id}_leg1`,
+              leg: 'first' as const,
+              homeTeam: recordingMatch.homeTeam,
+              awayTeam: recordingMatch.awayTeam,
+              homeScore,
+              awayScore,
+              played: true,
+            },
+          };
+        } else {
+          // Calculate aggregate
+          const firstLegHomeScore = tie.firstLeg?.homeScore || 0;
+          const firstLegAwayScore = tie.firstLeg?.awayScore || 0;
+          const aggregateHome = firstLegHomeScore + awayScore; // Note: reversed for second leg
+          const aggregateAway = firstLegAwayScore + homeScore;
+
+          return {
+            ...tie,
+            secondLeg: {
+              id: tie.secondLeg?.id || `${tie.id}_leg2`,
+              leg: 'second' as const,
+              homeTeam: recordingMatch.homeTeam,
+              awayTeam: recordingMatch.awayTeam,
+              homeScore,
+              awayScore,
+              played: true,
+            },
+            winner: aggregateHome > aggregateAway ? tie.team1 : tie.team2,
+            completed: true,
+          };
+        }
+      });
+
+      // Update tournament in Firebase
+      await updateTournament(tournament.id!, { knockoutBracket: updatedBracket });
+
+      // Refresh tournament data
+      const refreshed = await getTournamentById(tournament.id!);
+      if (refreshed) setTournament(refreshed);
+
+      // Close modal
+      setRecordingMatch(null);
+    } catch (error) {
+      console.error('Error recording knockout match:', error);
+    }
+  };
+
+  // Check if knockout bracket exists
+  if (!tournament.knockoutBracket || tournament.knockoutBracket.length === 0) {
+    return (
+      <div className="text-center py-20">
+        <Trophy className="w-20 h-20 text-gray-600 mx-auto mb-6" />
+        <h3 className="text-2xl font-bold text-white mb-2">No Knockout Stage</h3>
+        <p className="text-gray-400">
+          Knockout bracket will appear here once generated from the Overview tab.
+        </p>
+      </div>
+    );
+  }
+
+  // Group ties by round
+  const tiesByRound = tournament.knockoutBracket.reduce((acc, tie) => {
+    const round = tie.round;
+    if (!acc[round]) acc[round] = [];
+    acc[round].push(tie);
+    return acc;
+  }, {} as Record<string, KnockoutTie[]>);
+
+  // Order rounds
+  const roundOrder = ['round_16', 'quarter_final', 'semi_final', 'final'];
+  const availableRounds = roundOrder.filter(round => tiesByRound[round]);
+
+  const completedTies = tournament.knockoutBracket.filter(tie => tie.completed).length;
+  const totalTies = tournament.knockoutBracket.length;
 
   return (
-    <div className="space-y-6">
-      {/* Round Selector */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {availableRounds.map((round, index) => {
-          const isActive = selectedRound === round;
+    <>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-1">Knockout Stage</h2>
+            <p className="text-gray-400">Two-legged ties</p>
+          </div>
+          <div className="bg-dark-100/50 backdrop-blur-md border border-white/10 rounded-tech px-4 py-2">
+            <span className="text-sm text-gray-400">
+              {completedTies} / {totalTies} ties completed
+            </span>
+          </div>
+        </div>
 
-          return (
-            <motion.button
-              key={round}
-              initial={{ opacity: 0, y: -10 }}
+        {/* Rounds */}
+        <div className="space-y-8">
+          {availableRounds.map((roundKey, index) => (
+            <motion.div
+              key={roundKey}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              onClick={() => setSelectedRound(round)}
-              className={`
-                px-6 py-3 rounded-tech font-semibold whitespace-nowrap
-                transition-all duration-200
-                ${isActive
-                  ? 'bg-gradient-to-r from-cyber-500/20 to-electric-500/20 border-2 border-cyber-500/50 text-white shadow-glow'
-                  : 'bg-dark-100/50 border-2 border-white/10 text-gray-400 hover:bg-white/5'
-                }
-              `}
+              transition={{ delay: index * 0.1 }}
             >
-              {roundLabels[round]}
-            </motion.button>
-          );
-        })}
+              <RoundSection
+                roundKey={roundKey}
+                ties={tiesByRound[roundKey]}
+                isAuthenticated={isAuthenticated}
+                isLoading={isLoading}
+                onRecordMatch={setRecordingMatch}
+                isExpanded={expandedRounds.has(roundKey)}
+                onToggle={() => toggleRound(roundKey)}
+                isMobile={isMobile}
+              />
+            </motion.div>
+          ))}
+        </div>
       </div>
 
-      {/* Bracket View */}
-      {selectedRound === 'final' && matchesByRound['final'] ? (
-        // Special layout for final
-        <div className="flex justify-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-2xl"
-          >
-            <div className="text-center mb-6">
-              <Trophy className="w-12 h-12 text-yellow-400 mx-auto mb-2" />
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
-                FINAL
-              </h2>
-            </div>
-            {matchesByRound['final'].map((match) => (
-              <MatchCard
-                key={match.id}
-                match={match}
-                showDate
-              />
-            ))}
-          </motion.div>
+      {/* Record Match Modal */}
+      {recordingMatch && (
+        <RecordResultModal
+          isOpen={true}
+          onClose={() => setRecordingMatch(null)}
+          onSubmit={handleMatchResultSubmit}
+          homeTeam={recordingMatch.homeTeam}
+          awayTeam={recordingMatch.awayTeam}
+          title={`Record ${recordingMatch.leg === 'first' ? 'First' : 'Second'} Leg`}
+        />
+      )}
+    </>
+  );
+}
+
+/**
+ * Round Section Component
+ */
+interface RoundSectionProps {
+  roundKey: string;
+  ties: KnockoutTie[];
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  onRecordMatch: (match: { tieId: string; leg: 'first' | 'second'; homeTeam: string; awayTeam: string }) => void;
+  isExpanded: boolean;
+  onToggle: () => void;
+  isMobile: boolean;
+}
+
+function RoundSection({
+  roundKey,
+  ties,
+  isAuthenticated,
+  isLoading,
+  onRecordMatch,
+  isExpanded,
+  onToggle,
+  isMobile,
+}: RoundSectionProps) {
+  const roundNames: Record<string, string> = {
+    'round_16': 'Round of 16',
+    'quarter_final': 'Quarter Finals',
+    'semi_final': 'Semi Finals',
+    'final': 'Final'
+  };
+
+  const roundColors: Record<string, { gradient: string; border: string; text: string }> = {
+    'round_16': {
+      gradient: 'from-cyan-500/20 to-blue-500/20',
+      border: 'border-cyan-500/30',
+      text: 'text-cyan-400'
+    },
+    'quarter_final': {
+      gradient: 'from-pink-500/20 to-purple-500/20',
+      border: 'border-pink-500/30',
+      text: 'text-pink-400'
+    },
+    'semi_final': {
+      gradient: 'from-orange-500/20 to-red-500/20',
+      border: 'border-orange-500/30',
+      text: 'text-orange-400'
+    },
+    'final': {
+      gradient: 'from-yellow-500/20 to-amber-500/20',
+      border: 'border-yellow-500/30',
+      text: 'text-yellow-400'
+    }
+  };
+
+  const colors = roundColors[roundKey];
+
+  return (
+    <Card variant="glass" className={`bg-gradient-to-br ${colors.gradient} border-2 ${colors.border}`}>
+      {/* Round Header */}
+      <div
+        className={`flex items-center justify-between pb-4 mb-4 border-b-2 ${colors.border} ${
+          isMobile ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
+        }`}
+        onClick={isMobile ? onToggle : undefined}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`p-3 rounded-xl bg-gradient-to-br ${colors.gradient} border-2 ${colors.border}`}>
+            <Trophy className={`w-6 h-6 ${colors.text}`} />
+          </div>
+          <h3 className={`text-xl font-bold ${colors.text}`}>{roundNames[roundKey]}</h3>
+          <span className="text-sm text-gray-400">
+            ({ties.filter(t => t.completed).length}/{ties.length} completed)
+          </span>
         </div>
-      ) : (
-        // Grid layout for other rounds
-        <div>
-          {matchesByRound[selectedRound] && (
+        {isMobile && (
+          <motion.div
+            animate={{ rotate: isExpanded ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ChevronDown className={`w-5 h-5 ${colors.text}`} />
+          </motion.div>
+        )}
+      </div>
+
+      {/* Ties */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {matchesByRound[selectedRound].map((match, index) => (
-                <motion.div
-                  key={match.id}
-                  initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <MatchCard
-                    match={match}
-                    showDate
-                  />
-                </motion.div>
+              {ties.map((tie, index) => (
+                <TieCard
+                  key={tie.id}
+                  tie={tie}
+                  colors={colors}
+                  isAuthenticated={isAuthenticated}
+                  isLoading={isLoading}
+                  onRecordMatch={onRecordMatch}
+                  index={index}
+                />
               ))}
             </div>
-          )}
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </Card>
+  );
+}
 
-      {/* Bracket Diagram (Simplified) */}
-      <div className="hidden xl:block">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-dark-100/50 backdrop-blur-md border border-white/10 rounded-tech-lg p-6"
-        >
-          <h3 className="text-xl font-bold text-white mb-6 text-center">Bracket Overview</h3>
+/**
+ * Tie Card Component
+ */
+interface TieCardProps {
+  tie: KnockoutTie;
+  colors: { gradient: string; border: string; text: string };
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  onRecordMatch: (match: { tieId: string; leg: 'first' | 'second'; homeTeam: string; awayTeam: string }) => void;
+  index: number;
+}
 
-          <div className="flex items-center justify-around gap-4">
-            {roundOrder.map((round, roundIndex) => {
-              const roundMatches = matchesByRound[round] || [];
-              if (roundMatches.length === 0) return null;
+function TieCard({
+  tie,
+  colors,
+  isAuthenticated,
+  isLoading,
+  onRecordMatch,
+  index,
+}: TieCardProps) {
+  // Calculate aggregate scores
+  const team1Aggregate = (tie.firstLeg?.homeScore || 0) + (tie.secondLeg?.awayScore || 0);
+  const team2Aggregate = (tie.firstLeg?.awayScore || 0) + (tie.secondLeg?.homeScore || 0);
 
-              return (
-                <div key={round} className="flex flex-col gap-2">
-                  <p className="text-xs text-center text-gray-400 mb-2">
-                    {roundLabels[round]}
-                  </p>
-
-                  {roundMatches
-                    .filter(m => m.isFirstLeg || !m.isSecondLeg)
-                    .map((match) => (
-                      <div
-                        key={match.id}
-                        className="bg-dark-200/50 rounded-lg p-2 text-xs border border-white/10 min-w-[120px]"
-                      >
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-white truncate">{match.homeTeamName}</span>
-                            {match.status === 'completed' && (
-                              <span className="font-bold text-cyber-400">{match.homeScore}</span>
-                            )}
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-white truncate">{match.awayTeamName}</span>
-                            {match.status === 'completed' && (
-                              <span className="font-bold text-cyber-400">{match.awayScore}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                  {roundIndex < roundOrder.length - 1 && (
-                    <div className="self-center w-8 h-px bg-white/20" />
-                  )}
-                </div>
-              );
-            })}
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+    >
+      <Card variant="glass" className={`bg-gradient-to-br ${colors.gradient} border ${colors.border}`}>
+        {/* Teams with Aggregate */}
+        <div className="space-y-3 mb-4">
+          <div className={`flex items-center justify-between p-3 rounded-tech ${
+            tie.completed && tie.winner === tie.team1 ? 'bg-green-500/20 border border-green-500/30' : 'bg-dark-100/30'
+          }`}>
+            <span className="font-bold text-white">{tie.team1}</span>
+            {tie.completed && (
+              <span className="text-lg font-bold text-white">{team1Aggregate}</span>
+            )}
           </div>
-        </motion.div>
+          <div className={`flex items-center justify-between p-3 rounded-tech ${
+            tie.completed && tie.winner === tie.team2 ? 'bg-green-500/20 border border-green-500/30' : 'bg-dark-100/30'
+          }`}>
+            <span className="font-bold text-white">{tie.team2}</span>
+            {tie.completed && (
+              <span className="text-lg font-bold text-white">{team2Aggregate}</span>
+            )}
+          </div>
+        </div>
+
+        {/* Legs */}
+        <div className="space-y-3">
+          {/* First Leg */}
+          <LegRow
+            label="First Leg"
+            leg={tie.firstLeg}
+            homeTeam={tie.team1}
+            awayTeam={tie.team2}
+            isAuthenticated={isAuthenticated}
+            isLoading={isLoading}
+            onRecord={() => onRecordMatch({
+              tieId: tie.id!,
+              leg: 'first',
+              homeTeam: tie.team1,
+              awayTeam: tie.team2,
+            })}
+          />
+
+          {/* Second Leg */}
+          <LegRow
+            label="Second Leg"
+            leg={tie.secondLeg}
+            homeTeam={tie.team2}
+            awayTeam={tie.team1}
+            isAuthenticated={isAuthenticated}
+            isLoading={isLoading}
+            disabled={!tie.firstLeg?.played}
+            onRecord={() => onRecordMatch({
+              tieId: tie.id!,
+              leg: 'second',
+              homeTeam: tie.team2,
+              awayTeam: tie.team1,
+            })}
+          />
+        </div>
+
+        {/* Winner Badge */}
+        {tie.completed && tie.winner && (
+          <div className="mt-4 pt-4 border-t border-white/10 text-center">
+            <span className="text-sm text-gray-400">Winner: </span>
+            <span className="font-bold text-green-400">{tie.winner}</span>
+          </div>
+        )}
+      </Card>
+    </motion.div>
+  );
+}
+
+/**
+ * Leg Row Component
+ */
+interface LegRowProps {
+  label: string;
+  leg?: { homeTeam: string; awayTeam: string; homeScore?: number; awayScore?: number; played: boolean };
+  homeTeam: string;
+  awayTeam: string;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  disabled?: boolean;
+  onRecord: () => void;
+}
+
+function LegRow({
+  label,
+  leg,
+  homeTeam,
+  awayTeam,
+  isAuthenticated,
+  isLoading,
+  disabled,
+  onRecord,
+}: LegRowProps) {
+  return (
+    <div className={`bg-dark-100/50 rounded-tech p-3 ${disabled ? 'opacity-50' : ''}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-gray-400" />
+          <span className="text-xs font-semibold text-gray-300">{label}</span>
+        </div>
+        {isAuthenticated && !leg?.played && !disabled && (
+          <button
+            onClick={onRecord}
+            disabled={isLoading}
+            className="bg-cyber-500 hover:bg-cyber-600 text-white text-xs px-3 py-1 rounded-tech font-semibold transition-colors disabled:opacity-50"
+          >
+            Record
+          </button>
+        )}
       </div>
 
-      {/* Info Card */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="p-4 bg-cyber-500/10 border border-cyber-500/30 rounded-lg"
-      >
-        <p className="text-sm text-cyber-300">
-          💡 Knockout matches are played over two legs (home and away). The team with the higher aggregate score advances.
-        </p>
-      </motion.div>
+      {leg?.played ? (
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-white">{homeTeam}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold text-white">{leg.homeScore}</span>
+            <span className="text-gray-400">-</span>
+            <span className="text-lg font-bold text-white">{leg.awayScore}</span>
+          </div>
+          <span className="text-sm text-white">{awayTeam}</span>
+        </div>
+      ) : (
+        <div className="text-center">
+          <span className="text-xs text-yellow-400">
+            {disabled ? 'Play first leg first' : 'Not played'}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

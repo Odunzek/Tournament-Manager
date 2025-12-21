@@ -1,17 +1,31 @@
 "use client";
 
 import React from 'react';
-import { StatusBadgeProps, TournamentStatus, MatchStatus } from '@/types/tournament';
 import Badge from '../ui/Badge';
 
-const statusConfig: Record<TournamentStatus | MatchStatus, {
+// Support both Firebase and UI status types
+type Status = 'setup' | 'group_stage' | 'knockout' | 'completed' |
+              'upcoming' | 'active' |
+              'scheduled' | 'live' | 'postponed';
+
+interface StatusBadgeProps {
+  status: Status;
+  size?: 'sm' | 'md' | 'lg';
+}
+
+const statusConfig: Record<Status, {
   variant: 'default' | 'success' | 'warning' | 'danger' | 'info';
   label: string;
 }> = {
-  // Tournament statuses
+  // Firebase Tournament statuses
+  setup: { variant: 'info', label: 'Setup' },
+  group_stage: { variant: 'success', label: 'Groups' },
+  knockout: { variant: 'warning', label: 'Knockout' },
+  completed: { variant: 'default', label: 'Completed' },
+
+  // Legacy Tournament statuses (for compatibility)
   upcoming: { variant: 'info', label: 'Upcoming' },
   active: { variant: 'success', label: 'Active' },
-  completed: { variant: 'default', label: 'Completed' },
 
   // Match statuses
   scheduled: { variant: 'info', label: 'Scheduled' },
@@ -23,7 +37,10 @@ export default function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
   const config = statusConfig[status];
 
   return (
-    <Badge variant={config.variant} glow={status === 'active' || status === 'live'}>
+    <Badge
+      variant={config.variant}
+      glow={status === 'group_stage' || status === 'knockout' || status === 'active' || status === 'live'}
+    >
       {config.label}
     </Badge>
   );

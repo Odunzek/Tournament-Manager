@@ -1,74 +1,58 @@
+/**
+ * Tournaments List Page
+ *
+ * Displays all tournaments with Firebase real-time updates.
+ * Features search, filtering, and admin-only tournament creation.
+ *
+ * @page
+ * @features
+ * - Real-time tournament list from Firebase
+ * - Search by tournament name
+ * - Filter by status (Setup, Groups, Knockout, Completed)
+ * - Admin-only create tournament button
+ * - Click to view tournament details
+ * - Loading states and empty states
+ */
+
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus, Search, Filter, Loader2 } from 'lucide-react';
 import MainLayout from '../../components/layouts/MainLayout';
 import PageHeader from '../../components/layouts/PageHeader';
 import Container from '../../components/layouts/Container';
+import GlobalNavigation from '../../components/layouts/GlobalNavigation';
 import TournamentCard from '../../components/tournaments/TournamentCard';
+import CreateTournamentModal from '../../components/tournaments/CreateTournamentModal';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import { Tournament, TournamentStatus } from '@/types/tournament';
+import { Tournament, subscribeToTournaments } from '@/lib/tournamentUtils';
+import { AuthProvider, AuthModal, useAuth } from '@/lib/AuthContext';
 
-// Mock data - replace with Firebase data later
-const mockTournaments: Tournament[] = [
-  {
-    id: '1',
-    name: 'Champions League 2024',
-    type: 'groups_knockout',
-    status: 'active',
-    startDate: new Date('2024-09-01'),
-    endDate: new Date('2024-12-15'),
-    numberOfTeams: 32,
-    numberOfGroups: 8,
-    currentRound: 'Group Stage - Matchday 3',
-    createdAt: new Date('2024-08-15'),
-    updatedAt: new Date('2024-10-15'),
-  },
-  {
-    id: '2',
-    name: 'Premier League Tournament',
-    type: 'league',
-    status: 'active',
-    startDate: new Date('2024-08-10'),
-    endDate: new Date('2025-05-20'),
-    numberOfTeams: 20,
-    currentRound: 'Matchday 12',
-    createdAt: new Date('2024-07-01'),
-    updatedAt: new Date('2024-10-10'),
-  },
-  {
-    id: '3',
-    name: 'FA Cup 2024',
-    type: 'knockout',
-    status: 'upcoming',
-    startDate: new Date('2025-01-05'),
-    endDate: new Date('2025-05-25'),
-    numberOfTeams: 64,
-    createdAt: new Date('2024-10-01'),
-    updatedAt: new Date('2024-10-01'),
-  },
-  {
-    id: '4',
-    name: 'Europa League 2023',
-    type: 'groups_knockout',
-    status: 'completed',
-    startDate: new Date('2023-09-01'),
-    endDate: new Date('2023-12-20'),
-    numberOfTeams: 32,
-    numberOfGroups: 8,
-    createdAt: new Date('2023-08-01'),
-    updatedAt: new Date('2023-12-20'),
-  },
-];
+// Firebase Tournament status types for filtering
+type TournamentStatusFilter = 'setup' | 'group_stage' | 'knockout' | 'completed' | 'all';
 
-export default function TournamentsPage() {
+function TournamentsContent() {
   const router = useRouter();
-  const [tournaments] = useState(mockTournaments);
+  const { isAuthenticated } = useAuth(); // Get admin authentication status
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<TournamentStatus | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<TournamentStatusFilter>('all');
+  const [showCreateModal, setShowCreateModal] = useState(false); // Modal visibility state
+
+  // Subscribe to Firebase tournaments in real-time
+  useEffect(() => {
+    const unsubscribe = subscribeToTournaments((fetchedTournaments) => {
+      setTournaments(fetchedTournaments);
+      setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
 
   const filteredTournaments = tournaments.filter(tournament => {
     // Filter by status
@@ -82,17 +66,23 @@ export default function TournamentsPage() {
     return true;
   });
 
+  /**
+   * Navigate to tournament detail page
+   */
   const handleTournamentClick = (tournamentId: string) => {
     router.push(`/tournaments/${tournamentId}`);
   };
 
+  /**
+   * Open create tournament modal (admin only)
+   */
   const handleCreateTournament = () => {
-    // TODO: Open create tournament modal
-    console.log('Create tournament');
+    setShowCreateModal(true);
   };
 
   return (
     <MainLayout>
+      <GlobalNavigation />
       <Container maxWidth="2xl" className="py-8 sm:py-12">
         {/* Header */}
         <PageHeader
@@ -117,32 +107,46 @@ export default function TournamentsPage() {
             />
           </div>
 
-          <div className="flex gap-2">
-            {(['all', 'active', 'upcoming', 'completed'] as const).map((status) => (
+          <div className="flex gap-2 flex-wrap">
+            {([
+              { value: 'all', label: 'All' },
+              { value: 'setup', label: 'Setup' },
+              { value: 'group_stage', label: 'Groups' },
+              { value: 'knockout', label: 'Knockout' },
+              { value: 'completed', label: 'Completed' }
+            ] as const).map((status) => (
               <Button
-                key={status}
-                variant={statusFilter === status ? 'primary' : 'ghost'}
+                key={status.value}
+                variant={statusFilter === status.value ? 'primary' : 'ghost'}
                 size="sm"
-                onClick={() => setStatusFilter(status)}
-                className="capitalize"
+                onClick={() => setStatusFilter(status.value)}
               >
-                {status}
+                {status.label}
               </Button>
             ))}
           </div>
 
-          <Button
-            variant="primary"
-            leftIcon={<Plus className="w-4 h-4" />}
-            onClick={handleCreateTournament}
-            glow
-          >
-            Create
-          </Button>
+          {/* Admin-only: Create Tournament Button */}
+          {isAuthenticated && (
+            <Button
+              variant="primary"
+              leftIcon={<Plus className="w-4 h-4" />}
+              onClick={handleCreateTournament}
+              glow
+            >
+              Create
+            </Button>
+          )}
         </motion.div>
 
-        {/* Tournaments Grid */}
-        {filteredTournaments.length > 0 ? (
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-12 h-12 text-cyber-400 animate-spin mb-4" />
+            <p className="text-gray-400">Loading tournaments...</p>
+          </div>
+        ) : filteredTournaments.length > 0 ? (
+          /* Tournaments Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTournaments.map((tournament, index) => (
               <motion.div
@@ -153,7 +157,7 @@ export default function TournamentsPage() {
               >
                 <TournamentCard
                   tournament={tournament}
-                  onClick={() => handleTournamentClick(tournament.id)}
+                  onClick={() => handleTournamentClick(tournament.id || '')}
                 />
               </motion.div>
             ))}
@@ -198,11 +202,11 @@ export default function TournamentsPage() {
             { label: 'Total Tournaments', value: tournaments.length },
             {
               label: 'Active',
-              value: tournaments.filter(t => t.status === 'active').length,
+              value: tournaments.filter(t => t.status === 'group_stage' || t.status === 'knockout').length,
             },
             {
-              label: 'Upcoming',
-              value: tournaments.filter(t => t.status === 'upcoming').length,
+              label: 'Setup',
+              value: tournaments.filter(t => t.status === 'setup').length,
             },
             {
               label: 'Completed',
@@ -220,7 +224,25 @@ export default function TournamentsPage() {
             </div>
           ))}
         </motion.div>
+
+        {/* Create Tournament Modal (Admin Only) */}
+        <CreateTournamentModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            // Modal will close automatically and tournaments list will update via real-time listener
+          }}
+        />
       </Container>
     </MainLayout>
+  );
+}
+
+export default function TournamentsPage() {
+  return (
+    <AuthProvider>
+      <TournamentsContent />
+      <AuthModal />
+    </AuthProvider>
   );
 }

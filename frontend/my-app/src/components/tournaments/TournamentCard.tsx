@@ -1,15 +1,19 @@
 "use client";
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Calendar, Users, Trophy } from 'lucide-react';
-import { TournamentCardProps } from '@/types/tournament';
+import { Tournament, convertTimestamp } from '@/lib/tournamentUtils';
 import Card from '../ui/Card';
 import StatusBadge from './StatusBadge';
 
+interface TournamentCardProps {
+  tournament: Tournament;
+  onClick?: () => void;
+}
+
 export default function TournamentCard({ tournament, onClick }: TournamentCardProps) {
-  const startDate = new Date(tournament.startDate);
-  const endDate = tournament.endDate ? new Date(tournament.endDate) : null;
+  const startDate = tournament.startDate ? convertTimestamp(tournament.startDate) : null;
+  const endDate = tournament.endDate ? convertTimestamp(tournament.endDate) : null;
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -21,31 +25,38 @@ export default function TournamentCard({ tournament, onClick }: TournamentCardPr
         return 'League';
       case 'knockout':
         return 'Knockout';
-      case 'groups_knockout':
-        return 'Groups + Knockout';
+      case 'champions_league':
+        return 'Champions League';
+      case 'custom':
+        return 'Custom';
       default:
         return 'Tournament';
     }
   };
 
+  // Calculate number of groups
+  const numberOfGroups = tournament.groups?.length || 0;
+
   return (
     <Card
       variant="gradient"
       hover
-      glow={tournament.status === 'active'}
+      glow={tournament.status === 'group_stage' || tournament.status === 'knockout'}
       onClick={onClick}
       className="cursor-pointer"
     >
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <h3 className="text-xl font-bold text-white mb-2 line-clamp-2">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 pr-2">
               {tournament.name}
             </h3>
             <p className="text-sm text-gray-400">{getTournamentTypeLabel()}</p>
           </div>
-          <StatusBadge status={tournament.status} />
+          <div className="flex-shrink-0">
+            <StatusBadge status={tournament.status} />
+          </div>
         </div>
 
         {/* Info Grid */}
@@ -57,19 +68,21 @@ export default function TournamentCard({ tournament, onClick }: TournamentCardPr
             </div>
             <div>
               <p className="text-xs text-gray-400">Teams</p>
-              <p className="text-sm font-semibold text-white">{tournament.numberOfTeams}</p>
+              <p className="text-sm font-semibold text-white">
+                {tournament.currentTeams}/{tournament.maxTeams}
+              </p>
             </div>
           </div>
 
           {/* Groups */}
-          {tournament.numberOfGroups && (
+          {numberOfGroups > 0 && (
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-electric-500/20 flex items-center justify-center">
                 <Trophy className="w-4 h-4 text-electric-400" />
               </div>
               <div>
                 <p className="text-xs text-gray-400">Groups</p>
-                <p className="text-sm font-semibold text-white">{tournament.numberOfGroups}</p>
+                <p className="text-sm font-semibold text-white">{numberOfGroups}</p>
               </div>
             </div>
           )}
@@ -79,23 +92,10 @@ export default function TournamentCard({ tournament, onClick }: TournamentCardPr
         <div className="flex items-center gap-2 text-sm text-gray-300 mt-auto pt-4 border-t border-white/10">
           <Calendar className="w-4 h-4" />
           <span>
-            {formatDate(startDate)}
+            {startDate ? formatDate(startDate) : 'No date set'}
             {endDate && ` - ${formatDate(endDate)}`}
           </span>
         </div>
-
-        {/* Current Round (if active) */}
-        {tournament.status === 'active' && tournament.currentRound && (
-          <motion.div
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            className="mt-3 px-3 py-1.5 bg-gradient-to-r from-cyber-500/20 to-electric-500/20 rounded-lg border border-cyber-500/30"
-          >
-            <p className="text-xs text-center text-cyber-300">
-              Current: {tournament.currentRound}
-            </p>
-          </motion.div>
-        )}
       </div>
     </Card>
   );

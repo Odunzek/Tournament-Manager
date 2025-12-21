@@ -1,0 +1,140 @@
+/**
+ * GlobalNavigation Component
+ *
+ * Sticky navigation bar that appears on all main pages of the application.
+ * Features tab-style navigation with active state highlighting and admin authentication.
+ *
+ * @component
+ * @features
+ * - Sticky positioning at top of viewport
+ * - Tab-style navigation matching tech-inspired theme
+ * - Active page highlighting with smooth animations
+ * - Admin login/logout functionality
+ * - Responsive design (icons only on mobile, full labels on desktop)
+ * - Glass morphism effect with backdrop blur
+ */
+
+"use client";
+
+import React from 'react';
+import { motion } from 'framer-motion';
+import { usePathname, useRouter } from 'next/navigation';
+import { Trophy, Users, Target, BarChart3, Home } from 'lucide-react';
+import Button from '../ui/Button';
+import { useAuth } from '@/lib/AuthContext';
+
+// Navigation menu items configuration
+const navItems = [
+  { label: 'Home', href: '/', icon: Home },
+  { label: 'Leagues', href: '/leagues', icon: Trophy },
+  { label: 'Players', href: '/players', icon: Users },
+  { label: 'Tournaments', href: '/tournaments', icon: Target },
+  { label: 'Rankings', href: '/rankings', icon: BarChart3 },
+];
+
+export default function GlobalNavigation() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { isAuthenticated, setShowAuthModal, logout } = useAuth();
+
+  /**
+   * Check if a navigation item is currently active
+   * @param href - The route path to check
+   * @returns true if the current route matches the href
+   */
+  const isActive = (href: string) => {
+    if (href === '/') {
+      return pathname === '/';
+    }
+    return pathname.startsWith(href);
+  };
+
+  return (
+    <motion.nav
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="sticky top-0 z-50 bg-dark-50/80 backdrop-blur-xl border-b border-white/10"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo/Title - Left */}
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => router.push('/')}
+          >
+            <div className="w-8 h-8 rounded-lg bg-gradient-cyber flex items-center justify-center shadow-glow">
+              <Trophy className="w-5 h-5 text-white" />
+            </div>
+            <span className="hidden sm:block text-lg font-bold bg-gradient-to-r from-cyber-400 to-electric-400 bg-clip-text text-transparent">
+              EA MANAGER
+            </span>
+          </motion.div>
+
+          {/* Navigation Tabs - Center */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
+
+              return (
+                <motion.button
+                  key={item.href}
+                  onClick={() => router.push(item.href)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`
+                    relative px-3 sm:px-4 py-2 rounded-tech font-semibold text-sm
+                    transition-all duration-200
+                    ${active
+                      ? 'bg-gradient-cyber text-white shadow-glow'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Icon className={`w-4 h-4 ${active ? 'text-white' : 'text-gray-400'}`} />
+                    <span className="hidden sm:inline">{item.label}</span>
+                  </div>
+
+                  {/* Active indicator */}
+                  {active && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyber-400 to-electric-400"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+                </motion.button>
+              );
+            })}
+          </div>
+
+          {/* Auth Button - Right */}
+          <div className="flex items-center">
+            {isAuthenticated ? (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={logout}
+              >
+                <span className="hidden sm:inline">Logout</span>
+                <span className="sm:hidden">Out</span>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAuthModal(true)}
+              >
+                <span className="hidden sm:inline">Admin</span>
+                <span className="sm:hidden">Login</span>
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.nav>
+  );
+}

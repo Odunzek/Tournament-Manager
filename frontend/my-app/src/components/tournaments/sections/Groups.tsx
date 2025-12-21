@@ -1,229 +1,272 @@
+/**
+ * Tournament Groups Section
+ *
+ * Displays group stage standings tables.
+ * Clean, focused view of team rankings and statistics.
+ *
+ * @component
+ * @features
+ * - Real-time group standings display
+ * - Team statistics (played, won, drawn, lost, GD, points)
+ * - Progress indicators
+ * - Responsive design with cyber theme
+ * - Top 2 teams highlighted (qualify for knockout)
+ */
+
 "use client";
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { TournamentSectionProps, GroupStanding } from '@/types/tournament';
-import StandingsTable from '../StandingsTable';
+import { Trophy, TrendingUp, Settings, Info } from 'lucide-react';
+import { Tournament, TournamentGroup, adjustTeamPoints } from '@/lib/tournamentUtils';
+import { useAuth } from '@/lib/AuthContext';
+import Card from '../../ui/Card';
+import PointAdjustmentModal from '../PointAdjustmentModal';
+import PointAdjustmentHistoryModal from '../PointAdjustmentHistoryModal';
 
-// Mock data - replace with Firebase data later
-const mockGroups = [
-  {
-    id: 'group-a',
-    name: 'Group A',
-    standings: [
-      {
-        teamId: '1',
-        teamName: 'Manchester City',
-        played: 3,
-        won: 3,
-        drawn: 0,
-        lost: 0,
-        goalsFor: 9,
-        goalsAgainst: 2,
-        goalDifference: 7,
-        points: 9,
-        position: 1,
-        form: ['W', 'W', 'W'],
-      },
-      {
-        teamId: '2',
-        teamName: 'Real Madrid',
-        played: 3,
-        won: 2,
-        drawn: 0,
-        lost: 1,
-        goalsFor: 7,
-        goalsAgainst: 4,
-        goalDifference: 3,
-        points: 6,
-        position: 2,
-        form: ['W', 'L', 'W'],
-      },
-      {
-        teamId: '3',
-        teamName: 'Bayern Munich',
-        played: 3,
-        won: 1,
-        drawn: 0,
-        lost: 2,
-        goalsFor: 4,
-        goalsAgainst: 6,
-        goalDifference: -2,
-        points: 3,
-        position: 3,
-        form: ['L', 'W', 'L'],
-      },
-      {
-        teamId: '4',
-        teamName: 'PSG',
-        played: 3,
-        won: 0,
-        drawn: 0,
-        lost: 3,
-        goalsFor: 2,
-        goalsAgainst: 10,
-        goalDifference: -8,
-        points: 0,
-        position: 4,
-        form: ['L', 'L', 'L'],
-      },
-    ] as GroupStanding[],
-  },
-  {
-    id: 'group-b',
-    name: 'Group B',
-    standings: [
-      {
-        teamId: '5',
-        teamName: 'Barcelona',
-        played: 3,
-        won: 2,
-        drawn: 1,
-        lost: 0,
-        goalsFor: 8,
-        goalsAgainst: 3,
-        goalDifference: 5,
-        points: 7,
-        position: 1,
-      },
-      {
-        teamId: '6',
-        teamName: 'Liverpool',
-        played: 3,
-        won: 2,
-        drawn: 0,
-        lost: 1,
-        goalsFor: 6,
-        goalsAgainst: 4,
-        goalDifference: 2,
-        points: 6,
-        position: 2,
-      },
-      {
-        teamId: '7',
-        teamName: 'Inter Milan',
-        played: 3,
-        won: 1,
-        drawn: 1,
-        lost: 1,
-        goalsFor: 5,
-        goalsAgainst: 5,
-        goalDifference: 0,
-        points: 4,
-        position: 3,
-      },
-      {
-        teamId: '8',
-        teamName: 'Atletico Madrid',
-        played: 3,
-        won: 0,
-        drawn: 0,
-        lost: 3,
-        goalsFor: 2,
-        goalsAgainst: 9,
-        goalDifference: -7,
-        points: 0,
-        position: 4,
-      },
-    ] as GroupStanding[],
-  },
-];
+interface GroupsProps {
+  tournament: Tournament;
+}
 
-export default function Groups({ tournamentId }: TournamentSectionProps) {
-  const [groups] = useState(mockGroups);
-  const [activeGroup, setActiveGroup] = useState(mockGroups[0].id);
+export default function Groups({ tournament }: GroupsProps) {
+
+  // Check if groups exist
+  if (!tournament.groups || tournament.groups.length === 0) {
+    return (
+      <div className="text-center py-20">
+        <Trophy className="w-20 h-20 text-gray-600 mx-auto mb-6" />
+        <h3 className="text-2xl font-bold text-white mb-2">No Groups Generated</h3>
+        <p className="text-gray-400">
+          Groups will appear here once generated from the Overview tab.
+        </p>
+      </div>
+    );
+  }
+
+  const totalMatches = tournament.groups.reduce((t, g) => t + g.matches.length, 0);
+  const playedMatches = tournament.groups.reduce(
+    (t, g) => t + g.matches.filter((m) => m.played).length,
+    0
+  );
 
   return (
     <div className="space-y-6">
-      {/* Group Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {groups.map((group, index) => {
-          const isActive = activeGroup === group.id;
-
-          return (
-            <motion.button
-              key={group.id}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              onClick={() => setActiveGroup(group.id)}
-              className={`
-                px-6 py-3 rounded-tech font-semibold whitespace-nowrap
-                transition-all duration-200
-                ${isActive
-                  ? 'bg-gradient-to-r from-cyber-500/20 to-electric-500/20 border-2 border-cyber-500/50 text-white shadow-glow'
-                  : 'bg-dark-100/50 border-2 border-white/10 text-gray-400 hover:bg-white/5'
-                }
-              `}
-            >
-              {group.name}
-            </motion.button>
-          );
-        })}
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-1">Group Stage Standings</h2>
+          <p className="text-gray-400">{tournament.groups.length} Groups</p>
+        </div>
+        <div className="bg-dark-100/50 backdrop-blur-md border border-white/10 rounded-tech px-4 py-2">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-cyber-400" />
+            <span className="text-sm text-gray-400">
+              {playedMatches} / {totalMatches} matches played
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Active Group Standings */}
-      {groups.map((group) => {
-        if (group.id !== activeGroup) return null;
-
-        return (
-          <motion.div
+      {/* Groups Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {tournament.groups.map((group, index) => (
+          <GroupCard
             key={group.id}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="bg-dark-100/50 backdrop-blur-md border border-white/10 rounded-tech-lg p-4 sm:p-6"
-          >
-            <StandingsTable
-              standings={group.standings}
-              groupName={group.name}
-              highlightPositions={[1, 2]}
-              expandable
-            />
-
-            {/* Qualification Info */}
-            <div className="mt-6 p-4 bg-cyber-500/10 border border-cyber-500/30 rounded-lg">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-gradient-to-r from-cyber-500 to-electric-600" />
-                  <span className="text-sm text-gray-300">Top 2 qualify for knockout stage</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-electric-500/30" />
-                  <span className="text-sm text-gray-300">Best 3rd place teams may qualify</span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        );
-      })}
-
-      {/* All Groups Summary (Mobile Accordion) */}
-      <div className="md:hidden space-y-4">
-        <h3 className="text-lg font-bold text-white">All Groups</h3>
-        {groups.map((group, index) => (
-          <motion.details
-            key={group.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-dark-100/50 backdrop-blur-md border border-white/10 rounded-tech-lg overflow-hidden"
-          >
-            <summary className="px-4 py-3 font-semibold text-white cursor-pointer list-none flex items-center justify-between">
-              <span>{group.name}</span>
-              <span className="text-gray-400">▼</span>
-            </summary>
-            <div className="px-4 pb-4">
-              <StandingsTable
-                standings={group.standings}
-                highlightPositions={[1, 2]}
-                expandable
-              />
-            </div>
-          </motion.details>
+            group={group}
+            index={index}
+            tournamentId={tournament.id!}
+          />
         ))}
       </div>
     </div>
+  );
+}
+
+/**
+ * Individual Group Card Component
+ */
+interface GroupCardProps {
+  group: TournamentGroup;
+  index: number;
+  tournamentId: string;
+}
+
+function GroupCard({ group, index, tournamentId }: GroupCardProps) {
+  const { isAuthenticated } = useAuth();
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<{ name: string; points: number } | null>(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [historyTeamName, setHistoryTeamName] = useState('');
+  const [historyAdjustments, setHistoryAdjustments] = useState<any[]>([]);
+
+  const handleOpenAdjustModal = (teamName: string, currentPoints: number) => {
+    setSelectedTeam({ name: teamName, points: currentPoints });
+    setIsAdjustModalOpen(true);
+  };
+
+  const handleAdjustPoints = async (adjustment: number, reason: string) => {
+    if (!selectedTeam) return;
+
+    await adjustTeamPoints(
+      tournamentId,
+      group.id!,
+      selectedTeam.name,
+      adjustment,
+      reason
+    );
+
+    setIsAdjustModalOpen(false);
+    setSelectedTeam(null);
+  };
+
+  const handleOpenHistoryModal = (teamName: string, adjustments: any[]) => {
+    setHistoryTeamName(teamName);
+    setHistoryAdjustments(adjustments || []);
+    setIsHistoryModalOpen(true);
+  };
+  const playedMatches = group.matches.filter((m) => m.played).length;
+  const totalMatches = group.matches.length;
+  const completion = totalMatches ? (playedMatches / totalMatches) * 100 : 0;
+
+  // Sort standings
+  const sorted = [...group.standings].sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+    return b.goalsFor - a.goalsFor;
+  });
+
+  // Gradient colors for different groups
+  const groupGradients = [
+    'from-cyber-500/20 to-electric-500/20',
+    'from-electric-500/20 to-pink-500/20',
+    'from-pink-500/20 to-purple-500/20',
+    'from-purple-500/20 to-cyber-500/20',
+  ];
+  const gradient = groupGradients[index % groupGradients.length];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+    >
+      <Card variant="glass" className={`bg-gradient-to-br ${gradient} border-white/10`}>
+        {/* Group Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold text-white">{group.name}</h3>
+          <div className="text-right">
+            <div className="text-sm text-gray-400 font-medium mb-1">
+              {playedMatches}/{totalMatches} matches
+            </div>
+            <div className="w-24 bg-dark-200 rounded-full h-2">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${completion}%` }}
+                className="bg-gradient-to-r from-cyber-400 to-electric-400 h-2 rounded-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Standings Table */}
+        <div className="mb-6">
+          <h4 className="text-sm font-semibold text-gray-300 mb-3">Standings</h4>
+          <div className="space-y-2">
+            {sorted.map((standing, i) => {
+              const hasAdjustments = standing.pointAdjustments && standing.pointAdjustments.length > 0;
+              const totalAdjustment = hasAdjustments
+                ? standing.pointAdjustments!.reduce((sum, adj) => sum + adj.amount, 0)
+                : 0;
+
+              return (
+                <div
+                  key={standing.teamName}
+                  className="flex items-center justify-between bg-dark-100/50 backdrop-blur-sm rounded-tech p-3 border border-white/5 gap-2"
+                >
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <div
+                      className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                        i < 2
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
+                          : 'bg-dark-200 text-gray-400'
+                      }`}
+                    >
+                      {i + 1}
+                    </div>
+                    <span className="font-semibold text-white truncate text-sm sm:text-base">{standing.teamName}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 sm:gap-3 text-xs flex-shrink-0">
+                    <div className="flex items-center gap-1">
+                      <span className="font-bold text-cyber-400">{standing.points}<span className="hidden xs:inline">pts</span></span>
+
+                      {/* Adjustment Badge - Visible to all users */}
+                      {hasAdjustments && (
+                        <button
+                          onClick={() => handleOpenHistoryModal(standing.teamName, standing.pointAdjustments!)}
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all hover:scale-110 active:scale-95 ${
+                            totalAdjustment > 0
+                              ? 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30'
+                              : 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30'
+                          }`}
+                          title="View adjustment history"
+                        >
+                          {totalAdjustment > 0 ? '+' : ''}{totalAdjustment}
+                        </button>
+                      )}
+                    </div>
+
+                    <span className="text-gray-400 hidden sm:inline">{standing.played}P</span>
+                    <span className="text-green-400">{standing.won}W</span>
+                    <span className="text-yellow-400 hidden xs:inline">{standing.drawn}D</span>
+                    <span className="text-red-400">{standing.lost}L</span>
+                    <span className="text-gray-300 hidden sm:inline">
+                      {standing.goalDifference > 0 ? '+' : ''}
+                      {standing.goalDifference}
+                    </span>
+
+                    {/* Admin: Adjust Points Button */}
+                    {isAuthenticated && (
+                      <button
+                        onClick={() => handleOpenAdjustModal(standing.teamName, standing.points)}
+                        className="ml-2 p-1.5 rounded-lg bg-cyber-500/10 hover:bg-cyber-500/20 border border-cyber-500/30 hover:border-cyber-500/50 transition-all group"
+                        title="Adjust points"
+                      >
+                        <Settings className="w-3.5 h-3.5 text-cyber-400 group-hover:text-cyber-300 group-hover:rotate-90 transition-all" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </Card>
+
+      {/* Point Adjustment Modal */}
+      {selectedTeam && (
+        <PointAdjustmentModal
+          isOpen={isAdjustModalOpen}
+          onClose={() => {
+            setIsAdjustModalOpen(false);
+            setSelectedTeam(null);
+          }}
+          onSubmit={handleAdjustPoints}
+          teamName={selectedTeam.name}
+          currentPoints={selectedTeam.points}
+        />
+      )}
+
+      {/* Point Adjustment History Modal */}
+      <PointAdjustmentHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => {
+          setIsHistoryModalOpen(false);
+          setHistoryTeamName('');
+          setHistoryAdjustments([]);
+        }}
+        teamName={historyTeamName}
+        adjustments={historyAdjustments}
+      />
+    </motion.div>
   );
 }
