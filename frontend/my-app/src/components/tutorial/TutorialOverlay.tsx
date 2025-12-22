@@ -146,7 +146,7 @@ export default function TutorialOverlay() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: -20 }}
           transition={{ duration: 0.3 }}
-          className="absolute max-w-md w-[calc(100%-2rem)] sm:w-full px-4"
+          className="absolute w-[90vw] max-w-md mx-4"
           style={getTooltipPosition()}
         >
           <div className="bg-gradient-to-br from-dark-100 to-dark-200 border-2 border-cyber-500/50 rounded-2xl shadow-glow overflow-hidden">
@@ -169,22 +169,22 @@ export default function TutorialOverlay() {
             </div>
 
             {/* Content */}
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {/* Icon */}
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-cyber flex items-center justify-center shadow-glow">
-                  <Sparkles className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-cyber flex items-center justify-center shadow-glow shrink-0">
+                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="text-xs text-gray-400 mb-1">
                     Step {currentStep + 1} of {currentFlow.steps.length}
                   </div>
-                  <h3 className="text-xl font-bold text-white">{step.title}</h3>
+                  <h3 className="text-lg sm:text-xl font-bold text-white break-words">{step.title}</h3>
                 </div>
               </div>
 
               {/* Description */}
-              <p className="text-gray-300 mb-6 leading-relaxed">{step.description}</p>
+              <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6 leading-relaxed">{step.description}</p>
 
               {/* Navigation Buttons */}
               <div className="flex items-center justify-between gap-2 sm:gap-3">
