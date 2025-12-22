@@ -128,7 +128,7 @@ export function useLeagueMatches(leagueId: string | null) {
         setLoading(false);
       }
     };
-
+// Subscribe to new collection (leagueMatches)
     // Subscribe to new collection (leagueMatches)
     const newQuery = query(
       collection(db, 'leagueMatches'),
