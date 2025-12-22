@@ -121,3 +121,4 @@ vercel ls
 ---
 
 **🎉 Once all checkboxes are complete, your app is ready for production!**
+**🎉 Thank you**
