@@ -44,7 +44,7 @@ export default function TournamentSidebar({
                 key={item.id}
                 onClick={() => onSectionChange(item.id)}
                 className={`
-                  w-full flex items-center gap-3 px-4 py-3 rounded-tech
+                  w-full flex items-center gap-3 px-4 py-3 rounded-2xl
                   transition-all duration-200
                   ${isActive
                     ? 'bg-gradient-to-r from-cyber-500/20 to-electric-500/20 border-2 border-cyber-500/50 shadow-glow'
@@ -73,8 +73,8 @@ export default function TournamentSidebar({
       </aside>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-dark-100/95 backdrop-blur-xl border-t border-white/10 pb-safe">
-        <nav className="flex items-center justify-around px-2 py-3">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-dark-100/95 backdrop-blur-xl border-t border-white/10 safe-area-inset-bottom">
+        <nav className="flex items-center justify-around px-1 py-2.5 overflow-x-auto scrollbar-hide">
           {navItems.map((item) => {
             const isActive = activeSection === item.id;
 
@@ -82,7 +82,11 @@ export default function TournamentSidebar({
               <button
                 key={item.id}
                 onClick={() => onSectionChange(item.id)}
-                className="flex flex-col items-center gap-1 px-3 py-2 min-w-[60px] relative"
+                className={`
+                  flex flex-col items-center gap-1.5 px-2 py-2 rounded-xl min-w-[58px] flex-shrink-0 relative
+                  transition-all duration-200
+                  ${isActive ? 'bg-cyber-500/20' : 'active:bg-white/5'}
+                `}
               >
                 <div className={`
                   transition-all duration-200
@@ -91,7 +95,7 @@ export default function TournamentSidebar({
                   {item.icon}
                 </div>
                 <span className={`
-                  text-xs font-medium transition-colors
+                  text-[11px] font-semibold transition-colors leading-tight
                   ${isActive ? 'text-white' : 'text-gray-500'}
                 `}>
                   {item.label}
@@ -101,7 +105,7 @@ export default function TournamentSidebar({
                 {isActive && (
                   <motion.div
                     layoutId="activeTabMobile"
-                    className="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-cyber-400 shadow-glow"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyber-400 rounded-full"
                   />
                 )}
               </button>

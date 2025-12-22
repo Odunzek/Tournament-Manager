@@ -47,7 +47,7 @@ export default function LeagueSidebar({
                 key={section.id}
                 onClick={() => onSectionChange(section.id)}
                 className={`
-                  w-full flex items-center gap-3 px-4 py-3 rounded-tech-lg
+                  w-full flex items-center gap-3 px-4 py-3 rounded-2xl
                   transition-all duration-200
                   ${
                     isActive
@@ -71,8 +71,8 @@ export default function LeagueSidebar({
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-dark-100/95 backdrop-blur-xl border-t border-white/10 z-40">
-        <div className="flex items-center justify-around px-2 py-2">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-dark-100/95 backdrop-blur-xl border-t border-white/10 z-40 safe-area-inset-bottom">
+        <div className="flex items-center justify-around px-1 py-2.5 overflow-x-auto scrollbar-hide">
           {sections.map((section) => {
             const Icon = section.icon;
             const isActive = activeSection === section.id;
@@ -82,23 +82,25 @@ export default function LeagueSidebar({
                 key={section.id}
                 onClick={() => onSectionChange(section.id)}
                 className={`
-                  flex flex-col items-center gap-1 px-3 py-2 rounded-tech
-                  transition-all duration-200 min-w-0 flex-1
+                  flex flex-col items-center gap-1.5 px-2 py-2 rounded-xl
+                  transition-all duration-200 min-w-[60px] flex-shrink-0
                   ${
                     isActive
                       ? 'bg-cyber-500/20 text-cyber-400'
-                      : 'text-gray-400 hover:text-white'
+                      : 'text-gray-400 active:bg-white/5'
                   }
                 `}
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
-                <span className="text-[10px] font-semibold truncate w-full text-center">
-                  {section.label}
+                <span className="text-[11px] font-semibold leading-tight text-center max-w-[60px]">
+                  {section.label.split(' ').length > 1
+                    ? section.label.split(' ').map(word => word.slice(0,4)).join(' ')
+                    : section.label}
                 </span>
                 {isActive && (
                   <motion.div
                     layoutId="mobileActiveIndicator"
-                    className="w-full h-0.5 bg-cyber-400 rounded-full"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyber-400 rounded-full"
                   />
                 )}
               </button>

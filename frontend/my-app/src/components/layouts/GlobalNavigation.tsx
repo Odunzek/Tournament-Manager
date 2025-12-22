@@ -112,11 +112,11 @@ export default function GlobalNavigation() {
           </div>
 
           {/* Auth Button - Right */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             {isAuthenticated && (
-              <div className="admin-badge flex items-center gap-2 px-3 py-1.5 bg-green-500/20 border border-green-500/30 rounded-full">
+              <div className="admin-badge flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-green-500/20 border border-green-500/30 rounded-full">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-green-400 font-semibold text-xs">Admin</span>
+                <span className="hidden xs:inline text-green-400 font-semibold text-xs">Admin</span>
               </div>
             )}
             {isAuthenticated ? (
@@ -124,6 +124,7 @@ export default function GlobalNavigation() {
                 variant="danger"
                 size="sm"
                 onClick={logout}
+                className="shrink-0"
               >
                 <span className="hidden sm:inline">Logout</span>
                 <span className="sm:hidden">Out</span>
@@ -133,6 +134,7 @@ export default function GlobalNavigation() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowAuthModal(true)}
+                className="shrink-0"
               >
                 <span className="hidden sm:inline">Admin</span>
                 <span className="sm:hidden">Login</span>

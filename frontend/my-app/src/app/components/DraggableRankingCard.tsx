@@ -55,6 +55,15 @@ export default function DraggableRankingCard({
   };
 
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  // Detect mobile on mount
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   return (
     <motion.div
@@ -63,7 +72,7 @@ export default function DraggableRankingCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.2 }}
-      drag={isAuthenticated && !isDropdownOpen ? "y" : false}
+      drag={isAuthenticated && !isDropdownOpen && !isMobile ? "y" : false}
       dragConstraints={{ top: 0, bottom: 0 }}
       dragElastic={0.1}
       onDragStart={() => setIsDragging(true)}
@@ -83,7 +92,7 @@ export default function DraggableRankingCard({
           }
         }
       }}
-      className={`cursor-${isAuthenticated && !isDropdownOpen ? 'grab' : 'default'} ${isDragging ? 'cursor-grabbing' : ''} ${isDropdownOpen ? 'relative z-[200]' : 'relative z-0'}`}
+      className={`cursor-${isAuthenticated && !isDropdownOpen && !isMobile ? 'grab' : 'default'} ${isDragging ? 'cursor-grabbing' : ''} ${isDropdownOpen ? 'relative z-[200]' : 'relative z-0'}`}
     >
       <div
         className={`flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 sm:p-5 rounded-2xl bg-gradient-to-r ${gradient} border backdrop-blur-sm transition-all duration-200 ${
@@ -92,7 +101,7 @@ export default function DraggableRankingCard({
       >
         {/* Left side - drag handle, rank + name */}
         <div className="flex items-center gap-3 mb-3 sm:mb-0">
-          {isAuthenticated && (
+          {isAuthenticated && !isMobile && (
             <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-white transition-colors">
               <GripVertical className="w-5 h-5" />
             </div>

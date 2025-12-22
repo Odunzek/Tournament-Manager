@@ -2,21 +2,19 @@
 const path = require('path');
 
 const nextConfig = {
-  // Keep server actions
+  // Production-ready server actions configuration
   experimental: {
     serverActions: {
-      allowedOrigins: ['*'],
+      // In production, restrict to your actual domains
+      allowedOrigins: process.env.NODE_ENV === 'production'
+        ? [process.env.NEXT_PUBLIC_APP_URL || 'https://your-app.vercel.app']
+        : ['*'],
     },
   },
 
-  // Ignore TS errors during build (still valid)
+  // TypeScript - set to false once all type errors are fixed
   typescript: {
-    ignoreBuildErrors: true,
-  },
-
-  // Explicitly DISABLE Turbopack (this is the missing piece)
-  turbopack: {
-    enabled: false,
+    ignoreBuildErrors: true, // TODO: Fix type errors and set to false
   },
 
   // Image domains (this part is fine)
@@ -46,7 +44,10 @@ const nextConfig = {
     ];
   },
 
-  // Webpack config for alias support
+  // Turbopack configuration (Next.js 16+)
+  turbopack: {},
+
+  // Webpack config for alias support (fallback for non-Turbopack builds)
   webpack: (config) => {
     config.resolve.alias['@'] = path.resolve(__dirname, 'src');
     return config;

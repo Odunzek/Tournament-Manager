@@ -66,7 +66,10 @@ export default function TutorialOverlay() {
 
   // Calculate tooltip position
   const getTooltipPosition = () => {
-    if (!targetRect || step.position === 'center') {
+    const isMobile = window.innerWidth < 768;
+
+    // On mobile, always center the tooltip for better visibility
+    if (!targetRect || step.position === 'center' || isMobile) {
       return {
         top: '50%',
         left: '50%',
@@ -143,7 +146,7 @@ export default function TutorialOverlay() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: -20 }}
           transition={{ duration: 0.3 }}
-          className="absolute max-w-md w-full mx-4"
+          className="absolute max-w-md w-[calc(100%-2rem)] sm:w-full px-4"
           style={getTooltipPosition()}
         >
           <div className="bg-gradient-to-br from-dark-100 to-dark-200 border-2 border-cyber-500/50 rounded-2xl shadow-glow overflow-hidden">
@@ -184,25 +187,26 @@ export default function TutorialOverlay() {
               <p className="text-gray-300 mb-6 leading-relaxed">{step.description}</p>
 
               {/* Navigation Buttons */}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-2 sm:gap-3">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={skipTutorial}
-                  className="text-gray-400 hover:text-white"
+                  className="text-gray-400 hover:text-white text-xs sm:text-sm"
                 >
-                  Skip Tour
+                  Skip
                 </Button>
 
-                <div className="flex gap-2">
+                <div className="flex gap-1.5 sm:gap-2">
                   {!isFirstStep && (
                     <Button
                       variant="outline"
                       size="sm"
                       leftIcon={<ChevronLeft className="w-4 h-4" />}
                       onClick={prevStep}
+                      className="px-2 sm:px-3"
                     >
-                      Back
+                      <span className="hidden xs:inline">Back</span>
                     </Button>
                   )}
                   <Button
@@ -211,8 +215,9 @@ export default function TutorialOverlay() {
                     rightIcon={!isLastStep ? <ChevronRight className="w-4 h-4" /> : undefined}
                     onClick={nextStep}
                     glow
+                    className="px-3 sm:px-4"
                   >
-                    {isLastStep ? 'Get Started' : 'Next'}
+                    {isLastStep ? 'Start' : 'Next'}
                   </Button>
                 </div>
               </div>
