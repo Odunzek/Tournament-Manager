@@ -2,6 +2,13 @@
 const path = require('path'); // Add this line
 
 const nextConfig = {
+  // Server configuration
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['*'],
+    },
+  },
+
   // Disable type checking during build for faster deployment
   typescript: {
     ignoreBuildErrors: true,

@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import MainLayout from '../components/layouts/MainLayout';
 import PageHeader from '../components/layouts/PageHeader';
@@ -8,8 +8,33 @@ import Container from '../components/layouts/Container';
 import GlobalNavigation from '../components/layouts/GlobalNavigation';
 import NavigationCard from '../components/landing/NavigationCard';
 import { AuthProvider, AuthModal } from '../lib/AuthContext';
+import { TutorialProvider, useTutorial } from '../components/tutorial/TutorialContext';
+import TutorialOverlay from '../components/tutorial/TutorialOverlay';
 
 function LandingPage() {
+  const { startTutorial } = useTutorial();
+
+  // Start viewer tutorial on first visit
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      startTutorial('viewer');
+    }, 1000); // Delay 1 second after page load
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Listen for admin login to trigger admin tutorial
+  useEffect(() => {
+    const handleAdminLogin = () => {
+      setTimeout(() => {
+        startTutorial('admin');
+      }, 800);
+    };
+
+    window.addEventListener('admin-logged-in', handleAdminLogin);
+    return () => window.removeEventListener('admin-logged-in', handleAdminLogin);
+  }, [startTutorial]);
+
   const navigationCards = [
     {
       title: 'Leagues',
@@ -62,7 +87,7 @@ function LandingPage() {
         {/* Navigation Cards */}
         <div className="mb-12 mt-12">
           {/* First 4 cards in 2x2 grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
             {navigationCards.slice(0, 4).map((card, index) => (
               <NavigationCard
                 key={card.route}
@@ -101,8 +126,11 @@ function LandingPage() {
 export default function Home() {
   return (
     <AuthProvider>
-      <LandingPage />
-      <AuthModal />
+      <TutorialProvider>
+        <LandingPage />
+        <AuthModal />
+        <TutorialOverlay />
+      </TutorialProvider>
     </AuthProvider>
   );
 }

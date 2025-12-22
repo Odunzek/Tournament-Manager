@@ -8,13 +8,21 @@ import {
   updateRankingFields,
 } from "../../lib/rankingUtils";
 import type { RankingEntry } from "../../lib/rankingUtils";
+import CustomDropdown from "../../components/ui/CustomDropdown";
 
-// helper for color tiers
+// helper for color tiers - cyber theme
 function getRankGradient(rank: number) {
-  if (rank <= 10) return "from-yellow-300 via-amber-400 to-orange-400";
-  if (rank <= 20) return "from-indigo-400 via-blue-500 to-purple-500";
-  if (rank <= 30) return "from-green-300 via-emerald-400 to-teal-500";
-  return "from-gray-200 via-gray-300 to-gray-400";
+  if (rank <= 10) return "from-yellow-500/20 to-amber-500/20 border-yellow-500/30";
+  if (rank <= 20) return "from-cyber-500/20 to-electric-500/20 border-cyber-500/30";
+  if (rank <= 30) return "from-green-500/20 to-emerald-500/20 border-green-500/30";
+  return "from-gray-500/20 to-gray-600/20 border-gray-500/30";
+}
+
+function getRankIcon(rank: number) {
+  if (rank === 1) return "👑";
+  if (rank <= 3) return "🥇";
+  if (rank <= 10) return "⭐";
+  return "";
 }
 
 type RankingCardProps = {
@@ -53,22 +61,23 @@ export default function RankingCard({
     showToast(`${player.name} moved to rank ${newRank}`, "success");
   };
 
+  const gradient = getRankGradient(player.rank);
+  const icon = getRankIcon(player.rank);
+
   return (
     <div
-      className={`flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 sm:p-5 rounded-xl shadow-md bg-gradient-to-r ${getRankGradient(
-        player.rank
-      )} text-gray-900 transition-transform hover:scale-[1.01]`}
+      className={`flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 sm:p-5 rounded-tech bg-gradient-to-r ${gradient} border backdrop-blur-sm transition-all duration-200 hover:shadow-glow`}
     >
       {/* Left side - rank + name */}
       <div className="flex items-center gap-3 mb-3 sm:mb-0">
-        <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white/40 text-gray-900 font-bold">
-          {player.rank}
+        <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-tech bg-dark-100/50 border border-white/10 font-bold text-white">
+          {icon ? <span className="text-xl">{icon}</span> : player.rank}
         </div>
-        <p className="font-semibold text-base sm:text-lg">{player.name}</p>
+        <p className="font-semibold text-base sm:text-lg text-white">{player.name}</p>
       </div>
 
       {/* Right side - cool off & wild card */}
-      <div className="flex items-center gap-4 text-sm sm:text-base">
+      <div className="flex items-center gap-3 text-sm sm:text-base">
         {isAuthenticated ? (
           <>
             <input
@@ -80,7 +89,7 @@ export default function RankingCard({
                 })
               }
               placeholder="Cool Off"
-              className="px-2 py-1 rounded-lg border border-gray-300 bg-white/70 w-[3in] sm:w-28"
+              className="px-3 py-1.5 rounded-tech border border-white/10 bg-dark-100/50 text-white placeholder-gray-500 w-24 sm:w-32 focus:outline-none focus:border-cyber-500/50"
             />
             <input
               type="text"
@@ -91,11 +100,11 @@ export default function RankingCard({
                 })
               }
               placeholder="Wild Card"
-              className="px-2 py-1 rounded-lg border border-gray-300 bg-white/70 w-[10in] sm:w-28"
+              className="px-3 py-1.5 rounded-tech border border-white/10 bg-dark-100/50 text-white placeholder-gray-500 w-24 sm:w-32 focus:outline-none focus:border-cyber-500/50"
             />
-            <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex items-center gap-2">
               <button
-                className="bg-blue-600 text-white rounded px-2 py-1 text-xs hover:bg-blue-700"
+                className="bg-cyber-500 hover:bg-cyber-600 text-white rounded-tech px-3 py-1.5 text-xs font-semibold transition-colors"
                 onClick={() =>
                   moveUp(rankings, player.memberId).then(() =>
                     showToast(`${player.name} moved up`)
@@ -105,7 +114,7 @@ export default function RankingCard({
                 ↑
               </button>
               <button
-                className="bg-blue-600 text-white rounded px-2 py-1 text-xs hover:bg-blue-700"
+                className="bg-cyber-500 hover:bg-cyber-600 text-white rounded-tech px-3 py-1.5 text-xs font-semibold transition-colors"
                 onClick={() =>
                   moveDown(rankings, player.memberId).then(() =>
                     showToast(`${player.name} moved down`)
@@ -116,27 +125,23 @@ export default function RankingCard({
               </button>
 
               {/* Jump to rank dropdown */}
-              <select
+              <CustomDropdown
                 value={player.rank}
-                onChange={(e) =>
-                  handleJumpToRank(player.memberId, parseInt(e.target.value))
-                }
-                className="border border-gray-300 bg-white/70 rounded px-2 py-1 text-xs"
-              >
-                {rankings.map((_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    {i + 1}
-                  </option>
-                ))}
-              </select>
+                onChange={(newRank) => handleJumpToRank(player.memberId, Number(newRank))}
+                options={rankings.map((_, i) => ({
+                  value: i + 1,
+                  label: `Rank #${i + 1}`,
+                }))}
+                className="w-28"
+              />
             </div>
           </>
         ) : (
           <>
-            <span className="text-gray-800 font-medium">
+            <span className="text-gray-300 font-medium px-3">
               {player.coolOff || "—"}
             </span>
-            <span className="text-gray-800 font-medium">
+            <span className="text-gray-300 font-medium px-3">
               {player.wildCard || "—"}
             </span>
           </>

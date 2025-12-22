@@ -38,6 +38,7 @@ import {
   getTournamentMembers,
   TournamentParticipant,
   deleteTournament,
+  updateTournament,
 } from '@/lib/tournamentUtils';
 
 // Section components

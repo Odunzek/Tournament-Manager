@@ -2,13 +2,14 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, UserPlus, Trophy, Users, Loader2 } from 'lucide-react';
+import { Search, Filter, UserPlus, Trophy, Users, Loader2, Target } from 'lucide-react';
 import MainLayout from '@/components/layouts/MainLayout';
 import PageHeader from '@/components/layouts/PageHeader';
 import Container from '@/components/layouts/Container';
 import GlobalNavigation from '@/components/layouts/GlobalNavigation';
 import PlayerCard from '@/components/players/PlayerCard';
 import PlayerFormModal from '@/components/players/PlayerFormModal';
+import HeadToHeadModal from '@/components/players/HeadToHeadModal';
 import { Player, PlayerFilters } from '@/types/player';
 import { useRouter } from 'next/navigation';
 import { usePlayers } from '@/hooks/usePlayers';
@@ -21,6 +22,7 @@ export default function PlayersPage() {
   const { isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isH2HModalOpen, setIsH2HModalOpen] = useState(false);
   const [filters, setFilters] = useState<PlayerFilters>({
     search: '',
     hallOfFameOnly: false,
@@ -62,7 +64,7 @@ export default function PlayersPage() {
     return result;
   }, [searchQuery, filters, players]);
 
-  const hallOfFameCount = players.filter((p) => p.achievements.totalTitles >= 3).length;
+  const hallOfFameCount = players.filter((p) => p.achievements?.totalTitles >= 3).length || 0;
 
   const handlePlayerClick = (player: Player) => {
     router.push(`/players/${player.id}`);
@@ -88,7 +90,7 @@ export default function PlayersPage() {
         {/* Header */}
         <PageHeader
           title="PLAYERS"
-          subtitle={`Manage your ${players.length} registered players`}
+          subtitle={`Manage your ${players.length || 0} registered players`}
           gradient="electric"
         />
 
@@ -103,7 +105,7 @@ export default function PlayersPage() {
             <div className="flex items-center gap-3">
               <Users className="w-6 h-6 text-cyber-400" />
               <div>
-                <div className="text-2xl font-bold text-white">{players.length}</div>
+                <div className="text-2xl font-bold text-white">{players.length || 0}</div>
                 <div className="text-sm text-gray-400">Total Players</div>
               </div>
             </div>
@@ -113,7 +115,7 @@ export default function PlayersPage() {
             <div className="flex items-center gap-3">
               <Trophy className="w-6 h-6 text-yellow-400" />
               <div>
-                <div className="text-2xl font-bold text-white">{hallOfFameCount}</div>
+                <div className="text-2xl font-bold text-white">{hallOfFameCount || 0}</div>
                 <div className="text-sm text-gray-400">Hall of Fame</div>
               </div>
             </div>
@@ -123,7 +125,7 @@ export default function PlayersPage() {
             <div className="flex items-center gap-3">
               <Filter className="w-6 h-6 text-electric-400" />
               <div>
-                <div className="text-2xl font-bold text-white">{filteredPlayers.length}</div>
+                <div className="text-2xl font-bold text-white">{filteredPlayers.length || 0}</div>
                 <div className="text-sm text-gray-400">Showing</div>
               </div>
             </div>
@@ -158,6 +160,28 @@ export default function PlayersPage() {
               />
             </div>
 
+            {/* Compare Players Button */}
+            <button
+              onClick={() => setIsH2HModalOpen(true)}
+              disabled={players.length < 2}
+              className="
+                px-6 py-3
+                bg-gradient-to-r from-electric-500 to-pink-600
+                hover:from-electric-600 hover:to-pink-700
+                text-white font-bold
+                rounded-tech-lg
+                transition-all duration-300
+                hover:shadow-glow-purple
+                flex items-center justify-center gap-2
+                whitespace-nowrap
+                disabled:opacity-50 disabled:cursor-not-allowed
+              "
+            >
+              <Target className="w-5 h-5" />
+              <span className="hidden sm:inline">Compare Players</span>
+              <span className="sm:hidden">Compare</span>
+            </button>
+
             {/* Add Player Button - Admin Only */}
             {isAuthenticated && (
               <button
@@ -175,7 +199,8 @@ export default function PlayersPage() {
                 "
               >
                 <UserPlus className="w-5 h-5" />
-                <span>Add Player</span>
+                <span className="hidden sm:inline">Add Player</span>
+                <span className="sm:hidden">Add</span>
               </button>
             )}
           </div>
@@ -242,7 +267,7 @@ export default function PlayersPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
           >
             {filteredPlayers.map((player, index) => (
               <motion.div
@@ -284,6 +309,13 @@ export default function PlayersPage() {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleSubmitPlayer}
         mode="add"
+      />
+
+      {/* Head-to-Head Comparison Modal */}
+      <HeadToHeadModal
+        isOpen={isH2HModalOpen}
+        onClose={() => setIsH2HModalOpen(false)}
+        players={players}
       />
     </MainLayout>
   );

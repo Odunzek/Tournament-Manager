@@ -112,7 +112,13 @@ export default function GlobalNavigation() {
           </div>
 
           {/* Auth Button - Right */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
+            {isAuthenticated && (
+              <div className="admin-badge flex items-center gap-2 px-3 py-1.5 bg-green-500/20 border border-green-500/30 rounded-full">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-green-400 font-semibold text-xs">Admin</span>
+              </div>
+            )}
             {isAuthenticated ? (
               <Button
                 variant="danger"

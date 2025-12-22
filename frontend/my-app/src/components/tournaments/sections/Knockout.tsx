@@ -46,10 +46,10 @@ export default function Knockout({
   const [expandedRounds, setExpandedRounds] = useState<Set<string>>(new Set());
   const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile screen size
+  // Detect mobile/tablet screen size (collapsible on screens smaller than 1024px)
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < 1024);
     };
 
     checkMobile();
@@ -191,8 +191,11 @@ export default function Knockout({
           <div>
             <h2 className="text-2xl font-bold text-white mb-1">Knockout Stage</h2>
             <p className="text-gray-400">Two-legged ties</p>
+            {isMobile && (
+              <p className="text-xs text-gray-500 mt-2">💡 Tap rounds to expand/collapse</p>
+            )}
           </div>
-          <div className="bg-dark-100/50 backdrop-blur-md border border-white/10 rounded-tech px-4 py-2">
+          <div className="bg-dark-100/50 backdrop-blur-md border border-white/10 rounded-xl px-4 py-2">
             <span className="text-sm text-gray-400">
               {completedTies} / {totalTies} ties completed
             </span>
@@ -298,27 +301,34 @@ function RoundSection({
     <Card variant="glass" className={`bg-gradient-to-br ${colors.gradient} border-2 ${colors.border}`}>
       {/* Round Header */}
       <div
-        className={`flex items-center justify-between pb-4 mb-4 border-b-2 ${colors.border} ${
-          isMobile ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
+        className={`flex items-center justify-between pb-4 ${isExpanded ? 'mb-4 border-b-2' : 'mb-0'} ${colors.border} ${
+          isMobile ? 'cursor-pointer hover:opacity-80 active:scale-[0.99] transition-all' : ''
         }`}
         onClick={isMobile ? onToggle : undefined}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-1">
           <div className={`p-3 rounded-xl bg-gradient-to-br ${colors.gradient} border-2 ${colors.border}`}>
             <Trophy className={`w-6 h-6 ${colors.text}`} />
           </div>
-          <h3 className={`text-xl font-bold ${colors.text}`}>{roundNames[roundKey]}</h3>
-          <span className="text-sm text-gray-400">
-            ({ties.filter(t => t.completed).length}/{ties.length} completed)
-          </span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+            <h3 className={`text-lg sm:text-xl font-bold ${colors.text}`}>{roundNames[roundKey]}</h3>
+            <span className="text-xs sm:text-sm text-gray-400">
+              ({ties.filter(t => t.completed).length}/{ties.length} completed)
+            </span>
+          </div>
         </div>
         {isMobile && (
-          <motion.div
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <ChevronDown className={`w-5 h-5 ${colors.text}`} />
-          </motion.div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 hidden sm:inline">
+              {isExpanded ? 'Collapse' : 'Expand'}
+            </span>
+            <motion.div
+              animate={{ rotate: isExpanded ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ChevronDown className={`w-5 h-5 ${colors.text}`} />
+            </motion.div>
+          </div>
         )}
       </div>
 

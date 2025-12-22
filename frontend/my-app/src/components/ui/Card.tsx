@@ -38,8 +38,9 @@ export default function Card({
         ${variantClasses[variant]}
         ${glow ? 'shadow-glow' : 'shadow-xl'}
         ${hover ? 'cursor-pointer' : ''}
-        rounded-tech-lg p-6
+        rounded-2xl p-6
         transition-all duration-200
+        h-full
         ${className}
       `}
     >

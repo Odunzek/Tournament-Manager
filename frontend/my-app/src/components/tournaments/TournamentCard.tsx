@@ -43,9 +43,9 @@ export default function TournamentCard({ tournament, onClick }: TournamentCardPr
       hover
       glow={tournament.status === 'group_stage' || tournament.status === 'knockout'}
       onClick={onClick}
-      className="cursor-pointer"
+      className="cursor-pointer min-h-[280px]"
     >
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full min-h-[232px]">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex-1 min-w-0">

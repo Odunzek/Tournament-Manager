@@ -147,7 +147,7 @@ function TournamentsContent() {
           </div>
         ) : filteredTournaments.length > 0 ? (
           /* Tournaments Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredTournaments.map((tournament, index) => (
               <motion.div
                 key={tournament.id}
@@ -215,7 +215,7 @@ function TournamentsContent() {
           ].map((stat, index) => (
             <div
               key={stat.label}
-              className="text-center p-4 bg-dark-100/50 backdrop-blur-md border border-white/10 rounded-tech"
+              className="text-center p-4 bg-dark-100/50 backdrop-blur-md border border-white/10 rounded-xl"
             >
               <p className="text-xs text-gray-400 mb-1">{stat.label}</p>
               <p className="text-2xl font-bold bg-gradient-to-r from-cyber-400 to-electric-500 bg-clip-text text-transparent">

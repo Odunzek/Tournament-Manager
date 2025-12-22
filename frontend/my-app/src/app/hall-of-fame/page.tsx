@@ -144,7 +144,7 @@ export default function HallOfFamePage() {
                 className="
                   bg-gradient-to-br from-yellow-500/20 to-amber-600/20
                   border-2 border-yellow-500/30
-                  rounded-tech-lg p-5
+                  rounded-2xl p-5
                   backdrop-blur-xl
                   hover:shadow-[0_0_25px_rgba(234,179,8,0.4)]
                   transition-all duration-300
@@ -179,7 +179,7 @@ export default function HallOfFamePage() {
                 className="
                   bg-gradient-to-br from-cyber-500/20 to-cyber-600/20
                   border-2 border-cyber-500/30
-                  rounded-tech-lg p-5
+                  rounded-2xl p-5
                   backdrop-blur-xl
                   hover:shadow-glow
                   transition-all duration-300
@@ -214,7 +214,7 @@ export default function HallOfFamePage() {
                 className="
                   bg-gradient-to-br from-electric-500/20 to-electric-600/20
                   border-2 border-electric-500/30
-                  rounded-tech-lg p-5
+                  rounded-2xl p-5
                   backdrop-blur-xl
                   hover:shadow-glow-purple
                   transition-all duration-300
@@ -249,7 +249,7 @@ export default function HallOfFamePage() {
                 className="
                   bg-gradient-to-br from-green-500/20 to-emerald-600/20
                   border-2 border-green-500/30
-                  rounded-tech-lg p-5
+                  rounded-2xl p-5
                   backdrop-blur-xl
                   hover:shadow-[0_0_25px_rgba(34,197,94,0.4)]
                   transition-all duration-300
@@ -293,7 +293,7 @@ export default function HallOfFamePage() {
               Recent Inductees
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {recentInductees.map((player, index) => (
                 <motion.div
                   key={player.id}
@@ -305,7 +305,7 @@ export default function HallOfFamePage() {
                   className="
                     bg-gradient-to-br from-electric-500/20 to-electric-600/20
                     border-2 border-electric-500/30
-                    rounded-tech-lg p-5
+                    rounded-2xl p-5
                     backdrop-blur-xl
                     hover:shadow-glow-purple
                     transition-all duration-300
@@ -357,7 +357,7 @@ export default function HallOfFamePage() {
               Hall of Fame Members
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {hallOfFameMembers
                 .sort((a, b) => b.achievements.totalTitles - a.achievements.totalTitles)
                 .map((player, index) => (

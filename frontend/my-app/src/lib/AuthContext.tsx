@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const authStatus = localStorage.getItem('isAuthenticated');
     const authTime = localStorage.getItem('authTime');
-    
+
     if (authStatus === 'true' && authTime) {
       const timeElapsed = Date.now() - parseInt(authTime);
       // Authentication expires after 1 hour
@@ -39,10 +39,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = (password: string): boolean => {
     if (password === ADMIN_PASSWORD) {
+      const wasFirstLogin = !localStorage.getItem('admin_logged_in_before');
+
       setIsAuthenticated(true);
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('authTime', Date.now().toString());
       setShowAuthModal(false);
+
+      // Trigger admin tutorial on first login
+      if (wasFirstLogin) {
+        localStorage.setItem('admin_logged_in_before', 'true');
+        // Dispatch custom event for admin tutorial
+        window.dispatchEvent(new CustomEvent('admin-logged-in'));
+      }
+
       return true;
     }
     return false;
@@ -60,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       logout,
       showAuthModal,
-      setShowAuthModal
+      setShowAuthModal,
     }}>
       {children}
     </AuthContext.Provider>
@@ -107,23 +117,23 @@ export function AuthModal() {
   if (!showAuthModal) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+      <div className="bg-gradient-to-br from-dark-100 to-dark-200 rounded-tech shadow-glow border border-cyber-500/30 max-w-md w-full mx-4 transform transition-all duration-300">
         <div className="p-8">
-          <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-blue-100 rounded-full">
+          <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-gradient-cyber rounded-tech shadow-glow">
             <span className="text-3xl">🔐</span>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 text-center mb-3">
-            Authentication Required
+          <h3 className="text-2xl font-bold text-white text-center mb-3">
+            Admin Authentication
           </h3>
-          <p className="text-gray-600 text-center mb-8">
-            Enter the admin password to record match results
+          <p className="text-gray-400 text-center mb-8">
+            Enter admin password to access management features
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-3">
-                Admin Password
+              <label className="block text-sm font-bold text-gray-300 mb-3">
+                Password
               </label>
               <input
                 type="password"
@@ -132,39 +142,39 @@ export function AuthModal() {
                   setPassword(e.target.value);
                   setError('');
                 }}
-                className={`w-full px-4 py-4 border-2 rounded-xl text-gray-900 focus:outline-none transition-all duration-300 ${
-                  error 
-                    ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-100' 
-                    : 'border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100'
+                className={`w-full px-4 py-4 rounded-tech bg-dark-50 text-white focus:outline-none transition-all duration-300 border-2 ${
+                  error
+                    ? 'border-red-500/50 focus:border-red-500'
+                    : 'border-white/10 focus:border-cyber-500'
                 }`}
                 placeholder="Enter admin password"
                 autoFocus
                 disabled={isLoading}
               />
               {error && (
-                <div className="mt-2 flex items-center space-x-2 text-red-600">
-                  <span className="text-sm">❌</span>
+                <div className="mt-3 flex items-center gap-2 text-red-400 bg-red-500/10 border border-red-500/30 rounded-tech px-3 py-2">
+                  <span className="text-sm">⚠️</span>
                   <span className="text-sm font-medium">{error}</span>
                 </div>
               )}
             </div>
 
-            <div className="flex space-x-4">
+            <div className="flex gap-3">
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={isLoading}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
+                className="flex-1 bg-dark-50 hover:bg-dark-100 text-gray-300 px-6 py-4 rounded-tech font-bold transition-all duration-300 border border-white/10 hover:border-white/20 disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!password.trim() || isLoading}
-                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:cursor-not-allowed disabled:transform-none"
+                className="flex-1 bg-gradient-cyber hover:shadow-glow text-white px-6 py-4 rounded-tech font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
-                  <div className="flex items-center justify-center space-x-2">
+                  <div className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     <span>Authenticating...</span>
                   </div>

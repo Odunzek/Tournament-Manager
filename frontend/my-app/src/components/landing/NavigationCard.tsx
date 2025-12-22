@@ -56,7 +56,7 @@ export default function NavigationCard({
             bg-gradient-to-br ${gradientClasses[gradient]}
             backdrop-blur-xl
             border-2 ${gradientClasses[gradient].split(' ')[2]}
-            rounded-tech-lg
+            rounded-2xl
             p-6 sm:p-8
             transition-all duration-300
             ${glowClasses[gradient]}

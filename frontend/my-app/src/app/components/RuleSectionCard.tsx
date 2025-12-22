@@ -18,14 +18,14 @@ export default function RuleSectionCard({
   onUpdate,
 }: RuleSectionCardProps) {
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 mb-4 border border-gray-200">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-          {icon && <span>{icon}</span>} {title}
+    <div className="bg-dark-100/50 backdrop-blur-sm rounded-2xl shadow-lg p-5 sm:p-6 border border-white/10 hover:border-cyber-500/30 transition-all">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+          {icon && <span className="text-xl">{icon}</span>} {title}
         </h3>
       </div>
 
-      <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">
+      <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">
         {content}
       </div>
     </div>

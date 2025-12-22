@@ -120,7 +120,7 @@ export default function BulkMatchForm({ players, onSubmit, isSubmitting = false 
                   <select
                     value={match.playerA}
                     onChange={(e) => updateMatch(index, 'playerA', e.target.value)}
-                    className="w-full px-3 py-2 bg-dark-100 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyber-500/50"
+                    className="w-full px-3 py-2 bg-dark-100 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyber-500/50 [&>option]:bg-white [&>option]:text-black [&>option:checked]:bg-cyber-500 [&>option:checked]:text-white"
                     required
                   >
                     <option value="">Select Player</option>
@@ -140,7 +140,7 @@ export default function BulkMatchForm({ players, onSubmit, isSubmitting = false 
                   <select
                     value={match.playerB}
                     onChange={(e) => updateMatch(index, 'playerB', e.target.value)}
-                    className="w-full px-3 py-2 bg-dark-100 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyber-500/50"
+                    className="w-full px-3 py-2 bg-dark-100 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyber-500/50 [&>option]:bg-white [&>option]:text-black [&>option:checked]:bg-cyber-500 [&>option:checked]:text-white"
                     required
                   >
                     <option value="">Select Player</option>
