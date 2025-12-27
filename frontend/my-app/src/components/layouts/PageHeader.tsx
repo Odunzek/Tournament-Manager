@@ -59,7 +59,7 @@ export default function PageHeader({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-base sm:text-lg text-gray-300 font-medium mt-2"
+          className="text-base sm:text-lg text-light-700 dark:text-gray-300 font-medium mt-2"
         >
           {subtitle}
         </motion.p>

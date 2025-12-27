@@ -11,9 +11,10 @@ interface ResultsProps {
   matches: LeagueMatch[];
   players: Player[];
   isLoading: boolean;
+  onMatchUpdated?: () => void;
 }
 
-export default function Results({ matches, players, isLoading }: ResultsProps) {
+export default function Results({ matches, players, isLoading, onMatchUpdated }: ResultsProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<string>('all');
 
   const filteredMatches = useMemo(() => {
@@ -29,7 +30,7 @@ export default function Results({ matches, players, isLoading }: ResultsProps) {
     return (
       <div className="text-center py-16">
         <div className="inline-block w-8 h-8 border-4 border-cyber-400 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-gray-400">Loading results...</p>
+        <p className="text-light-600 dark:text-gray-400">Loading results...</p>
       </div>
     );
   }
@@ -39,7 +40,7 @@ export default function Results({ matches, players, isLoading }: ResultsProps) {
       <Card variant="glass">
         <div className="text-center py-16">
           <ListChecks className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-gray-400 mb-2">No Results Yet</h3>
+          <h3 className="text-xl font-bold text-light-600 dark:text-gray-400 mb-2">No Results Yet</h3>
           <p className="text-gray-500">Match results will appear here after they are recorded</p>
         </div>
       </Card>
@@ -50,7 +51,7 @@ export default function Results({ matches, players, isLoading }: ResultsProps) {
     <div className="space-y-6">
       {/* Header with Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+        <h2 className="text-2xl font-bold text-light-900 dark:text-white flex items-center gap-2">
           <ListChecks className="w-6 h-6 text-cyber-400" />
           Match Results
         </h2>
@@ -61,11 +62,11 @@ export default function Results({ matches, players, isLoading }: ResultsProps) {
           <select
             value={selectedPlayer}
             onChange={(e) => setSelectedPlayer(e.target.value)}
-            className="px-3 py-2 bg-dark-100 border border-white/10 rounded-tech text-white text-sm focus:outline-none focus:border-cyber-500/50"
+            className="px-4 py-2.5 bg-dark-100/50 border-2 border-white/10 rounded-tech text-white text-sm focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
           >
-            <option value="all">All Players</option>
+            <option value="all" className="bg-dark-100 text-white">All Players</option>
             {players.map((player) => (
-              <option key={player.id} value={player.id}>
+              <option key={player.id} value={player.id} className="bg-dark-100 text-white">
                 {player.name}
               </option>
             ))}
@@ -74,7 +75,7 @@ export default function Results({ matches, players, isLoading }: ResultsProps) {
       </div>
 
       {/* Results Count */}
-      <div className="text-sm text-gray-400">
+      <div className="text-sm text-light-600 dark:text-gray-400">
         Showing {filteredMatches.length} of {matches.length} matches
       </div>
 
@@ -82,13 +83,13 @@ export default function Results({ matches, players, isLoading }: ResultsProps) {
       {filteredMatches.length > 0 ? (
         <div className="space-y-3">
           {filteredMatches.map((match, index) => (
-            <MatchResultCard key={match.id} match={match} index={index} />
+            <MatchResultCard key={match.id} match={match} index={index} onMatchUpdated={onMatchUpdated} />
           ))}
         </div>
       ) : (
         <Card variant="glass">
           <div className="text-center py-12">
-            <p className="text-gray-400">No matches found for this player</p>
+            <p className="text-light-600 dark:text-gray-400">No matches found for this player</p>
           </div>
         </Card>
       )}

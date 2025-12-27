@@ -145,24 +145,24 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-dark-100 rounded-tech-lg border border-white/10 shadow-glow max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              className="bg-light-100 dark:bg-dark-100 rounded-tech-lg border border-black/10 dark:border-white/10 shadow-glow max-w-2xl w-full max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="sticky top-0 bg-dark-100/95 backdrop-blur-xl border-b border-white/10 p-6 flex items-center justify-between">
+              <div className="sticky top-0 bg-light-100/95 dark:bg-dark-100/95 backdrop-blur-xl border-b border-black/10 dark:border-white/10 p-6 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-gradient-cyber flex items-center justify-center">
                     <Trophy className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-white">Create Tournament</h2>
-                    <p className="text-sm text-gray-400">Set up a new tournament</p>
+                    <h2 className="text-xl font-bold text-light-900 dark:text-white">Create Tournament</h2>
+                    <p className="text-sm text-light-600 dark:text-gray-400">Set up a new tournament</p>
                   </div>
                 </div>
                 <button
                   onClick={handleClose}
                   disabled={isSubmitting}
-                  className="text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                  className="text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white transition-colors disabled:opacity-50"
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -179,7 +179,7 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
 
                 {/* Tournament Name */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-white">
+                  <label className="block text-sm font-semibold text-light-900 dark:text-white">
                     Tournament Name <span className="text-red-400">*</span>
                   </label>
                   <Input
@@ -193,7 +193,7 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
 
                 {/* Tournament Type */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-white">
+                  <label className="block text-sm font-semibold text-light-900 dark:text-white">
                     Tournament Type <span className="text-red-400">*</span>
                   </label>
                   <div className="grid grid-cols-2 gap-3">
@@ -207,13 +207,13 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
                           p-4 rounded-tech border-2 text-left transition-all
                           ${type === option.value
                             ? 'border-cyber-500 bg-cyber-500/10'
-                            : 'border-white/10 bg-white/5 hover:border-white/20'
+                            : 'border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:border-black/20 dark:hover:border-white/20'
                           }
                           disabled:opacity-50 disabled:cursor-not-allowed
                         `}
                       >
-                        <div className="font-semibold text-white mb-1">{option.label}</div>
-                        <div className="text-xs text-gray-400">{option.description}</div>
+                        <div className="font-semibold text-light-900 dark:text-white mb-1">{option.label}</div>
+                        <div className="text-xs text-light-600 dark:text-gray-400">{option.description}</div>
                       </button>
                     ))}
                   </div>
@@ -221,7 +221,7 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
 
                 {/* Max Teams */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-white">
+                  <label className="block text-sm font-semibold text-light-900 dark:text-white">
                     Maximum Teams <span className="text-red-400">*</span>
                   </label>
                   <Input
@@ -233,13 +233,13 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
                     leftIcon={<Users className="w-4 h-4" />}
                     disabled={isSubmitting}
                   />
-                  <p className="text-xs text-gray-400">Minimum: 4 teams, Maximum: 64 teams</p>
+                  <p className="text-xs text-light-600 dark:text-gray-400">Minimum: 4 teams, Maximum: 64 teams</p>
                 </div>
 
                 {/* Date Range */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-white">
+                    <label className="block text-sm font-semibold text-light-900 dark:text-white">
                       Start Date (Optional)
                     </label>
                     <Input
@@ -251,7 +251,7 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-white">
+                    <label className="block text-sm font-semibold text-light-900 dark:text-white">
                       End Date (Optional)
                     </label>
                     <Input
@@ -265,12 +265,12 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
                 </div>
 
                 {/* Settings Preview */}
-                <div className="bg-white/5 border border-white/10 rounded-tech p-4">
+                <div className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-tech p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Settings className="w-4 h-4 text-cyber-400" />
-                    <span className="text-sm font-semibold text-white">Tournament Settings</span>
+                    <span className="text-sm font-semibold text-light-900 dark:text-white">Tournament Settings</span>
                   </div>
-                  <div className="text-xs text-gray-400 space-y-1">
+                  <div className="text-xs text-light-600 dark:text-gray-400 space-y-1">
                     <div>• Group Size: {type === 'champions_league' || type === 'custom' ? '4 teams' : 'N/A'}</div>
                     <div>• Points: Win = 3, Draw = 1, Loss = 0</div>
                     {(type === 'champions_league' || type === 'knockout') && (

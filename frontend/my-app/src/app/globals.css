@@ -2,7 +2,13 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
+  --surface: #f0f9ff;              /* cyber-50 tint for subtle color */
+  --surface-elevated: #e0f2fe;     /* cyber-100 for elevated cards */
+  --border: rgba(2, 132, 199, 0.2); /* cyber-600 with opacity for colored borders */
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-tertiary: #475569;        /* light-700 for better contrast */
 }
 
 @theme inline {
@@ -14,8 +20,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #18181b;
     --foreground: #ededed;
+    --surface: #27272a;
+    --surface-elevated: #3f3f46;
+    --border: rgba(255, 255, 255, 0.1);
+    --text-primary: #ededed;
+    --text-secondary: #d4d4d8;
+    --text-tertiary: #a1a1aa;
   }
 }
 

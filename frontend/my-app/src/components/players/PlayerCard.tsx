@@ -54,11 +54,11 @@ export default function PlayerCard({
 
   const cardBg = isPremium
     ? 'bg-gradient-to-br from-yellow-500/10 via-amber-600/10 to-yellow-500/10 border-yellow-500/30'
-    : 'bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-white/10';
+    : 'bg-gradient-to-br from-cyber-50 to-electric-50 dark:from-gray-800/50 dark:to-gray-900/50 border-cyber-600/40 dark:border-white/10';
 
   const cardGlow = isPremium
     ? 'hover:shadow-[0_0_30px_rgba(234,179,8,0.3)]'
-    : 'hover:shadow-glow';
+    : 'shadow-light-cyber hover:shadow-light-cyber-lg dark:hover:shadow-glow';
 
   return (
     <motion.div
@@ -84,18 +84,18 @@ export default function PlayerCard({
           alt={player.name}
           size={config.avatar}
           showBorder={true}
-          borderColor={isPremium ? 'border-yellow-500/50' : 'border-cyber-500/50'}
+          borderColor={isPremium ? 'border-yellow-500/50' : 'border-cyber-600/60 dark:border-cyber-500/50'}
           className="mb-4"
         />
 
         {/* Player Name */}
-        <h3 className={`${config.title} font-bold text-white mb-1`}>
+        <h3 className={`${config.title} font-bold text-light-900 dark:text-white mb-1`}>
           {player.name}
         </h3>
 
         {/* PSN ID - Only show if provided */}
         {player.psnId && player.psnId !== 'player' && (
-          <p className={`${config.subtitle} text-gray-400 mb-3`}>
+          <p className={`${config.subtitle} text-light-600 dark:text-gray-400 mb-3`}>
             @{player.psnId}
           </p>
         )}
@@ -116,24 +116,24 @@ export default function PlayerCard({
           `}
         >
           <Trophy
-            className={`w-4 h-4 ${isHallOfFame ? 'text-yellow-400' : 'text-gray-400'}`}
+            className={`w-4 h-4 ${isHallOfFame ? 'text-yellow-400' : 'text-light-600 dark:text-gray-400'}`}
           />
-          <span className={`text-sm font-semibold ${isHallOfFame ? 'text-yellow-400' : 'text-gray-300'}`}>
+          <span className={`text-sm font-semibold ${isHallOfFame ? 'text-yellow-400' : 'text-light-700 dark:text-gray-300'}`}>
             {player.achievements.totalTitles} {player.achievements.totalTitles === 1 ? 'Title' : 'Titles'}
           </span>
         </div>
 
         {/* Achievement Stats (for larger cards) */}
         {size === 'lg' && (
-          <div className="mt-4 pt-4 border-t border-white/10 w-full">
+          <div className="mt-4 pt-4 border-t border-light-300 dark:border-white/10 w-full">
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="text-center">
                 <div className="text-cyber-400 font-bold">{player.achievements.leagueWins}</div>
-                <div className="text-gray-500 text-xs">Leagues</div>
+                <div className="text-light-600 dark:text-gray-500 text-xs">Leagues</div>
               </div>
               <div className="text-center">
                 <div className="text-electric-400 font-bold">{player.achievements.tournamentWins}</div>
-                <div className="text-gray-500 text-xs">Tournaments</div>
+                <div className="text-light-600 dark:text-gray-500 text-xs">Tournaments</div>
               </div>
             </div>
           </div>

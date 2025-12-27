@@ -49,10 +49,10 @@ export default function TournamentCard({ tournament, onClick }: TournamentCardPr
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex-1 min-w-0">
-            <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 pr-2">
+            <h3 className="text-xl font-bold text-light-900 dark:text-white mb-2 line-clamp-2 pr-2">
               {tournament.name}
             </h3>
-            <p className="text-sm text-gray-400">{getTournamentTypeLabel()}</p>
+            <p className="text-sm text-light-600 dark:text-gray-400">{getTournamentTypeLabel()}</p>
           </div>
           <div className="flex-shrink-0">
             <StatusBadge status={tournament.status} />
@@ -63,12 +63,12 @@ export default function TournamentCard({ tournament, onClick }: TournamentCardPr
         <div className="grid grid-cols-2 gap-4 mb-4">
           {/* Teams */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-cyber-500/20 flex items-center justify-center">
-              <Users className="w-4 h-4 text-cyber-400" />
+            <div className="w-8 h-8 rounded-lg bg-cyber-500/20 border border-cyber-600/30 dark:border-transparent flex items-center justify-center">
+              <Users className="w-4 h-4 text-cyber-600 dark:text-cyber-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Teams</p>
-              <p className="text-sm font-semibold text-white">
+              <p className="text-xs text-light-600 dark:text-gray-400">Teams</p>
+              <p className="text-sm font-semibold text-light-900 dark:text-white">
                 {tournament.currentTeams}/{tournament.maxTeams}
               </p>
             </div>
@@ -77,19 +77,19 @@ export default function TournamentCard({ tournament, onClick }: TournamentCardPr
           {/* Groups */}
           {numberOfGroups > 0 && (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-electric-500/20 flex items-center justify-center">
-                <Trophy className="w-4 h-4 text-electric-400" />
+              <div className="w-8 h-8 rounded-lg bg-electric-500/20 border border-electric-600/30 dark:border-transparent flex items-center justify-center">
+                <Trophy className="w-4 h-4 text-electric-600 dark:text-electric-400" />
               </div>
               <div>
-                <p className="text-xs text-gray-400">Groups</p>
-                <p className="text-sm font-semibold text-white">{numberOfGroups}</p>
+                <p className="text-xs text-light-600 dark:text-gray-400">Groups</p>
+                <p className="text-sm font-semibold text-light-900 dark:text-white">{numberOfGroups}</p>
               </div>
             </div>
           )}
         </div>
 
         {/* Date */}
-        <div className="flex items-center gap-2 text-sm text-gray-300 mt-auto pt-4 border-t border-white/10">
+        <div className="flex items-center gap-2 text-sm text-light-700 dark:text-gray-300 mt-auto pt-4 border-t border-black/10 dark:border-white/10">
           <Calendar className="w-4 h-4" />
           <span>
             {startDate ? formatDate(startDate) : 'No date set'}

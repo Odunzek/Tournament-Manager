@@ -115,16 +115,16 @@ export default function RecordResultModal({
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-dark-100 rounded-tech-lg border border-white/10 shadow-glow max-w-md w-full"
+              className="bg-light-100 dark:bg-dark-100 rounded-tech-lg border border-black/10 dark:border-white/10 shadow-glow max-w-md w-full"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="border-b border-white/10 p-6 flex items-center justify-between">
-                <h3 className="text-xl font-bold text-white">{title}</h3>
+              <div className="border-b border-black/10 dark:border-white/10 p-6 flex items-center justify-between">
+                <h3 className="text-xl font-bold text-light-900 dark:text-white">{title}</h3>
                 <button
                   onClick={handleClose}
                   disabled={isSubmitting}
-                  className="text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                  className="text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white transition-colors disabled:opacity-50"
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -140,18 +140,18 @@ export default function RecordResultModal({
                 )}
 
                 {/* Match Info */}
-                <div className="text-center p-4 bg-dark-200/50 rounded-tech border border-white/10">
+                <div className="text-center p-4 bg-light-200/50 dark:bg-dark-200/50 rounded-tech border border-black/10 dark:border-white/10">
                   <div className="flex items-center justify-center gap-4">
-                    <span className="text-lg font-bold text-white">{homeTeam}</span>
-                    <span className="text-gray-500 font-semibold">vs</span>
-                    <span className="text-lg font-bold text-white">{awayTeam}</span>
+                    <span className="text-lg font-bold text-light-900 dark:text-white">{homeTeam}</span>
+                    <span className="text-light-600 dark:text-gray-500 font-semibold">vs</span>
+                    <span className="text-lg font-bold text-light-900 dark:text-white">{awayTeam}</span>
                   </div>
                 </div>
 
                 {/* Score Inputs */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2 text-center">
+                    <label className="block text-sm font-medium text-light-700 dark:text-gray-300 mb-2 text-center">
                       {homeTeam}
                     </label>
                     <Input
@@ -165,7 +165,7 @@ export default function RecordResultModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2 text-center">
+                    <label className="block text-sm font-medium text-light-700 dark:text-gray-300 mb-2 text-center">
                       {awayTeam}
                     </label>
                     <Input
@@ -182,7 +182,7 @@ export default function RecordResultModal({
               </div>
 
               {/* Footer */}
-              <div className="border-t border-white/10 p-6 flex gap-3">
+              <div className="border-t border-black/10 dark:border-white/10 p-6 flex gap-3">
                 <Button
                   variant="ghost"
                   onClick={handleClose}

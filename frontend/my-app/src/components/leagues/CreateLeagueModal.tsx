@@ -141,11 +141,11 @@ export default function CreateLeagueModal({
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <Trophy className="w-6 h-6 text-cyber-400" />
-                    <h2 className="text-2xl font-bold text-white">Create New League</h2>
+                    <h2 className="text-2xl font-bold text-light-900 dark:text-white">Create New League</h2>
                   </div>
                   <button
                     onClick={onClose}
-                    className="text-gray-400 hover:text-white transition-colors"
+                    className="text-light-600 dark:text-gray-400 hover:text-light-900 dark:text-white transition-colors"
                   >
                     <X className="w-6 h-6" />
                   </button>
@@ -163,9 +163,9 @@ export default function CreateLeagueModal({
                       value={formData.name}
                       onChange={(e) => handleChange('name', e.target.value)}
                       placeholder="e.g., Premier League Season 1"
-                      className={`w-full px-4 py-3 bg-dark-100 border-2 ${
-                        errors.name ? 'border-red-500/50' : 'border-white/10'
-                      } rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyber-500/50 transition-colors`}
+                      className={`w-full px-4 py-3 bg-light-100 dark:bg-dark-100 border-2 ${
+                        errors.name ? 'border-red-500/50' : 'border-black/10 dark:border-white/10'
+                      } rounded-xl text-light-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-cyber-500/50 transition-colors`}
                     />
                     {errors.name && (
                       <p className="text-red-400 text-sm mt-1">{errors.name}</p>
@@ -182,9 +182,9 @@ export default function CreateLeagueModal({
                       value={formData.season}
                       onChange={(e) => handleChange('season', e.target.value)}
                       placeholder="e.g., 2024 Spring"
-                      className={`w-full px-4 py-3 bg-dark-100 border-2 ${
-                        errors.season ? 'border-red-500/50' : 'border-white/10'
-                      } rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyber-500/50 transition-colors`}
+                      className={`w-full px-4 py-3 bg-light-100 dark:bg-dark-100 border-2 ${
+                        errors.season ? 'border-red-500/50' : 'border-black/10 dark:border-white/10'
+                      } rounded-xl text-light-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-cyber-500/50 transition-colors`}
                     />
                     {errors.season && (
                       <p className="text-red-400 text-sm mt-1">{errors.season}</p>
@@ -204,8 +204,8 @@ export default function CreateLeagueModal({
                           onClick={() => handleChange('status', status)}
                           className={`flex-1 px-4 py-3 rounded-tech font-semibold transition-all ${
                             formData.status === status
-                              ? 'bg-gradient-to-r from-cyber-500 to-electric-500 text-white'
-                              : 'bg-dark-100 text-gray-400 hover:text-white border-2 border-white/10'
+                              ? 'bg-gradient-to-r from-cyber-500 to-electric-500 text-light-900 dark:text-white'
+                              : 'bg-light-100 dark:bg-dark-100 text-light-600 dark:text-gray-400 hover:text-light-900 dark:text-white border-2 border-black/10 dark:border-white/10'
                           }`}
                         >
                           {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -224,9 +224,9 @@ export default function CreateLeagueModal({
                         type="date"
                         value={formData.startDate}
                         onChange={(e) => handleChange('startDate', e.target.value)}
-                        className={`w-full px-4 py-3 bg-dark-100 border-2 ${
-                          errors.startDate ? 'border-red-500/50' : 'border-white/10'
-                        } rounded-xl text-white focus:outline-none focus:border-cyber-500/50 transition-colors`}
+                        className={`w-full px-4 py-3 bg-light-100 dark:bg-dark-100 border-2 ${
+                          errors.startDate ? 'border-red-500/50' : 'border-black/10 dark:border-white/10'
+                        } rounded-xl text-light-900 dark:text-white focus:outline-none focus:border-cyber-500/50 transition-colors`}
                       />
                       {errors.startDate && (
                         <p className="text-red-400 text-sm mt-1">{errors.startDate}</p>
@@ -241,9 +241,9 @@ export default function CreateLeagueModal({
                         type="date"
                         value={formData.endDate}
                         onChange={(e) => handleChange('endDate', e.target.value)}
-                        className={`w-full px-4 py-3 bg-dark-100 border-2 ${
-                          errors.endDate ? 'border-red-500/50' : 'border-white/10'
-                        } rounded-xl text-white focus:outline-none focus:border-cyber-500/50 transition-colors`}
+                        className={`w-full px-4 py-3 bg-light-100 dark:bg-dark-100 border-2 ${
+                          errors.endDate ? 'border-red-500/50' : 'border-black/10 dark:border-white/10'
+                        } rounded-xl text-light-900 dark:text-white focus:outline-none focus:border-cyber-500/50 transition-colors`}
                       />
                       {errors.endDate && (
                         <p className="text-red-400 text-sm mt-1">{errors.endDate}</p>
@@ -256,7 +256,7 @@ export default function CreateLeagueModal({
                     <label className="block text-sm font-semibold text-gray-300 mb-2">
                       Select Players * (Minimum 2)
                     </label>
-                    <div className="max-h-64 overflow-y-auto bg-dark-100 border-2 border-white/10 rounded-xl p-4">
+                    <div className="max-h-64 overflow-y-auto bg-light-100 dark:bg-dark-100 border-2 border-black/10 dark:border-white/10 rounded-xl p-4">
                       {players.length > 0 ? (
                         <div className="space-y-2">
                           {players.map((player) => (
@@ -268,20 +268,20 @@ export default function CreateLeagueModal({
                                 type="checkbox"
                                 checked={formData.playerIds.includes(player.id!)}
                                 onChange={() => togglePlayer(player.id!)}
-                                className="w-5 h-5 rounded-lg border-2 border-white/20 bg-dark-100 text-cyber-500 focus:ring-cyber-500 focus:ring-offset-0 focus:ring-2"
+                                className="w-5 h-5 rounded-lg border-2 border-white/20 bg-light-100 dark:bg-dark-100 text-cyber-500 focus:ring-cyber-500 focus:ring-offset-0 focus:ring-2"
                               />
-                              <span className="text-white font-medium">{player.name}</span>
-                              <span className="text-gray-400 text-sm">@{player.psnId}</span>
+                              <span className="text-light-900 dark:text-white font-medium">{player.name}</span>
+                              <span className="text-light-600 dark:text-gray-400 text-sm">@{player.psnId}</span>
                             </label>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-gray-400 text-center py-4">
+                        <p className="text-light-600 dark:text-gray-400 text-center py-4">
                           No players available. Please add players first.
                         </p>
                       )}
                     </div>
-                    <p className="text-sm text-gray-400 mt-2">
+                    <p className="text-sm text-light-600 dark:text-gray-400 mt-2">
                       {formData.playerIds.length} player(s) selected
                     </p>
                     {errors.playerIds && (

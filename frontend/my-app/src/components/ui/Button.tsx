@@ -14,11 +14,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses = {
-  primary: 'bg-gradient-to-r from-cyber-500 to-electric-600 text-white hover:from-cyber-600 hover:to-electric-700 shadow-glow',
-  secondary: 'bg-gradient-to-r from-electric-500 to-pink-600 text-white hover:from-electric-600 hover:to-pink-700 shadow-glow-purple',
-  outline: 'bg-transparent border-2 border-cyber-500 text-cyber-400 hover:bg-cyber-500/10 hover:border-cyber-400',
-  ghost: 'bg-white/5 text-gray-200 hover:bg-white/10 backdrop-blur-sm',
-  danger: 'bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700',
+  primary: 'bg-gradient-to-r from-cyber-600 to-electric-600 dark:from-cyber-500 dark:to-electric-600 text-white hover:from-cyber-700 hover:to-electric-700 dark:hover:from-cyber-600 dark:hover:to-electric-700 shadow-light-cyber-lg dark:shadow-glow',
+  secondary: 'bg-gradient-to-r from-electric-600 to-pink-600 dark:from-electric-500 dark:to-pink-600 text-white hover:from-electric-700 hover:to-pink-700 dark:hover:from-electric-600 dark:hover:to-pink-700 shadow-light-electric-lg dark:shadow-glow-purple',
+  outline: 'bg-transparent border-2 border-cyber-600 dark:border-cyber-500 text-cyber-700 dark:text-cyber-500 hover:bg-cyber-50 dark:hover:bg-cyber-500/10 hover:border-cyber-700 dark:hover:border-cyber-400',
+  ghost: 'bg-cyber-50/50 dark:bg-white/5 text-light-900 dark:text-gray-200 hover:bg-cyber-100 dark:hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-cyber-500/30',
+  danger: 'bg-gradient-to-r from-red-600 to-pink-600 dark:from-red-500 dark:to-pink-600 text-white hover:from-red-700 hover:to-pink-700 dark:hover:from-red-600 dark:hover:to-pink-700 shadow-light-electric-lg',
 };
 
 const sizeClasses = {
@@ -46,12 +46,12 @@ export default function Button({
       className={`
         ${variantClasses[variant]}
         ${sizeClasses[size]}
-        ${glow ? 'shadow-glow animate-glow' : ''}
+        ${glow ? 'shadow-lg shadow-cyber-500/30 dark:shadow-glow dark:animate-glow' : ''}
         inline-flex items-center justify-center gap-2
         font-semibold rounded-tech
         transition-all duration-200
         disabled:opacity-50 disabled:cursor-not-allowed
-        focus:outline-none focus:ring-2 focus:ring-cyber-500/50 focus:ring-offset-2 focus:ring-offset-dark-100
+        focus:outline-none focus:ring-2 focus:ring-cyber-500/50 focus:ring-offset-2 focus:ring-offset-light-100 dark:focus:ring-offset-dark-100
         ${className}
       `}
       disabled={disabled || isLoading}

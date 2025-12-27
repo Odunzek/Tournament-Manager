@@ -16,7 +16,9 @@ import {
   onSnapshot,
   getDoc,
   where,
-  Timestamp
+  Timestamp,
+  serverTimestamp,
+  setDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Player, PlayerFormData, calculateTier } from '@/types/player';
@@ -62,6 +64,36 @@ export const createPlayer = async (
     });
 
     console.log('✅ Player created:', docRef.id);
+
+    // Automatically add to P4P rankings at the bottom
+    try {
+      const rankingsCol = collection(db, 'rankings');
+      const rankingsSnapshot = await getDocs(rankingsCol);
+
+      // Find the current max rank
+      let maxRank = 0;
+      rankingsSnapshot.docs.forEach((doc) => {
+        const rank = doc.data().rank || 0;
+        if (rank > maxRank) maxRank = rank;
+      });
+
+      // Add player to rankings at the bottom (maxRank + 1)
+      const newRank = maxRank + 1;
+      await setDoc(doc(db, 'rankings', docRef.id), {
+        memberId: docRef.id,
+        name: playerData.name,
+        rank: newRank,
+        coolOff: '',
+        wildCard: '',
+        updatedAt: serverTimestamp()
+      });
+
+      console.log(`✅ Added to P4P rankings at position ${newRank}`);
+    } catch (error) {
+      console.warn('⚠️ Could not add to P4P rankings:', error);
+      // Don't throw - player creation succeeded, ranking addition is secondary
+    }
+
     return docRef.id;
   } catch (error) {
     console.error('❌ Error creating player:', error);
@@ -216,14 +248,86 @@ export const updatePlayer = async (
 };
 
 /**
- * Delete a player from Firestore
+ * Delete a player from Firestore with cascade delete
+ * Removes player from:
+ * - Players collection
+ * - P4P Rankings
+ * - Future/upcoming leagues (not completed)
+ * - Future/upcoming tournaments (not completed)
+ * But keeps them in historical data (completed leagues, past matches)
  */
 export const deletePlayer = async (playerId: string): Promise<void> => {
   try {
+    console.log('🗑️ Starting cascade delete for player:', playerId);
+
+    // 1. Delete from P4P Rankings (rankings collection)
+    try {
+      const rankingRef = doc(db, 'rankings', playerId);
+      const rankingDoc = await getDoc(rankingRef);
+      if (rankingDoc.exists()) {
+        await deleteDoc(rankingRef);
+        console.log('✅ Removed from P4P rankings');
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not remove from rankings:', error);
+    }
+
+    // 2. Remove from future/upcoming leagues (not completed)
+    try {
+      const leaguesQuery = query(
+        collection(db, 'leagues'),
+        where('status', 'in', ['active', 'upcoming'])
+      );
+      const leaguesSnapshot = await getDocs(leaguesQuery);
+
+      for (const leagueDoc of leaguesSnapshot.docs) {
+        const leagueData = leagueDoc.data();
+        if (leagueData.playerIds && leagueData.playerIds.includes(playerId)) {
+          const updatedPlayerIds = leagueData.playerIds.filter((id: string) => id !== playerId);
+          await updateDoc(doc(db, 'leagues', leagueDoc.id), {
+            playerIds: updatedPlayerIds,
+            updatedAt: serverTimestamp()
+          });
+          console.log(`✅ Removed from league: ${leagueData.name}`);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not remove from leagues:', error);
+    }
+
+    // 3. Remove from future/upcoming tournaments
+    try {
+      const tournamentsQuery = query(
+        collection(db, 'tournaments'),
+        where('status', 'in', ['upcoming'])
+      );
+      const tournamentsSnapshot = await getDocs(tournamentsQuery);
+
+      for (const tournamentDoc of tournamentsSnapshot.docs) {
+        // Remove from tournament_members collection
+        const membersQuery = query(
+          collection(db, 'tournament_members'),
+          where('tournamentId', '==', tournamentDoc.id),
+          where('playerId', '==', playerId)
+        );
+        const membersSnapshot = await getDocs(membersQuery);
+
+        for (const memberDoc of membersSnapshot.docs) {
+          await deleteDoc(doc(db, 'tournament_members', memberDoc.id));
+          console.log(`✅ Removed from tournament: ${tournamentDoc.data().name}`);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not remove from tournaments:', error);
+    }
+
+    // 4. Delete the player from players collection
     await deleteDoc(doc(db, 'players', playerId));
-    console.log('✅ Player deleted:', playerId);
+    console.log('✅ Player deleted from players collection');
+
+    console.log('✅ Cascade delete completed successfully');
   } catch (error) {
-    console.error('❌ Error deleting player:', error);
+    console.error('❌ Error during cascade delete:', error);
     throw error;
   }
 };

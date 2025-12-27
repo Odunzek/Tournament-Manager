@@ -15,14 +15,14 @@ export default function MainLayout({
   showBackground = true
 }: MainLayoutProps) {
   return (
-    <div className="min-h-screen relative overflow-x-hidden bg-gradient-to-br from-dark-50 via-dark-100 to-dark-200">
+    <div className="min-h-screen relative overflow-x-hidden bg-gradient-to-br from-light-50 via-light-100 to-light-200 dark:from-dark-50 dark:via-dark-100 dark:to-dark-200">
       {/* Animated Background */}
       {showBackground && (
         <>
           {/* Gradient Orbs */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <motion.div
-              className="absolute top-0 left-1/4 w-96 h-96 bg-cyber-500/20 rounded-full blur-3xl"
+              className="absolute top-0 left-1/4 w-96 h-96 bg-cyber-500/10 dark:bg-cyber-500/20 rounded-full blur-3xl"
               animate={{
                 x: [0, 100, 0],
                 y: [0, 50, 0],
@@ -34,7 +34,7 @@ export default function MainLayout({
               }}
             />
             <motion.div
-              className="absolute bottom-0 right-1/4 w-96 h-96 bg-electric-500/20 rounded-full blur-3xl"
+              className="absolute bottom-0 right-1/4 w-96 h-96 bg-electric-500/10 dark:bg-electric-500/20 rounded-full blur-3xl"
               animate={{
                 x: [0, -100, 0],
                 y: [0, -50, 0],
@@ -46,7 +46,7 @@ export default function MainLayout({
               }}
             />
             <motion.div
-              className="absolute top-1/2 left-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl"
+              className="absolute top-1/2 left-1/2 w-96 h-96 bg-pink-500/5 dark:bg-pink-500/10 rounded-full blur-3xl"
               animate={{
                 scale: [1, 1.2, 1],
                 opacity: [0.1, 0.2, 0.1],
@@ -61,7 +61,7 @@ export default function MainLayout({
 
           {/* Grid Pattern */}
           <div
-            className="absolute inset-0 opacity-[0.02]"
+            className="absolute inset-0 opacity-[0.08] dark:opacity-[0.02]"
             style={{
               backgroundImage: `
                 linear-gradient(to right, rgb(14, 165, 233) 1px, transparent 1px),

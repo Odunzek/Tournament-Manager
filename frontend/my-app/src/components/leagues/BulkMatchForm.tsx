@@ -99,7 +99,7 @@ export default function BulkMatchForm({ players, onSubmit, isSubmitting = false 
           >
             <Card variant="glass">
               <div className="flex items-start justify-between mb-4">
-                <h4 className="text-sm font-semibold text-gray-300">Match {index + 1}</h4>
+                <h4 className="text-sm font-semibold text-light-700 dark:text-gray-300">Match {index + 1}</h4>
                 {matches.length > 1 && (
                   <button
                     type="button"
@@ -120,12 +120,12 @@ export default function BulkMatchForm({ players, onSubmit, isSubmitting = false 
                   <select
                     value={match.playerA}
                     onChange={(e) => updateMatch(index, 'playerA', e.target.value)}
-                    className="w-full px-3 py-2 bg-dark-100 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyber-500/50 [&>option]:bg-white [&>option]:text-black [&>option:checked]:bg-cyber-500 [&>option:checked]:text-white"
+                    className="w-full px-3 py-2.5 bg-dark-100/50 border-2 border-white/10 rounded-tech text-white focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
                     required
                   >
-                    <option value="">Select Player</option>
+                    <option value="" className="bg-dark-100 text-gray-400">Select Player</option>
                     {players.map((player) => (
-                      <option key={player.id} value={player.id}>
+                      <option key={player.id} value={player.id} className="bg-dark-100 text-white">
                         {player.name}
                       </option>
                     ))}
@@ -140,12 +140,12 @@ export default function BulkMatchForm({ players, onSubmit, isSubmitting = false 
                   <select
                     value={match.playerB}
                     onChange={(e) => updateMatch(index, 'playerB', e.target.value)}
-                    className="w-full px-3 py-2 bg-dark-100 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyber-500/50 [&>option]:bg-white [&>option]:text-black [&>option:checked]:bg-cyber-500 [&>option:checked]:text-white"
+                    className="w-full px-3 py-2.5 bg-dark-100/50 border-2 border-white/10 rounded-tech text-white focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
                     required
                   >
-                    <option value="">Select Player</option>
+                    <option value="" className="bg-dark-100 text-gray-400">Select Player</option>
                     {players.map((player) => (
-                      <option key={player.id} value={player.id}>
+                      <option key={player.id} value={player.id} className="bg-dark-100 text-white">
                         {player.name}
                       </option>
                     ))}
@@ -162,7 +162,7 @@ export default function BulkMatchForm({ players, onSubmit, isSubmitting = false 
                     min="0"
                     value={match.scoreA}
                     onChange={(e) => updateMatch(index, 'scoreA', parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2 bg-dark-100 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyber-500/50"
+                    className="w-full px-3 py-2.5 bg-dark-100/50 border-2 border-white/10 rounded-tech text-white focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
                     required
                   />
                 </div>
@@ -177,7 +177,7 @@ export default function BulkMatchForm({ players, onSubmit, isSubmitting = false 
                     min="0"
                     value={match.scoreB}
                     onChange={(e) => updateMatch(index, 'scoreB', parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2 bg-dark-100 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyber-500/50"
+                    className="w-full px-3 py-2.5 bg-dark-100/50 border-2 border-white/10 rounded-tech text-white focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
                     required
                   />
                 </div>
@@ -191,7 +191,7 @@ export default function BulkMatchForm({ players, onSubmit, isSubmitting = false 
                     type="date"
                     value={match.date}
                     onChange={(e) => updateMatch(index, 'date', e.target.value)}
-                    className="w-full px-3 py-2 bg-dark-100 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyber-500/50"
+                    className="w-full px-3 py-2.5 bg-dark-100/50 border-2 border-white/10 rounded-tech text-white focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
                     required
                   />
                 </div>

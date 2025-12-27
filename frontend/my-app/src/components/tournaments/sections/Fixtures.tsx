@@ -387,8 +387,8 @@ export default function Fixtures({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">Fixtures & Results</h2>
-          <p className="text-gray-400">All tournament matches</p>
+          <h2 className="text-2xl font-bold text-light-900 dark:text-white mb-1">Fixtures & Results</h2>
+          <p className="text-light-600 dark:text-gray-400">All tournament matches</p>
         </div>
       </div>
 
@@ -397,8 +397,8 @@ export default function Fixtures({
         <Card variant="glass">
           <div className="text-center">
             <Calendar className="w-6 h-6 text-cyber-400 mx-auto mb-2" />
-            <p className="text-xs text-gray-400 mb-1">Total</p>
-            <p className="text-2xl font-bold text-white">{totalMatches}</p>
+            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Total</p>
+            <p className="text-2xl font-bold text-light-900 dark:text-white">{totalMatches}</p>
           </div>
         </Card>
 
@@ -407,24 +407,24 @@ export default function Fixtures({
             <div className="w-6 h-6 mx-auto mb-2 rounded-full bg-green-500/20 flex items-center justify-center">
               <div className="w-3 h-3 rounded-full bg-green-400" />
             </div>
-            <p className="text-xs text-gray-400 mb-1">Played</p>
-            <p className="text-2xl font-bold text-white">{playedMatches}</p>
+            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Played</p>
+            <p className="text-2xl font-bold text-light-900 dark:text-white">{playedMatches}</p>
           </div>
         </Card>
 
         <Card variant="glass">
           <div className="text-center">
             <Target className="w-6 h-6 text-electric-400 mx-auto mb-2" />
-            <p className="text-xs text-gray-400 mb-1">Groups</p>
-            <p className="text-2xl font-bold text-white">{groupMatches}</p>
+            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Groups</p>
+            <p className="text-2xl font-bold text-light-900 dark:text-white">{groupMatches}</p>
           </div>
         </Card>
 
         <Card variant="glass">
           <div className="text-center">
             <Trophy className="w-6 h-6 text-pink-400 mx-auto mb-2" />
-            <p className="text-xs text-gray-400 mb-1">Knockout</p>
-            <p className="text-2xl font-bold text-white">{knockoutMatchesCount}</p>
+            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Knockout</p>
+            <p className="text-2xl font-bold text-light-900 dark:text-white">{knockoutMatchesCount}</p>
           </div>
         </Card>
       </div>
@@ -474,7 +474,7 @@ export default function Fixtures({
       {/* Group Stage Matches - Grouped by Group */}
       {(phaseFilter === 'all' || phaseFilter === 'groups') && hasGroupMatches && (
         <div className="space-y-8">
-          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-light-900 dark:text-white mb-6 flex items-center gap-3">
             <Target className="w-7 h-7 text-cyber-400" />
             Group Stage Fixtures
           </h2>
@@ -497,14 +497,14 @@ export default function Fixtures({
                   onClick={() => isMobile && toggleGroup(groupName)}
                   className={`w-full flex items-center justify-between p-6 ${isMobile ? 'cursor-pointer hover:bg-cyber-500/5 active:bg-cyber-500/10' : 'cursor-default'} transition-colors ${!isExpanded ? 'pb-6' : 'pb-4 border-b-2 border-cyber-500/30'}`}
                 >
-                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <h3 className="text-xl font-bold text-light-900 dark:text-white flex items-center gap-2">
                     <div className="w-10 h-10 rounded-tech bg-gradient-cyber flex items-center justify-center">
-                      <Trophy className="w-5 h-5 text-white" />
+                      <Trophy className="w-5 h-5 text-light-900 dark:text-white" />
                     </div>
                     Group {groupName}
                   </h3>
                   <div className="flex items-center gap-3">
-                    <div className="text-sm text-gray-400">
+                    <div className="text-sm text-light-600 dark:text-gray-400">
                       {playedCount}/{totalCount} matches
                     </div>
                     {isMobile && (
@@ -549,7 +549,7 @@ export default function Fixtures({
       {/* Knockout Matches */}
       {(phaseFilter === 'all' || phaseFilter === 'knockout') && hasKnockoutMatches && (
         <div>
-          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-light-900 dark:text-white mb-6 flex items-center gap-3">
             <Trophy className="w-7 h-7 text-pink-400" />
             Knockout Stage Fixtures
           </h2>
@@ -572,12 +572,12 @@ export default function Fixtures({
       {filteredMatches.length === 0 && (
         <div className="text-center py-20">
           <Filter className="w-20 h-20 text-gray-600 mx-auto mb-6" />
-          <h3 className="text-2xl font-bold text-white mb-2">
+          <h3 className="text-2xl font-bold text-light-900 dark:text-white mb-2">
             {searchQuery || phaseFilter !== 'all' || statusFilter !== 'all'
               ? 'No matches found'
               : 'No matches yet'}
           </h3>
-          <p className="text-gray-400">
+          <p className="text-light-600 dark:text-gray-400">
             {searchQuery || phaseFilter !== 'all' || statusFilter !== 'all'
               ? 'Try adjusting your filters or search query'
               : 'Matches will appear here once the tournament begins'}
@@ -667,14 +667,14 @@ function MatchCard({ match, index, isAuthenticated, isLoading, onRecordMatch }: 
             awayWon ? 'bg-dark-100/20' :
             'bg-dark-100/30'
           }`}>
-            <span className={`font-bold ${homeWon ? 'text-green-400' : 'text-white'}`}>
+            <span className={`font-bold ${homeWon ? 'text-green-400' : 'text-light-900 dark:text-white'}`}>
               {match.homeTeam}
             </span>
             {match.played && match.homeScore !== undefined && (
               <span className={`text-2xl font-extrabold ${
                 homeWon ? 'text-green-400' :
                 awayWon ? 'text-gray-500' :
-                'text-white'
+                'text-light-900 dark:text-white'
               }`}>
                 {match.homeScore}
               </span>
@@ -690,14 +690,14 @@ function MatchCard({ match, index, isAuthenticated, isLoading, onRecordMatch }: 
             homeWon ? 'bg-dark-100/20' :
             'bg-dark-100/30'
           }`}>
-            <span className={`font-bold ${awayWon ? 'text-green-400' : 'text-white'}`}>
+            <span className={`font-bold ${awayWon ? 'text-green-400' : 'text-light-900 dark:text-white'}`}>
               {match.awayTeam}
             </span>
             {match.played && match.awayScore !== undefined && (
               <span className={`text-2xl font-extrabold ${
                 awayWon ? 'text-green-400' :
                 homeWon ? 'text-gray-500' :
-                'text-white'
+                'text-light-900 dark:text-white'
               }`}>
                 {match.awayScore}
               </span>
@@ -707,7 +707,7 @@ function MatchCard({ match, index, isAuthenticated, isLoading, onRecordMatch }: 
 
         {/* Admin Action Button */}
         {isAuthenticated && (
-          <div className="mt-4 pt-4 border-t border-white/10">
+          <div className="mt-4 pt-4 border-t border-black/10 dark:border-white/10">
             <Button
               variant={match.played ? 'secondary' : 'primary'}
               size="sm"

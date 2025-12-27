@@ -107,9 +107,9 @@ export default function Overview({
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <Trophy className="w-6 h-6 text-cyber-400" />
-                <h1 className="text-2xl sm:text-3xl font-bold text-white">{tournament.name}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-light-900 dark:text-light-900 dark:text-white">{tournament.name}</h1>
               </div>
-              <p className="text-gray-400 mb-3">{getTournamentTypeLabel(tournament.type)}</p>
+              <p className="text-light-600 dark:text-light-600 dark:text-gray-400 mb-3">{getTournamentTypeLabel(tournament.type)}</p>
               <StatusBadge status={tournament.status} />
             </div>
           </div>
@@ -124,8 +124,8 @@ export default function Overview({
               <Users className="w-6 h-6 text-cyber-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Teams</p>
-              <p className="text-xl font-bold text-white">{tournament.currentTeams}/{tournament.maxTeams}</p>
+              <p className="text-xs text-light-600 dark:text-light-600 dark:text-gray-400">Teams</p>
+              <p className="text-xl font-bold text-light-900 dark:text-light-900 dark:text-white">{tournament.currentTeams}/{tournament.maxTeams}</p>
             </div>
           </div>
         </Card>
@@ -136,8 +136,8 @@ export default function Overview({
               <Target className="w-6 h-6 text-electric-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Groups</p>
-              <p className="text-xl font-bold text-white">{tournament.groups?.length || 0}</p>
+              <p className="text-xs text-light-600 dark:text-light-600 dark:text-gray-400">Groups</p>
+              <p className="text-xl font-bold text-light-900 dark:text-light-900 dark:text-white">{tournament.groups?.length || 0}</p>
             </div>
           </div>
         </Card>
@@ -148,8 +148,8 @@ export default function Overview({
               <Trophy className="w-6 h-6 text-pink-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Knockout Ties</p>
-              <p className="text-xl font-bold text-white">{tournament.knockoutBracket?.length || 0}</p>
+              <p className="text-xs text-light-600 dark:text-gray-400">Knockout Ties</p>
+              <p className="text-xl font-bold text-light-900 dark:text-white">{tournament.knockoutBracket?.length || 0}</p>
             </div>
           </div>
         </Card>
@@ -160,8 +160,8 @@ export default function Overview({
               <BarChart3 className="w-6 h-6 text-purple-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Matches Played</p>
-              <p className="text-xl font-bold text-white">{playedMatches}</p>
+              <p className="text-xs text-light-600 dark:text-gray-400">Matches Played</p>
+              <p className="text-xl font-bold text-light-900 dark:text-white">{playedMatches}</p>
             </div>
           </div>
         </Card>
@@ -172,9 +172,9 @@ export default function Overview({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-cyber-400" />
-            <span className="text-sm font-semibold text-white">Tournament Progress</span>
+            <span className="text-sm font-semibold text-light-900 dark:text-white">Tournament Progress</span>
           </div>
-          <span className="text-sm text-gray-400">
+          <span className="text-sm text-light-600 dark:text-gray-400">
             {Math.round(progress)}% Complete
           </span>
         </div>
@@ -190,29 +190,29 @@ export default function Overview({
 
       {/* Tournament Details */}
       <Card variant="glass">
-        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <h3 className="text-lg font-bold text-light-900 dark:text-white mb-4 flex items-center gap-2">
           <Calendar className="w-5 h-5 text-cyber-400" />
           Tournament Details
         </h3>
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-gray-400">Current Phase:</span>
-            <span className="font-semibold text-white capitalize">
+            <span className="text-light-600 dark:text-gray-400">Current Phase:</span>
+            <span className="font-semibold text-light-900 dark:text-white capitalize">
               {tournament.status.replace('_', ' ')}
             </span>
           </div>
           {tournament.startDate && (
             <div className="flex justify-between items-center">
-              <span className="text-gray-400">Start Date:</span>
-              <span className="font-semibold text-white">
+              <span className="text-light-600 dark:text-gray-400">Start Date:</span>
+              <span className="font-semibold text-light-900 dark:text-white">
                 {formatDate(tournament.startDate)}
               </span>
             </div>
           )}
           {tournament.endDate && (
             <div className="flex justify-between items-center">
-              <span className="text-gray-400">End Date:</span>
-              <span className="font-semibold text-white">
+              <span className="text-light-600 dark:text-gray-400">End Date:</span>
+              <span className="font-semibold text-light-900 dark:text-white">
                 {formatDate(tournament.endDate)}
               </span>
             </div>
@@ -223,7 +223,7 @@ export default function Overview({
       {/* Admin Actions */}
       {isAuthenticated && (
         <Card variant="gradient">
-          <h3 className="text-lg font-bold text-white mb-4">Admin Actions</h3>
+          <h3 className="text-lg font-bold text-light-900 dark:text-white mb-4">Admin Actions</h3>
 
           {/* Setup Phase - Generate Groups */}
           {tournament.status === 'setup' && (
@@ -312,7 +312,7 @@ export default function Overview({
 
           {/* Delete Tournament */}
           {onDeleteTournament && (
-            <div className="mt-6 pt-6 border-t border-white/10">
+            <div className="mt-6 pt-6 border-t border-black/10 dark:border-white/10">
               <h4 className="text-sm font-semibold text-red-400 mb-3">Danger Zone</h4>
               {!showDeleteConfirm ? (
                 <Button
@@ -344,7 +344,7 @@ export default function Overview({
                       onClick={onDeleteTournament}
                       disabled={isLoading}
                       isLoading={isLoading}
-                      className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                      className="flex-1 bg-red-500 hover:bg-red-600 text-light-900 dark:text-white"
                     >
                       Delete Permanently
                     </Button>

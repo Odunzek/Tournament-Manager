@@ -57,7 +57,7 @@ export default function StandingsTable({ players, leagueId, currentUserId }: Sta
       return (
         <div className="flex items-center gap-1">
           <span className="text-2xl">🥈</span>
-          <span className="font-bold text-gray-300">2</span>
+          <span className="font-bold text-light-700 dark:text-gray-300">2</span>
         </div>
       );
     } else if (position === 3) {
@@ -68,7 +68,7 @@ export default function StandingsTable({ players, leagueId, currentUserId }: Sta
         </div>
       );
     }
-    return <span className="font-bold text-gray-400">{position}</span>;
+    return <span className="font-bold text-light-600 dark:text-gray-400">{position}</span>;
   };
 
   const getFormIndicator = (form: ('W' | 'D' | 'L')[]) => {
@@ -98,7 +98,7 @@ export default function StandingsTable({ players, leagueId, currentUserId }: Sta
   const SortHeader = ({ field, label }: { field: SortField; label: string }) => (
     <th
       onClick={() => handleSort(field)}
-      className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-cyber-400 transition-colors"
+      className="px-3 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-cyber-400 transition-colors"
     >
       <div className="flex items-center gap-1">
         {label}
@@ -121,28 +121,28 @@ export default function StandingsTable({ players, leagueId, currentUserId }: Sta
       <div className="inline-block min-w-full align-middle">
         <table className="min-w-full">
           <thead>
-            <tr className="border-b border-white/10">
+            <tr className="border-b border-black/10 dark:border-white/10">
               <SortHeader field="position" label="Pos" />
               <SortHeader field="name" label="Player" />
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">
                 P
               </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">
                 W
               </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">
                 D
               </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">
                 L
               </th>
               <SortHeader field="goalsFor" label="GF" />
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">
                 GA
               </th>
               <SortHeader field="goalDifference" label="GD" />
               <SortHeader field="points" label="Pts" />
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">
                 Form
               </th>
             </tr>
@@ -160,10 +160,10 @@ export default function StandingsTable({ players, leagueId, currentUserId }: Sta
                   transition={{ delay: index * 0.03 }}
                   onClick={() => router.push(`/leagues/${leagueId}/players/${player.id}`)}
                   className={`
-                    border-b border-white/5
+                    border-b border-light-300/50 dark:border-white/5
                     cursor-pointer
                     transition-all duration-200
-                    hover:bg-cyber-500/10 hover:shadow-glow
+                    hover:bg-cyber-500/10 hover:shadow-light-cyber dark:hover:shadow-glow
                     ${isCurrentUser ? 'bg-electric-500/10' : ''}
                     ${isTopThree ? 'bg-gradient-to-r from-yellow-500/5 to-transparent' : ''}
                   `}
@@ -184,19 +184,19 @@ export default function StandingsTable({ players, leagueId, currentUserId }: Sta
                   </td>
 
                   {/* Stats */}
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-white">{player.played || 0}</td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-light-900 dark:text-white">{player.played || 0}</td>
                   <td className="px-3 py-4 whitespace-nowrap text-sm text-green-400">{player.won || 0}</td>
                   <td className="px-3 py-4 whitespace-nowrap text-sm text-yellow-400">{player.draw || 0}</td>
                   <td className="px-3 py-4 whitespace-nowrap text-sm text-red-400">{player.lost || 0}</td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-white">{player.goalsFor || 0}</td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-white">{player.goalsAgainst || 0}</td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-light-900 dark:text-white">{player.goalsFor || 0}</td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-light-900 dark:text-white">{player.goalsAgainst || 0}</td>
                   <td
                     className={`px-3 py-4 whitespace-nowrap text-sm font-semibold ${
                       (player.goalDifference || 0) > 0
                         ? 'text-green-400'
                         : (player.goalDifference || 0) < 0
                         ? 'text-red-400'
-                        : 'text-gray-400'
+                        : 'text-light-600 dark:text-gray-400'
                     }`}
                   >
                     {(player.goalDifference || 0) > 0 ? '+' : ''}

@@ -49,9 +49,9 @@ export default function WinStreakCard({ streak, rank, showCurrent = true }: WinS
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="text-2xl">{getRankBadge(rank)}</div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-white truncate">{streak.playerName}</p>
+              <p className="font-bold text-light-900 dark:text-white truncate">{streak.playerName}</p>
               {!showCurrent && streak.longestStreakDate && (
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-light-600 dark:text-gray-400">
                   {convertTimestamp(streak.longestStreakDate).toLocaleDateString('en-US', {
                     month: 'short',
                     year: 'numeric',
@@ -65,7 +65,7 @@ export default function WinStreakCard({ streak, rank, showCurrent = true }: WinS
           <div className="flex items-center gap-2">
             <div className="text-center">
               <div className="text-2xl font-black text-cyber-400">{streakValue}</div>
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-light-600 dark:text-gray-400">
                 {streakValue === 1 ? 'win' : 'wins'}
               </div>
             </div>
@@ -78,7 +78,7 @@ export default function WinStreakCard({ streak, rank, showCurrent = true }: WinS
         {/* Progress Bar for Current Streaks */}
         {showCurrent && streakValue > 0 && (
           <div className="mt-3">
-            <div className="w-full bg-dark-200 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-light-300 dark:bg-dark-200 rounded-full h-2 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min((streakValue / 10) * 100, 100)}%` }}

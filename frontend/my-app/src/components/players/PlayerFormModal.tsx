@@ -136,17 +136,17 @@ export default function PlayerFormModal({
           >
             <div className="bg-gradient-to-br from-gray-900 to-gray-950 border-2 border-cyber-500/30 rounded-tech-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto backdrop-blur-xl shadow-2xl">
               {/* Header */}
-              <div className="sticky top-0 bg-gradient-to-r from-cyber-500/20 to-electric-500/20 border-b border-white/10 p-6 backdrop-blur-xl z-10">
+              <div className="sticky top-0 bg-gradient-to-r from-cyber-500/20 to-electric-500/20 border-b border-black/10 dark:border-white/10 p-6 backdrop-blur-xl z-10">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <User className="w-6 h-6 text-cyber-400" />
-                    <h2 className="text-2xl font-bold text-white">
+                    <h2 className="text-2xl font-bold text-light-900 dark:text-white">
                       {mode === 'add' ? 'Add New Player' : 'Edit Player'}
                     </h2>
                   </div>
                   <button
                     onClick={onClose}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+                    className="p-2 rounded-lg hover:bg-white/10 transition-colors text-light-600 dark:text-gray-400 hover:text-light-900 dark:text-white"
                   >
                     <X className="w-6 h-6" />
                   </button>
@@ -157,7 +157,7 @@ export default function PlayerFormModal({
               <form onSubmit={handleSubmit} className="p-6 space-y-6">
                 {/* Player Info Section */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-light-900 dark:text-white flex items-center gap-2">
                     <User className="w-5 h-5 text-cyber-400" />
                     Player Information
                   </h3>
@@ -175,9 +175,9 @@ export default function PlayerFormModal({
                       className={`
                         w-full px-4 py-3
                         bg-gray-900/50 border-2
-                        ${errors.name ? 'border-red-500/50' : 'border-white/10 focus:border-cyber-500/50'}
+                        ${errors.name ? 'border-red-500/50' : 'border-black/10 dark:border-white/10 focus:border-cyber-500/50'}
                         rounded-lg
-                        text-white placeholder-gray-500
+                        text-light-900 dark:text-white placeholder-gray-500
                         focus:outline-none
                         transition-colors
                       `}
@@ -207,9 +207,9 @@ export default function PlayerFormModal({
                       className={`
                         w-full px-4 py-3
                         bg-gray-900/50 border-2
-                        ${errors.psnId ? 'border-red-500/50' : 'border-white/10 focus:border-cyber-500/50'}
+                        ${errors.psnId ? 'border-red-500/50' : 'border-black/10 dark:border-white/10 focus:border-cyber-500/50'}
                         rounded-lg
-                        text-white placeholder-gray-500
+                        text-light-900 dark:text-white placeholder-gray-500
                         focus:outline-none
                         transition-colors
                       `}
@@ -238,10 +238,10 @@ export default function PlayerFormModal({
                       placeholder="https://example.com/avatar.jpg"
                       className="
                         w-full px-4 py-3
-                        bg-gray-900/50 border-2 border-white/10
+                        bg-gray-900/50 border-2 border-black/10 dark:border-white/10
                         focus:border-cyber-500/50
                         rounded-lg
-                        text-white placeholder-gray-500
+                        text-light-900 dark:text-white placeholder-gray-500
                         focus:outline-none
                         transition-colors
                       "
@@ -250,8 +250,8 @@ export default function PlayerFormModal({
                 </div>
 
                 {/* Achievements Section */}
-                <div className="space-y-4 pt-4 border-t border-white/10">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <div className="space-y-4 pt-4 border-t border-black/10 dark:border-white/10">
+                  <h3 className="text-lg font-bold text-light-900 dark:text-white flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-yellow-400" />
                     Achievements
                   </h3>
@@ -269,10 +269,10 @@ export default function PlayerFormModal({
                         onChange={(e) => handleChange('leagueWins', parseInt(e.target.value) || 0)}
                         className="
                           w-full px-4 py-3
-                          bg-gray-900/50 border-2 border-white/10
+                          bg-gray-900/50 border-2 border-black/10 dark:border-white/10
                           focus:border-cyber-500/50
                           rounded-lg
-                          text-white
+                          text-light-900 dark:text-white
                           focus:outline-none
                           transition-colors
                         "
@@ -291,10 +291,10 @@ export default function PlayerFormModal({
                         onChange={(e) => handleChange('tournamentWins', parseInt(e.target.value) || 0)}
                         className="
                           w-full px-4 py-3
-                          bg-gray-900/50 border-2 border-white/10
+                          bg-gray-900/50 border-2 border-black/10 dark:border-white/10
                           focus:border-electric-500/50
                           rounded-lg
-                          text-white
+                          text-light-900 dark:text-white
                           focus:outline-none
                           transition-colors
                         "
@@ -329,8 +329,8 @@ export default function PlayerFormModal({
                     className="
                       flex-1 px-6 py-3
                       bg-gray-800 hover:bg-gray-700
-                      border-2 border-white/10
-                      text-white font-bold
+                      border-2 border-black/10 dark:border-white/10
+                      text-light-900 dark:text-white font-bold
                       rounded-lg
                       transition-all duration-300
                     "
@@ -343,7 +343,7 @@ export default function PlayerFormModal({
                       flex-1 px-6 py-3
                       bg-gradient-to-r from-cyber-500 to-electric-500
                       hover:from-cyber-600 hover:to-electric-600
-                      text-white font-bold
+                      text-light-900 dark:text-white font-bold
                       rounded-lg
                       transition-all duration-300
                       hover:shadow-glow

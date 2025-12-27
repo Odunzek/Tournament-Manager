@@ -33,7 +33,7 @@ export default function LeagueCard({ league, onClick, leagueLeader }: LeagueCard
       },
       completed: {
         label: 'Completed',
-        className: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+        className: 'bg-gray-500/20 text-light-600 dark:text-gray-400 border-gray-500/30',
       },
     };
 
@@ -65,10 +65,10 @@ export default function LeagueCard({ league, onClick, leagueLeader }: LeagueCard
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex-1 min-w-0">
-            <h3 className="text-xl font-bold text-white mb-1 line-clamp-2 pr-2">
+            <h3 className="text-xl font-bold text-light-900 dark:text-white mb-1 line-clamp-2 pr-2">
               {league.name}
             </h3>
-            <p className="text-sm text-gray-400">{league.season}</p>
+            <p className="text-sm text-light-600 dark:text-gray-400">{league.season}</p>
           </div>
           <div className="flex-shrink-0">{getStatusBadge()}</div>
         </div>
@@ -79,7 +79,7 @@ export default function LeagueCard({ league, onClick, leagueLeader }: LeagueCard
             <div className="flex items-center gap-2">
               <Trophy className="w-4 h-4 text-yellow-400" />
               <div>
-                <p className="text-xs text-gray-400">League Leader</p>
+                <p className="text-xs text-light-600 dark:text-gray-400">League Leader</p>
                 <p className="text-sm font-bold text-yellow-400">{leagueLeader}</p>
               </div>
             </div>
@@ -90,23 +90,23 @@ export default function LeagueCard({ league, onClick, leagueLeader }: LeagueCard
         <div className="grid grid-cols-2 gap-4 mb-4">
           {/* Players */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-cyber-500/20 flex items-center justify-center">
-              <Users className="w-4 h-4 text-cyber-400" />
+            <div className="w-8 h-8 rounded-lg bg-cyber-500/20 border border-cyber-600/30 dark:border-transparent flex items-center justify-center">
+              <Users className="w-4 h-4 text-cyber-600 dark:text-cyber-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Players</p>
-              <p className="text-sm font-semibold text-white">{playerCount}</p>
+              <p className="text-xs text-light-600 dark:text-gray-400">Players</p>
+              <p className="text-sm font-semibold text-light-900 dark:text-white">{playerCount}</p>
             </div>
           </div>
 
           {/* Matches */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-electric-500/20 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-electric-400" />
+            <div className="w-8 h-8 rounded-lg bg-electric-500/20 border border-electric-600/30 dark:border-transparent flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-electric-600 dark:text-electric-400" />
             </div>
             <div>
-              <p className="text-xs text-gray-400">Matches</p>
-              <p className="text-sm font-semibold text-white">
+              <p className="text-xs text-light-600 dark:text-gray-400">Matches</p>
+              <p className="text-sm font-semibold text-light-900 dark:text-white">
                 {matchesPlayed}/{totalMatches}
               </p>
             </div>
@@ -116,11 +116,11 @@ export default function LeagueCard({ league, onClick, leagueLeader }: LeagueCard
         {/* Progress Bar */}
         {league.status === 'active' && (
           <div className="mb-4">
-            <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
+            <div className="flex items-center justify-between text-xs text-light-600 dark:text-gray-400 mb-1">
               <span>Progress</span>
               <span>{Math.round(matchProgress)}%</span>
             </div>
-            <div className="w-full bg-dark-200 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-light-300 dark:bg-dark-200 rounded-full h-2 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${matchProgress}%` }}
@@ -132,7 +132,7 @@ export default function LeagueCard({ league, onClick, leagueLeader }: LeagueCard
         )}
 
         {/* Date */}
-        <div className="flex items-center gap-2 text-sm text-gray-300 mt-auto pt-4 border-t border-white/10">
+        <div className="flex items-center gap-2 text-sm text-light-700 dark:text-gray-300 mt-auto pt-4 border-t border-black/10 dark:border-white/10">
           <Calendar className="w-4 h-4" />
           <span>
             {startDate ? formatDate(startDate) : 'No date set'}

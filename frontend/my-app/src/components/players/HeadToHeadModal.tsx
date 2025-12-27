@@ -94,19 +94,19 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
           className="bg-gradient-to-br from-dark-100 to-dark-200 rounded-2xl shadow-glow border-2 border-cyber-500/30 max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="p-6 border-b border-white/10 flex items-center justify-between">
+          <div className="p-6 border-b border-black/10 dark:border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-gradient-cyber flex items-center justify-center shadow-glow">
-                <Target className="w-6 h-6 text-white" />
+                <Target className="w-6 h-6 text-light-900 dark:text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">Head-to-Head Comparison</h2>
-                <p className="text-sm text-gray-400">Compare players across all competitions</p>
+                <h2 className="text-2xl font-bold text-light-900 dark:text-white">Head-to-Head Comparison</h2>
+                <p className="text-sm text-light-600 dark:text-gray-400">Compare players across all competitions</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10"
+              className="text-light-600 dark:text-gray-400 hover:text-light-900 dark:text-white transition-colors p-2 rounded-lg hover:bg-white/10"
             >
               <X className="w-6 h-6" />
             </button>
@@ -117,7 +117,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
             {/* Player Selection */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div>
-                <label className="block text-sm font-bold text-gray-300 mb-2">Player 1</label>
+                <label className="block text-sm font-bold text-light-700 dark:text-gray-300 mb-2">Player 1</label>
                 <CustomDropdown
                   value={playerA?.id || ''}
                   onChange={handlePlayerAChange}
@@ -126,7 +126,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-300 mb-2">Player 2</label>
+                <label className="block text-sm font-bold text-light-700 dark:text-gray-300 mb-2">Player 2</label>
                 <CustomDropdown
                   value={playerB?.id || ''}
                   onChange={handlePlayerBChange}
@@ -140,7 +140,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
             {loading && (
               <div className="text-center py-12">
                 <Loader2 className="w-12 h-12 text-cyber-400 mx-auto mb-4 animate-spin" />
-                <p className="text-gray-400">Analyzing matches...</p>
+                <p className="text-light-600 dark:text-gray-400">Analyzing matches...</p>
               </div>
             )}
 
@@ -148,7 +148,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
             {!loading && !stats && (
               <div className="text-center py-12">
                 <Target className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-400 mb-2">Select Two Players</h3>
+                <h3 className="text-xl font-bold text-light-600 dark:text-gray-400 mb-2">Select Two Players</h3>
                 <p className="text-gray-500">Choose two players to compare their head-to-head record</p>
               </div>
             )}
@@ -158,12 +158,12 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
               <div className="space-y-6">
                 {/* Overall Record */}
                 <div className="bg-gradient-to-br from-cyber-500/10 to-electric-500/10 border-2 border-cyber-500/30 rounded-2xl p-6">
-                  <h3 className="text-lg font-bold text-white mb-4 text-center">Overall Record</h3>
+                  <h3 className="text-lg font-bold text-light-900 dark:text-white mb-4 text-center">Overall Record</h3>
 
                   <div className="grid grid-cols-3 gap-4 text-center">
                     {/* Player A */}
                     <div>
-                      <div className="text-sm text-gray-400 mb-2">{stats.playerA.name}</div>
+                      <div className="text-sm text-light-600 dark:text-gray-400 mb-2">{stats.playerA.name}</div>
                       <div className="text-3xl font-bold text-cyber-400 mb-1">
                         {stats.playerA.wins}
                       </div>
@@ -174,8 +174,8 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
 
                     {/* Draws */}
                     <div>
-                      <div className="text-sm text-gray-400 mb-2">Draws</div>
-                      <div className="text-3xl font-bold text-gray-400 mb-1">
+                      <div className="text-sm text-light-600 dark:text-gray-400 mb-2">Draws</div>
+                      <div className="text-3xl font-bold text-light-600 dark:text-gray-400 mb-1">
                         {stats.playerA.draws}
                       </div>
                       <div className="text-xs text-gray-500">{stats.totalMatches} total</div>
@@ -183,7 +183,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
 
                     {/* Player B */}
                     <div>
-                      <div className="text-sm text-gray-400 mb-2">{stats.playerB.name}</div>
+                      <div className="text-sm text-light-600 dark:text-gray-400 mb-2">{stats.playerB.name}</div>
                       <div className="text-3xl font-bold text-electric-400 mb-1">
                         {stats.playerB.wins}
                       </div>
@@ -196,22 +196,22 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
 
                 {/* Goals Statistics */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-dark-50/50 border border-white/10 rounded-xl p-4">
+                  <div className="bg-dark-50/50 border border-black/10 dark:border-white/10 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Trophy className="w-5 h-5 text-cyber-400" />
-                      <h4 className="font-bold text-white">Goals</h4>
+                      <h4 className="font-bold text-light-900 dark:text-white">Goals</h4>
                     </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-400">{stats.playerA.name}:</span>
-                        <span className="text-white font-semibold">{stats.playerA.goalsScored}</span>
+                        <span className="text-light-600 dark:text-gray-400">{stats.playerA.name}:</span>
+                        <span className="text-light-900 dark:text-white font-semibold">{stats.playerA.goalsScored}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">{stats.playerB.name}:</span>
-                        <span className="text-white font-semibold">{stats.playerB.goalsScored}</span>
+                        <span className="text-light-600 dark:text-gray-400">{stats.playerB.name}:</span>
+                        <span className="text-light-900 dark:text-white font-semibold">{stats.playerB.goalsScored}</span>
                       </div>
-                      <div className="flex justify-between pt-2 border-t border-white/10">
-                        <span className="text-gray-400">Avg per match:</span>
+                      <div className="flex justify-between pt-2 border-t border-black/10 dark:border-white/10">
+                        <span className="text-light-600 dark:text-gray-400">Avg per match:</span>
                         <span className="text-cyber-400 font-semibold">
                           {stats.avgGoalsPerMatch.toFixed(1)}
                         </span>
@@ -219,29 +219,29 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
                     </div>
                   </div>
 
-                  <div className="bg-dark-50/50 border border-white/10 rounded-xl p-4">
+                  <div className="bg-dark-50/50 border border-black/10 dark:border-white/10 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <TrendingUp className="w-5 h-5 text-electric-400" />
-                      <h4 className="font-bold text-white">Competition Breakdown</h4>
+                      <h4 className="font-bold text-light-900 dark:text-white">Competition Breakdown</h4>
                     </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Leagues:</span>
-                        <span className="text-white font-mono">
+                        <span className="text-light-600 dark:text-gray-400">Leagues:</span>
+                        <span className="text-light-900 dark:text-white font-mono">
                           {stats.leagueRecord.playerAWins}-{stats.leagueRecord.draws}-
                           {stats.leagueRecord.playerBWins}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Tournaments:</span>
-                        <span className="text-white font-mono">
+                        <span className="text-light-600 dark:text-gray-400">Tournaments:</span>
+                        <span className="text-light-900 dark:text-white font-mono">
                           {stats.tournamentRecord.playerAWins}-{stats.tournamentRecord.draws}-
                           {stats.tournamentRecord.playerBWins}
                         </span>
                       </div>
                       {stats.mostCommonScore && (
-                        <div className="flex justify-between pt-2 border-t border-white/10">
-                          <span className="text-gray-400">Most common:</span>
+                        <div className="flex justify-between pt-2 border-t border-black/10 dark:border-white/10">
+                          <span className="text-light-600 dark:text-gray-400">Most common:</span>
                           <span className="text-electric-400 font-semibold">
                             {stats.mostCommonScore.score} ({stats.mostCommonScore.count}x)
                           </span>
@@ -256,7 +256,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {stats.playerA.biggestWin && (
                       <div className="bg-gradient-to-br from-cyber-500/10 to-cyber-600/10 border border-cyber-500/30 rounded-xl p-4">
-                        <div className="text-xs text-gray-400 mb-1">
+                        <div className="text-xs text-light-600 dark:text-gray-400 mb-1">
                           {stats.playerA.name}'s Biggest Win
                         </div>
                         <div className="text-2xl font-bold text-cyber-400 mb-1">
@@ -269,7 +269,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
                     )}
                     {stats.playerB.biggestWin && (
                       <div className="bg-gradient-to-br from-electric-500/10 to-electric-600/10 border border-electric-500/30 rounded-xl p-4">
-                        <div className="text-xs text-gray-400 mb-1">
+                        <div className="text-xs text-light-600 dark:text-gray-400 mb-1">
                           {stats.playerB.name}'s Biggest Win
                         </div>
                         <div className="text-2xl font-bold text-electric-400 mb-1">
@@ -285,10 +285,10 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
 
                 {/* Recent Matches */}
                 {stats.recentMatches.length > 0 && (
-                  <div className="bg-dark-50/50 border border-white/10 rounded-xl p-4">
+                  <div className="bg-dark-50/50 border border-black/10 dark:border-white/10 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-4">
-                      <Calendar className="w-5 h-5 text-gray-400" />
-                      <h4 className="font-bold text-white">Recent Matches</h4>
+                      <Calendar className="w-5 h-5 text-light-600 dark:text-gray-400" />
+                      <h4 className="font-bold text-light-900 dark:text-white">Recent Matches</h4>
                       <span className="text-xs text-gray-500 ml-auto">
                         Last {Math.min(stats.recentMatches.length, 10)}
                       </span>
@@ -297,13 +297,13 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
                       {stats.recentMatches.map((match, index) => (
                         <div
                           key={match.id}
-                          className="flex items-center justify-between p-3 bg-dark-100/50 rounded-lg hover:bg-dark-100 transition-colors"
+                          className="flex items-center justify-between p-3 bg-light-100 dark:bg-dark-100/50 rounded-lg hover:bg-light-100 dark:bg-dark-100 transition-colors"
                         >
                           <div className="flex items-center gap-3">
                             <span className="text-xs text-gray-500 w-20">
                               {formatDate(match.date)}
                             </span>
-                            <span className="text-sm text-gray-400">{match.competition}</span>
+                            <span className="text-sm text-light-600 dark:text-gray-400">{match.competition}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span
@@ -312,7 +312,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
                                   ? 'text-cyber-400'
                                   : match.winner === 'playerB'
                                   ? 'text-electric-400'
-                                  : 'text-gray-400'
+                                  : 'text-light-600 dark:text-gray-400'
                               }`}
                             >
                               {match.playerAScore} - {match.playerBScore}
@@ -333,7 +333,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
             {!loading && stats && stats.totalMatches === 0 && (
               <div className="text-center py-12">
                 <Trophy className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-400 mb-2">No Matches Found</h3>
+                <h3 className="text-xl font-bold text-light-600 dark:text-gray-400 mb-2">No Matches Found</h3>
                 <p className="text-gray-500">
                   {playerA?.name} and {playerB?.name} haven't faced each other yet
                 </p>
@@ -342,7 +342,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
           </div>
 
           {/* Footer */}
-          <div className="p-6 border-t border-white/10">
+          <div className="p-6 border-t border-black/10 dark:border-white/10">
             <Button variant="outline" onClick={onClose} className="w-full">
               Close
             </Button>

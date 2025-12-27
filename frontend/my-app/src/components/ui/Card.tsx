@@ -13,10 +13,10 @@ interface CardProps {
 }
 
 const variantClasses = {
-  default: 'bg-dark-100/50 backdrop-blur-md border border-white/10',
-  gradient: 'bg-gradient-to-br from-dark-100/80 to-dark-200/80 backdrop-blur-md border border-white/10',
-  glass: 'bg-white/5 backdrop-blur-xl border border-white/20',
-  solid: 'bg-dark-100 border border-dark-200',
+  default: 'bg-cyber-50/80 dark:bg-dark-100/50 backdrop-blur-md border-2 border-cyber-500/20 dark:border-white/10',
+  gradient: 'bg-gradient-to-br from-cyber-50 to-electric-50 dark:from-dark-100/80 dark:to-dark-200/80 backdrop-blur-md border-2 border-cyber-500/25 dark:border-white/10',
+  glass: 'bg-white/90 dark:bg-white/5 backdrop-blur-xl border-2 border-cyber-500/30 dark:border-white/20',
+  solid: 'bg-light-100 dark:bg-dark-100 border-2 border-cyber-500/25 dark:border-dark-200',
 };
 
 export default function Card({
@@ -36,7 +36,7 @@ export default function Card({
       onClick={onClick}
       className={`
         ${variantClasses[variant]}
-        ${glow ? 'shadow-glow' : 'shadow-xl'}
+        ${glow ? 'shadow-light-cyber-lg dark:shadow-glow' : 'shadow-card-light dark:shadow-xl'}
         ${hover ? 'cursor-pointer' : ''}
         rounded-2xl p-6
         transition-all duration-200

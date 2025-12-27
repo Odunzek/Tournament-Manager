@@ -82,13 +82,13 @@ export default function PointAdjustmentModal({
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            <div className="bg-dark-200 border-2 border-cyber-500/30 rounded-tech-lg w-full max-w-md p-6">
+            <div className="bg-light-200 dark:bg-dark-200 border-2 border-cyber-500/30 rounded-tech-lg w-full max-w-md p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-white">Adjust Points</h3>
+                <h3 className="text-xl font-bold text-light-900 dark:text-white">Adjust Points</h3>
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+                  className="p-2 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -96,9 +96,9 @@ export default function PointAdjustmentModal({
 
               {/* Team Info */}
               <div className="bg-cyber-500/10 border border-cyber-500/30 rounded-lg p-4 mb-6">
-                <div className="text-sm text-gray-400 mb-1">Team</div>
-                <div className="text-lg font-bold text-white">{teamName}</div>
-                <div className="text-sm text-gray-400 mt-2">
+                <div className="text-sm text-light-600 dark:text-gray-400 mb-1">Team</div>
+                <div className="text-lg font-bold text-light-900 dark:text-white">{teamName}</div>
+                <div className="text-sm text-light-600 dark:text-gray-400 mt-2">
                   Current Points: <span className="text-cyber-400 font-bold">{currentPoints}</span>
                 </div>
               </div>
@@ -107,7 +107,7 @@ export default function PointAdjustmentModal({
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Point Adjustment */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-3">
+                  <label className="block text-sm font-semibold text-light-700 dark:text-gray-300 mb-3">
                     Point Adjustment <span className="text-red-400">*</span>
                   </label>
 
@@ -124,7 +124,7 @@ export default function PointAdjustmentModal({
                             ? val < 0
                               ? 'bg-red-500/20 border-2 border-red-500/50 text-red-400'
                               : 'bg-green-500/20 border-2 border-green-500/50 text-green-400'
-                            : 'bg-gray-800/50 border border-white/10 text-gray-400 hover:border-white/20'
+                            : 'bg-gray-800/50 border border-black/10 dark:border-white/10 text-light-600 dark:text-gray-400 hover:border-black/20 dark:hover:border-white/20'
                           }
                         `}
                       >
@@ -142,10 +142,10 @@ export default function PointAdjustmentModal({
                       placeholder="Custom adjustment"
                       className="
                         flex-1 px-4 py-3
-                        bg-gray-900/50 border-2 border-white/10
+                        bg-gray-900/50 border-2 border-black/10 dark:border-white/10
                         focus:border-cyber-500/50
                         rounded-lg
-                        text-white text-center font-bold text-lg
+                        text-light-900 dark:text-white text-center font-bold text-lg
                         focus:outline-none
                         transition-colors
                       "
@@ -163,7 +163,7 @@ export default function PointAdjustmentModal({
 
                 {/* Reason */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">
+                  <label className="block text-sm font-semibold text-light-700 dark:text-gray-300 mb-2">
                     Reason <span className="text-red-400">*</span>
                   </label>
                   <textarea
@@ -173,10 +173,10 @@ export default function PointAdjustmentModal({
                     rows={3}
                     className="
                       w-full px-4 py-3
-                      bg-gray-900/50 border-2 border-white/10
+                      bg-gray-900/50 border-2 border-black/10 dark:border-white/10
                       focus:border-cyber-500/50
                       rounded-lg
-                      text-white placeholder-gray-500
+                      text-light-900 dark:text-white placeholder-gray-500
                       focus:outline-none
                       transition-colors
                       resize-none

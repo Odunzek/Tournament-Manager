@@ -159,9 +159,9 @@ export default function Knockout({
   if (!tournament.knockoutBracket || tournament.knockoutBracket.length === 0) {
     return (
       <div className="text-center py-20">
-        <Trophy className="w-20 h-20 text-gray-600 mx-auto mb-6" />
-        <h3 className="text-2xl font-bold text-white mb-2">No Knockout Stage</h3>
-        <p className="text-gray-400">
+        <Trophy className="w-20 h-20 text-light-600 dark:text-gray-600 mx-auto mb-6" />
+        <h3 className="text-2xl font-bold text-light-900 dark:text-white mb-2">No Knockout Stage</h3>
+        <p className="text-light-600 dark:text-gray-400">
           Knockout bracket will appear here once generated from the Overview tab.
         </p>
       </div>
@@ -189,14 +189,14 @@ export default function Knockout({
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-white mb-1">Knockout Stage</h2>
-            <p className="text-gray-400">Two-legged ties</p>
+            <h2 className="text-2xl font-bold text-light-900 dark:text-white mb-1">Knockout Stage</h2>
+            <p className="text-light-600 dark:text-gray-400">Two-legged ties</p>
             {isMobile && (
-              <p className="text-xs text-gray-500 mt-2">💡 Tap rounds to expand/collapse</p>
+              <p className="text-xs text-light-600 dark:text-gray-500 mt-2">💡 Tap rounds to expand/collapse</p>
             )}
           </div>
-          <div className="bg-dark-100/50 backdrop-blur-md border border-white/10 rounded-xl px-4 py-2">
-            <span className="text-sm text-gray-400">
+          <div className="bg-light-100/50 dark:bg-dark-100/50 backdrop-blur-md border border-black/10 dark:border-white/10 rounded-xl px-4 py-2">
+            <span className="text-sm text-light-600 dark:text-gray-400">
               {completedTies} / {totalTies} ties completed
             </span>
           </div>
@@ -312,14 +312,14 @@ function RoundSection({
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
             <h3 className={`text-lg sm:text-xl font-bold ${colors.text}`}>{roundNames[roundKey]}</h3>
-            <span className="text-xs sm:text-sm text-gray-400">
+            <span className="text-xs sm:text-sm text-light-600 dark:text-gray-400">
               ({ties.filter(t => t.completed).length}/{ties.length} completed)
             </span>
           </div>
         </div>
         {isMobile && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 hidden sm:inline">
+            <span className="text-xs text-light-600 dark:text-gray-400 hidden sm:inline">
               {isExpanded ? 'Collapse' : 'Expand'}
             </span>
             <motion.div
@@ -396,19 +396,19 @@ function TieCard({
         {/* Teams with Aggregate */}
         <div className="space-y-3 mb-4">
           <div className={`flex items-center justify-between p-3 rounded-tech ${
-            tie.completed && tie.winner === tie.team1 ? 'bg-green-500/20 border border-green-500/30' : 'bg-dark-100/30'
+            tie.completed && tie.winner === tie.team1 ? 'bg-green-500/20 border border-green-500/30' : 'bg-light-100/30 dark:bg-dark-100/30'
           }`}>
-            <span className="font-bold text-white">{tie.team1}</span>
+            <span className="font-bold text-light-900 dark:text-white">{tie.team1}</span>
             {tie.completed && (
-              <span className="text-lg font-bold text-white">{team1Aggregate}</span>
+              <span className="text-lg font-bold text-light-900 dark:text-white">{team1Aggregate}</span>
             )}
           </div>
           <div className={`flex items-center justify-between p-3 rounded-tech ${
-            tie.completed && tie.winner === tie.team2 ? 'bg-green-500/20 border border-green-500/30' : 'bg-dark-100/30'
+            tie.completed && tie.winner === tie.team2 ? 'bg-green-500/20 border border-green-500/30' : 'bg-light-100/30 dark:bg-dark-100/30'
           }`}>
-            <span className="font-bold text-white">{tie.team2}</span>
+            <span className="font-bold text-light-900 dark:text-white">{tie.team2}</span>
             {tie.completed && (
-              <span className="text-lg font-bold text-white">{team2Aggregate}</span>
+              <span className="text-lg font-bold text-light-900 dark:text-white">{team2Aggregate}</span>
             )}
           </div>
         </div>
@@ -451,8 +451,8 @@ function TieCard({
 
         {/* Winner Badge */}
         {tie.completed && tie.winner && (
-          <div className="mt-4 pt-4 border-t border-white/10 text-center">
-            <span className="text-sm text-gray-400">Winner: </span>
+          <div className="mt-4 pt-4 border-t border-black/10 dark:border-white/10 text-center">
+            <span className="text-sm text-light-600 dark:text-gray-400">Winner: </span>
             <span className="font-bold text-green-400">{tie.winner}</span>
           </div>
         )}
@@ -486,11 +486,11 @@ function LegRow({
   onRecord,
 }: LegRowProps) {
   return (
-    <div className={`bg-dark-100/50 rounded-tech p-3 ${disabled ? 'opacity-50' : ''}`}>
+    <div className={`bg-light-100/50 dark:bg-dark-100/50 rounded-tech p-3 ${disabled ? 'opacity-50' : ''}`}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-gray-400" />
-          <span className="text-xs font-semibold text-gray-300">{label}</span>
+          <Calendar className="w-4 h-4 text-light-600 dark:text-gray-400" />
+          <span className="text-xs font-semibold text-light-700 dark:text-gray-300">{label}</span>
         </div>
         {isAuthenticated && !leg?.played && !disabled && (
           <button
@@ -505,13 +505,13 @@ function LegRow({
 
       {leg?.played ? (
         <div className="flex items-center justify-between">
-          <span className="text-sm text-white">{homeTeam}</span>
+          <span className="text-sm text-light-900 dark:text-white">{homeTeam}</span>
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-white">{leg.homeScore}</span>
-            <span className="text-gray-400">-</span>
-            <span className="text-lg font-bold text-white">{leg.awayScore}</span>
+            <span className="text-lg font-bold text-light-900 dark:text-white">{leg.homeScore}</span>
+            <span className="text-light-600 dark:text-gray-400">-</span>
+            <span className="text-lg font-bold text-light-900 dark:text-white">{leg.awayScore}</span>
           </div>
-          <span className="text-sm text-white">{awayTeam}</span>
+          <span className="text-sm text-light-900 dark:text-white">{awayTeam}</span>
         </div>
       ) : (
         <div className="text-center">

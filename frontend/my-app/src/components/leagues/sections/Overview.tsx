@@ -1,13 +1,14 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Users, TrendingUp, Target, Calendar, Edit, CheckCircle, UserPlus } from 'lucide-react';
+import { Trophy, Users, TrendingUp, Target, Calendar, Edit, CheckCircle, UserPlus, Trash2 } from 'lucide-react';
 import { League, LeaguePlayer, LeagueMatch } from '@/types/league';
 import { convertTimestamp } from '@/lib/leagueUtils';
 import Card from '../../ui/Card';
 import Button from '../../ui/Button';
 import MatchResultCard from '../MatchResultCard';
+import DeleteLeagueModal from '../DeleteLeagueModal';
 
 interface OverviewProps {
   league: League;
@@ -19,6 +20,7 @@ interface OverviewProps {
   isLoading: boolean;
   onAddPlayers?: () => void;
   onEndLeague?: () => void;
+  onMatchUpdated?: () => void;
 }
 
 export default function Overview({
@@ -31,7 +33,9 @@ export default function Overview({
   isLoading,
   onAddPlayers,
   onEndLeague,
+  onMatchUpdated,
 }: OverviewProps) {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const startDate = convertTimestamp(league.startDate);
   const endDate = league.endDate ? convertTimestamp(league.endDate) : null;
 
@@ -51,7 +55,7 @@ export default function Overview({
       },
       completed: {
         label: 'Completed',
-        className: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+        className: 'bg-gray-500/20 text-light-600 dark:text-gray-400 border-gray-500/30',
         icon: CheckCircle,
       },
     };
@@ -73,8 +77,8 @@ export default function Overview({
       <Card variant="glass">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div className="flex-1">
-            <h2 className="text-3xl font-bold text-white mb-2">{league.name}</h2>
-            <p className="text-lg text-gray-400 mb-4">{league.season}</p>
+            <h2 className="text-3xl font-bold text-light-900 dark:text-white mb-2">{league.name}</h2>
+            <p className="text-lg text-light-600 dark:text-gray-400 mb-4">{league.season}</p>
 
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2 text-gray-300">
@@ -102,7 +106,7 @@ export default function Overview({
         {/* Progress Bar */}
         {league.status === 'active' && (
           <div className="mt-6">
-            <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+            <div className="flex items-center justify-between text-sm text-light-600 dark:text-gray-400 mb-2">
               <span>League Progress</span>
               <span>
                 {league.matchesPlayed} / {league.totalMatches} matches ({Math.round(matchProgress)}%)
@@ -162,8 +166,8 @@ export default function Overview({
             <div className="flex items-center gap-3">
               <Users className="w-8 h-8 text-cyber-400" />
               <div>
-                <p className="text-xs text-gray-400">Players</p>
-                <p className="text-2xl font-bold text-white">{playerCount}</p>
+                <p className="text-xs text-light-600 dark:text-gray-400">Players</p>
+                <p className="text-2xl font-bold text-light-900 dark:text-white">{playerCount}</p>
               </div>
             </div>
           </Card>
@@ -181,8 +185,8 @@ export default function Overview({
             <div className="flex items-center gap-3">
               <TrendingUp className="w-8 h-8 text-electric-400" />
               <div>
-                <p className="text-xs text-gray-400">Matches Played</p>
-                <p className="text-2xl font-bold text-white">{league.matchesPlayed}</p>
+                <p className="text-xs text-light-600 dark:text-gray-400">Matches Played</p>
+                <p className="text-2xl font-bold text-light-900 dark:text-white">{league.matchesPlayed}</p>
               </div>
             </div>
           </Card>
@@ -200,8 +204,8 @@ export default function Overview({
             <div className="flex items-center gap-3">
               <CheckCircle className="w-8 h-8 text-green-400" />
               <div>
-                <p className="text-xs text-gray-400">Remaining</p>
-                <p className="text-2xl font-bold text-white">{league.totalMatches - league.matchesPlayed}</p>
+                <p className="text-xs text-light-600 dark:text-gray-400">Remaining</p>
+                <p className="text-2xl font-bold text-light-900 dark:text-white">{league.totalMatches - league.matchesPlayed}</p>
               </div>
             </div>
           </Card>
@@ -219,8 +223,8 @@ export default function Overview({
             <div className="flex items-center gap-3">
               <Target className="w-8 h-8 text-pink-400" />
               <div>
-                <p className="text-xs text-gray-400">Total Goals</p>
-                <p className="text-2xl font-bold text-white">{totalGoals || 0}</p>
+                <p className="text-xs text-light-600 dark:text-gray-400">Total Goals</p>
+                <p className="text-2xl font-bold text-light-900 dark:text-white">{totalGoals || 0}</p>
               </div>
             </div>
           </Card>
@@ -230,13 +234,13 @@ export default function Overview({
       {/* Recent Results */}
       {recentMatches.length > 0 && (
         <div>
-          <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <h3 className="text-xl font-bold text-light-900 dark:text-white mb-4 flex items-center gap-2">
             <Trophy className="w-5 h-5 text-cyber-400" />
             Recent Results
           </h3>
           <div className="space-y-3">
             {recentMatches.slice(0, 5).map((match, index) => (
-              <MatchResultCard key={match.id} match={match} index={index} />
+              <MatchResultCard key={match.id} match={match} index={index} onMatchUpdated={onMatchUpdated} />
             ))}
           </div>
         </div>
@@ -245,7 +249,7 @@ export default function Overview({
       {/* Admin Actions */}
       {isAuthenticated && (
         <Card variant="glass">
-          <h3 className="text-lg font-bold text-white mb-4">Quick Actions</h3>
+          <h3 className="text-lg font-bold text-light-900 dark:text-white mb-4">Quick Actions</h3>
           <div className="flex flex-col sm:flex-row gap-3">
             <Button
               variant="outline"
@@ -269,8 +273,28 @@ export default function Overview({
               </Button>
             )}
           </div>
+
+          {/* Delete League Section */}
+          <div className="mt-4 pt-4 border-t border-light-300 dark:border-white/10">
+            <p className="text-xs text-light-600 dark:text-gray-400 mb-2">Danger Zone</p>
+            <Button
+              variant="danger"
+              leftIcon={<Trash2 className="w-4 h-4" />}
+              onClick={() => setShowDeleteModal(true)}
+              className="w-full"
+            >
+              Delete League
+            </Button>
+          </div>
         </Card>
       )}
+
+      {/* Delete League Modal */}
+      <DeleteLeagueModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        league={league}
+      />
     </div>
   );
 }

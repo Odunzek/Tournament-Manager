@@ -17,11 +17,11 @@ interface NavigationCardProps {
 }
 
 const gradientClasses = {
-  cyber: 'from-cyber-500/20 to-cyber-600/20 hover:from-cyber-500/30 hover:to-cyber-600/30 border-cyber-500/30',
-  electric: 'from-electric-500/20 to-electric-600/20 hover:from-electric-500/30 hover:to-electric-600/30 border-electric-500/30',
-  neon: 'from-pink-500/20 to-purple-600/20 hover:from-pink-500/30 hover:to-purple-600/30 border-pink-500/30',
-  tech: 'from-blue-500/20 to-purple-600/20 hover:from-blue-500/30 hover:to-purple-600/30 border-blue-500/30',
-  gold: 'from-yellow-500/20 to-amber-600/20 hover:from-yellow-500/30 hover:to-amber-600/30 border-yellow-500/30',
+  cyber: 'from-cyber-500/20 to-cyber-600/20 hover:from-cyber-500/30 hover:to-cyber-600/30 border-cyber-600/40 dark:border-cyber-500/30',
+  electric: 'from-electric-500/20 to-electric-600/20 hover:from-electric-500/30 hover:to-electric-600/30 border-electric-600/40 dark:border-electric-500/30',
+  neon: 'from-pink-500/20 to-purple-600/20 hover:from-pink-500/30 hover:to-purple-600/30 border-pink-600/40 dark:border-pink-500/30',
+  tech: 'from-blue-500/20 to-purple-600/20 hover:from-blue-500/30 hover:to-purple-600/30 border-blue-600/40 dark:border-blue-500/30',
+  gold: 'from-yellow-500/20 to-amber-600/20 hover:from-yellow-500/30 hover:to-amber-600/30 border-yellow-600/40 dark:border-yellow-500/30',
 };
 
 const glowClasses = {
@@ -95,11 +95,11 @@ export default function NavigationCard({
 
             {/* Content */}
             <div className="flex-1">
-              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3 group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-gray-300 group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">
+              <h3 className="text-2xl sm:text-3xl font-bold text-light-900 dark:text-white mb-3 group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-gray-300 group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">
                 {title}
               </h3>
 
-              <p className="text-gray-300 text-sm sm:text-base leading-relaxed mb-4">
+              <p className="text-light-700 dark:text-gray-300 text-sm sm:text-base leading-relaxed mb-4">
                 {description}
               </p>
 
@@ -112,7 +112,7 @@ export default function NavigationCard({
 
             {/* Arrow Icon */}
             <motion.div
-              className="mt-6 flex items-center gap-2 text-white font-semibold"
+              className="mt-6 flex items-center gap-2 text-light-900 dark:text-white font-semibold"
               initial={{ x: 0 }}
               whileHover={{ x: 5 }}
               transition={{ duration: 0.2 }}

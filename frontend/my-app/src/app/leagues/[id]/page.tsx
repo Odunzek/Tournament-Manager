@@ -152,6 +152,25 @@ export default function LeagueDetailPage() {
     }
   };
 
+  // Handle match update
+  const handleMatchUpdated = async () => {
+    // Force recalculation of standings and streaks
+    if (!league?.id || leaguePlayers.length === 0) return;
+
+    setIsCalculating(true);
+    try {
+      const calculatedStandings = await calculateStandings(league.id, leaguePlayers);
+      const calculatedStreaks = await calculateWinStreaks(league.id, leaguePlayers);
+
+      setStandings(calculatedStandings);
+      setStreaks(calculatedStreaks);
+    } catch (error) {
+      console.error('Error recalculating after match update:', error);
+    } finally {
+      setIsCalculating(false);
+    }
+  };
+
   const loading = leagueLoading || matchesLoading;
 
   if (loading) {
@@ -205,13 +224,14 @@ export default function LeagueDetailPage() {
             isAuthenticated={isAuthenticated}
             onAddPlayers={() => setIsAddPlayersModalOpen(true)}
             onEndLeague={handleEndLeague}
+            onMatchUpdated={handleMatchUpdated}
             {...sectionProps}
           />
         );
       case 'standings':
         return <Standings standings={standings} leagueId={league.id!} {...sectionProps} />;
       case 'results':
-        return <Results matches={matches} players={leaguePlayers} {...sectionProps} />;
+        return <Results matches={matches} players={leaguePlayers} onMatchUpdated={handleMatchUpdated} {...sectionProps} />;
       case 'streaks':
         return <StreaksAndStats streaks={streaks} standings={standings} {...sectionProps} />;
       case 'record':

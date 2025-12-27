@@ -11,11 +11,11 @@ interface BadgeProps {
 }
 
 const variantClasses = {
-  default: 'bg-gray-500/20 text-gray-300 border-gray-500/30',
-  success: 'bg-green-500/20 text-green-300 border-green-500/30',
-  warning: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
-  danger: 'bg-red-500/20 text-red-300 border-red-500/30',
-  info: 'bg-cyber-500/20 text-cyber-300 border-cyber-500/30',
+  default: 'bg-gray-500/20 text-light-800 dark:text-gray-300 border-2 border-gray-600/40 dark:border-gray-500/30',
+  success: 'bg-green-500/20 text-green-700 dark:text-green-300 border-2 border-green-600/40 dark:border-green-500/30',
+  warning: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-2 border-yellow-600/40 dark:border-yellow-500/30',
+  danger: 'bg-red-500/20 text-red-700 dark:text-red-300 border-2 border-red-600/40 dark:border-red-500/30',
+  info: 'bg-cyber-500/20 text-cyber-700 dark:text-cyber-300 border-2 border-cyber-600/40 dark:border-cyber-500/30',
 };
 
 const glowClasses = {
@@ -41,7 +41,7 @@ export default function Badge({
         ${glow ? glowClasses[variant] : ''}
         inline-flex items-center gap-1
         px-2.5 py-1 text-xs font-semibold
-        rounded-full border backdrop-blur-sm
+        rounded-full backdrop-blur-sm
         ${className}
       `}
     >

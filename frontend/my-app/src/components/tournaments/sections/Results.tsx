@@ -255,7 +255,7 @@ export default function Results({ tournament, tournamentMembers }: ResultsProps)
             <Card variant="glass" className="bg-gradient-to-br from-yellow-500/20 to-amber-600/20 border-yellow-500/30">
               <div className="text-center">
                 <Trophy className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
-                <p className="text-sm text-gray-400 mb-1">Champion</p>
+                <p className="text-sm text-light-600 dark:text-gray-400 mb-1">Champion</p>
                 <h3 className="text-2xl font-bold text-yellow-400">{champion}</h3>
               </div>
             </Card>
@@ -263,9 +263,9 @@ export default function Results({ tournament, tournamentMembers }: ResultsProps)
             {/* Runner-up */}
             <Card variant="glass" className="bg-gradient-to-br from-gray-500/20 to-gray-600/20 border-gray-500/30">
               <div className="text-center">
-                <Award className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-sm text-gray-400 mb-1">Runner-up</p>
-                <h3 className="text-2xl font-bold text-gray-300">{runnerUp}</h3>
+                <Award className="w-12 h-12 text-light-600 dark:text-gray-400 mx-auto mb-3" />
+                <p className="text-sm text-light-600 dark:text-gray-400 mb-1">Runner-up</p>
+                <h3 className="text-2xl font-bold text-light-700 dark:text-gray-300">{runnerUp}</h3>
               </div>
             </Card>
           </div>
@@ -309,36 +309,36 @@ export default function Results({ tournament, tournamentMembers }: ResultsProps)
           {/* Match Records */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card variant="glass">
-              <h4 className="text-sm font-semibold text-gray-300 mb-2">Biggest Victory</h4>
-              <p className="text-lg font-bold text-white">{analytics.biggestVictory.match || 'N/A'}</p>
-              <p className="text-xs text-gray-400 mt-1">{analytics.biggestVictory.margin} goal margin</p>
+              <h4 className="text-sm font-semibold text-light-700 dark:text-gray-300 mb-2">Biggest Victory</h4>
+              <p className="text-lg font-bold text-light-900 dark:text-white">{analytics.biggestVictory.match || 'N/A'}</p>
+              <p className="text-xs text-light-600 dark:text-gray-400 mt-1">{analytics.biggestVictory.margin} goal margin</p>
             </Card>
 
             <Card variant="glass">
-              <h4 className="text-sm font-semibold text-gray-300 mb-2">Highest Scoring Match</h4>
-              <p className="text-lg font-bold text-white">{analytics.highestScoring.match || 'N/A'}</p>
-              <p className="text-xs text-gray-400 mt-1">{analytics.highestScoring.totalGoals} total goals</p>
+              <h4 className="text-sm font-semibold text-light-700 dark:text-gray-300 mb-2">Highest Scoring Match</h4>
+              <p className="text-lg font-bold text-light-900 dark:text-white">{analytics.highestScoring.match || 'N/A'}</p>
+              <p className="text-xs text-light-600 dark:text-gray-400 mt-1">{analytics.highestScoring.totalGoals} total goals</p>
             </Card>
           </div>
 
           {/* Tournament Totals */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <Card variant="glass">
-              <p className="text-xs text-gray-400 mb-1">Total Matches</p>
+              <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Total Matches</p>
               <p className="text-2xl font-bold text-cyber-400">{analytics.totalMatches}</p>
             </Card>
             <Card variant="glass">
-              <p className="text-xs text-gray-400 mb-1">Total Goals</p>
+              <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Total Goals</p>
               <p className="text-2xl font-bold text-electric-400">{Math.round(analytics.totalGoals)}</p>
             </Card>
             <Card variant="glass">
-              <p className="text-xs text-gray-400 mb-1">Avg Goals/Match</p>
+              <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Avg Goals/Match</p>
               <p className="text-2xl font-bold text-green-400">
                 {analytics.totalMatches > 0 ? (analytics.totalGoals / analytics.totalMatches).toFixed(1) : '0.0'}
               </p>
             </Card>
             <Card variant="glass">
-              <p className="text-xs text-gray-400 mb-1">Teams</p>
+              <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Teams</p>
               <p className="text-2xl font-bold text-pink-400">{tournamentMembers.length}</p>
             </Card>
           </div>
@@ -347,7 +347,7 @@ export default function Results({ tournament, tournamentMembers }: ResultsProps)
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             {/* Top Scoring Teams Chart */}
             <Card variant="glass">
-              <h4 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+              <h4 className="text-sm font-semibold text-light-900 dark:text-white mb-4 flex items-center gap-2">
                 <Target className="w-4 h-4 text-cyber-400" />
                 Top Scoring Teams
               </h4>
@@ -363,7 +363,7 @@ export default function Results({ tournament, tournamentMembers }: ResultsProps)
                           <span className="w-5 h-5 rounded-full bg-cyber-500/20 text-cyber-400 text-xs font-bold flex items-center justify-center">
                             {index + 1}
                           </span>
-                          <span className="text-white font-medium truncate">{team.name}</span>
+                          <span className="text-light-900 dark:text-white font-medium truncate">{team.name}</span>
                         </div>
                         <span className="text-cyber-400 font-bold">{team.goals}</span>
                       </div>
@@ -379,14 +379,14 @@ export default function Results({ tournament, tournamentMembers }: ResultsProps)
                   );
                 })}
                 {topScoringTeams.length === 0 && (
-                  <p className="text-sm text-gray-400 text-center py-4">No data available</p>
+                  <p className="text-sm text-light-600 dark:text-gray-400 text-center py-4">No data available</p>
                 )}
               </div>
             </Card>
 
             {/* Most Wins Chart */}
             <Card variant="glass">
-              <h4 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+              <h4 className="text-sm font-semibold text-light-900 dark:text-white mb-4 flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-electric-400" />
                 Most Wins
               </h4>
@@ -402,7 +402,7 @@ export default function Results({ tournament, tournamentMembers }: ResultsProps)
                           <span className="w-5 h-5 rounded-full bg-electric-500/20 text-electric-400 text-xs font-bold flex items-center justify-center">
                             {index + 1}
                           </span>
-                          <span className="text-white font-medium truncate">{team.name}</span>
+                          <span className="text-light-900 dark:text-white font-medium truncate">{team.name}</span>
                         </div>
                         <span className="text-electric-400 font-bold">{team.wins}</span>
                       </div>
@@ -418,7 +418,7 @@ export default function Results({ tournament, tournamentMembers }: ResultsProps)
                   );
                 })}
                 {topWinningTeams.length === 0 && (
-                  <p className="text-sm text-gray-400 text-center py-4">No data available</p>
+                  <p className="text-sm text-light-600 dark:text-gray-400 text-center py-4">No data available</p>
                 )}
               </div>
             </Card>
@@ -454,12 +454,12 @@ function CollapsibleSection({
         onClick={onToggle}
         className="w-full flex items-center justify-between mb-4 hover:opacity-80 transition-opacity"
       >
-        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+        <h2 className="text-xl font-bold text-light-900 dark:text-white flex items-center gap-2">
           {icon}
           {title}
         </h2>
         <ChevronDown
-          className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+          className={`w-5 h-5 text-light-600 dark:text-gray-400 transition-transform duration-200 ${
             isExpanded ? 'rotate-180' : ''
           }`}
         />
@@ -502,9 +502,9 @@ function StatCard({ label, value, subValue, icon, color }: StatCardProps) {
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0">{icon}</div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-gray-400 mb-1">{label}</p>
-          <p className="text-lg font-bold text-white truncate">{value}</p>
-          <p className="text-xs text-gray-400 mt-1">{subValue}</p>
+          <p className="text-xs text-light-600 dark:text-gray-400 mb-1">{label}</p>
+          <p className="text-lg font-bold text-light-900 dark:text-white truncate">{value}</p>
+          <p className="text-xs text-light-600 dark:text-gray-400 mt-1">{subValue}</p>
         </div>
       </div>
     </Card>

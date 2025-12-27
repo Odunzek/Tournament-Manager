@@ -40,7 +40,7 @@ export default function MatchCard({
         {/* Header: Group/Round + Status */}
         <div className="flex items-center justify-between">
           {showGroup && (match.groupId || match.round) && (
-            <div className="flex items-center gap-2 text-sm text-gray-400">
+            <div className="flex items-center gap-2 text-sm text-light-600 dark:text-gray-400">
               <MapPin className="w-4 h-4" />
               <span>{match.round || `Group ${match.groupId?.slice(-1)}`}</span>
             </div>
@@ -52,7 +52,7 @@ export default function MatchCard({
         <div className="flex items-center justify-between gap-4">
           {/* Home Team */}
           <div className="flex-1 text-right">
-            <p className="text-base sm:text-lg font-bold text-white truncate">
+            <p className="text-base sm:text-lg font-bold text-light-900 dark:text-white truncate">
               {match.homeTeamName}
             </p>
           </div>
@@ -84,16 +84,16 @@ export default function MatchCard({
 
           {/* Away Team */}
           <div className="flex-1">
-            <p className="text-base sm:text-lg font-bold text-white truncate">
+            <p className="text-base sm:text-lg font-bold text-light-900 dark:text-white truncate">
               {match.awayTeamName}
             </p>
           </div>
         </div>
 
         {/* Footer: Date + Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-white/10">
+        <div className="flex items-center justify-between pt-3 border-t border-light-300 dark:border-white/10">
           {showDate && (
-            <div className="flex items-center gap-2 text-sm text-gray-400">
+            <div className="flex items-center gap-2 text-sm text-light-600 dark:text-gray-400">
               <Calendar className="w-4 h-4" />
               <span>
                 {formatDate(scheduledDate)} • {formatTime(scheduledDate)}

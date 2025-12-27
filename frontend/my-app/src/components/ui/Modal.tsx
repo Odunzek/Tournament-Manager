@@ -66,7 +66,7 @@ export default function Modal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50"
             onClick={closeOnBackdrop ? onClose : undefined}
             aria-hidden="true"
           />
@@ -81,10 +81,10 @@ export default function Modal({
               className={`
                 ${sizeClasses[size]}
                 w-full
-                bg-dark-100/95 backdrop-blur-xl
-                border-2 border-white/10
-                rounded-tech-lg
-                shadow-glow-lg
+                bg-gradient-to-br from-dark-100 to-dark-200
+                border border-cyber-500/30
+                rounded-tech
+                shadow-glow
                 overflow-hidden
               `}
               role="dialog"
@@ -96,7 +96,7 @@ export default function Modal({
                 <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
                   <h2
                     id="modal-title"
-                    className="text-xl font-bold bg-gradient-to-r from-cyber-400 to-electric-500 bg-clip-text text-transparent"
+                    className="text-xl font-bold text-white"
                   >
                     {title}
                   </h2>

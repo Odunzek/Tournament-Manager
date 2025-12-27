@@ -35,8 +35,8 @@ export default function Groups({ tournament }: GroupsProps) {
     return (
       <div className="text-center py-20">
         <Trophy className="w-20 h-20 text-gray-600 mx-auto mb-6" />
-        <h3 className="text-2xl font-bold text-white mb-2">No Groups Generated</h3>
-        <p className="text-gray-400">
+        <h3 className="text-2xl font-bold text-light-900 dark:text-white mb-2">No Groups Generated</h3>
+        <p className="text-light-600 dark:text-gray-400">
           Groups will appear here once generated from the Overview tab.
         </p>
       </div>
@@ -54,13 +54,13 @@ export default function Groups({ tournament }: GroupsProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">Group Stage Standings</h2>
-          <p className="text-gray-400">{tournament.groups.length} Groups</p>
+          <h2 className="text-2xl font-bold text-light-900 dark:text-white mb-1">Group Stage Standings</h2>
+          <p className="text-light-600 dark:text-gray-400">{tournament.groups.length} Groups</p>
         </div>
         <div className="bg-dark-100/50 backdrop-blur-md border border-white/10 rounded-tech px-4 py-2">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-cyber-400" />
-            <span className="text-sm text-gray-400">
+            <span className="text-sm text-light-600 dark:text-gray-400">
               {playedMatches} / {totalMatches} matches played
             </span>
           </div>
@@ -153,9 +153,9 @@ function GroupCard({ group, index, tournamentId }: GroupCardProps) {
       <Card variant="glass" className={`bg-gradient-to-br ${gradient} border-white/10`}>
         {/* Group Header */}
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-white">{group.name}</h3>
+          <h3 className="text-xl font-bold text-light-900 dark:text-white">{group.name}</h3>
           <div className="text-right">
-            <div className="text-sm text-gray-400 font-medium mb-1">
+            <div className="text-sm text-light-600 dark:text-gray-400 font-medium mb-1">
               {playedMatches}/{totalMatches} matches
             </div>
             <div className="w-24 bg-dark-200 rounded-full h-2">
@@ -170,7 +170,7 @@ function GroupCard({ group, index, tournamentId }: GroupCardProps) {
 
         {/* Standings Table */}
         <div className="mb-6">
-          <h4 className="text-sm font-semibold text-gray-300 mb-3">Standings</h4>
+          <h4 className="text-sm font-semibold text-light-700 dark:text-gray-300 mb-3">Standings</h4>
           <div className="space-y-2">
             {sorted.map((standing, i) => {
               const hasAdjustments = standing.pointAdjustments && standing.pointAdjustments.length > 0;
@@ -187,13 +187,13 @@ function GroupCard({ group, index, tournamentId }: GroupCardProps) {
                     <div
                       className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                         i < 2
-                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
-                          : 'bg-dark-200 text-gray-400'
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-light-900 dark:text-white'
+                          : 'bg-dark-200 text-light-600 dark:text-gray-400'
                       }`}
                     >
                       {i + 1}
                     </div>
-                    <span className="font-semibold text-white truncate text-sm sm:text-base">{standing.teamName}</span>
+                    <span className="font-semibold text-light-900 dark:text-white truncate text-sm sm:text-base">{standing.teamName}</span>
                   </div>
                   <div className="flex items-center gap-1.5 sm:gap-3 text-xs flex-shrink-0">
                     <div className="flex items-center gap-1">
@@ -215,11 +215,11 @@ function GroupCard({ group, index, tournamentId }: GroupCardProps) {
                       )}
                     </div>
 
-                    <span className="text-gray-400 hidden sm:inline">{standing.played}P</span>
+                    <span className="text-light-600 dark:text-gray-400 hidden sm:inline">{standing.played}P</span>
                     <span className="text-green-400">{standing.won}W</span>
                     <span className="text-yellow-400 hidden xs:inline">{standing.drawn}D</span>
                     <span className="text-red-400">{standing.lost}L</span>
-                    <span className="text-gray-300 hidden sm:inline">
+                    <span className="text-light-700 dark:text-gray-300 hidden sm:inline">
                       {standing.goalDifference > 0 ? '+' : ''}
                       {standing.goalDifference}
                     </span>

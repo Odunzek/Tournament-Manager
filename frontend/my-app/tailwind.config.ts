@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: 'media',
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -55,6 +56,18 @@ const config: Config = {
           700: '#e4e4e7',
           800: '#f4f4f5',
           900: '#fafafa',
+        },
+        light: {
+          50: '#ffffff',
+          100: '#f8fafc',
+          200: '#f1f5f9',
+          300: '#e2e8f0',
+          400: '#cbd5e1',
+          500: '#94a3b8',
+          600: '#64748b',
+          700: '#475569',
+          800: '#334155',
+          900: '#0f172a',
         }
       },
       backgroundImage: {
@@ -74,6 +87,17 @@ const config: Config = {
         'neon-blue': '0 0 5px #3a86ff, 0 0 10px #3a86ff, 0 0 15px #3a86ff',
         'neon-purple': '0 0 5px #8338ec, 0 0 10px #8338ec, 0 0 15px #8338ec',
         'neon-pink': '0 0 5px #ff006e, 0 0 10px #ff006e, 0 0 15px #ff006e',
+        'glow-light': '0 0 20px rgba(14, 165, 233, 0.15)',
+        'glow-light-lg': '0 0 30px rgba(14, 165, 233, 0.2)',
+        'glow-light-purple': '0 0 20px rgba(168, 85, 247, 0.15)',
+        'glow-light-pink': '0 0 20px rgba(236, 72, 153, 0.15)',
+        // Light mode colored shadows for depth and visual prominence
+        'light-cyber': '0 4px 14px rgba(2, 132, 199, 0.25)',
+        'light-cyber-lg': '0 8px 24px rgba(2, 132, 199, 0.3)',
+        'light-electric': '0 4px 14px rgba(147, 51, 234, 0.25)',
+        'light-electric-lg': '0 8px 24px rgba(147, 51, 234, 0.3)',
+        'card-light': '0 4px 20px rgba(15, 23, 42, 0.08), 0 0 1px rgba(15, 23, 42, 0.1)',
+        'card-light-hover': '0 8px 30px rgba(2, 132, 199, 0.15), 0 0 1px rgba(2, 132, 199, 0.2)',
       },
       animation: {
         'float': 'float 6s ease-in-out infinite',

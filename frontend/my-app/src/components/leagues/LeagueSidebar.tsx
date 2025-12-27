@@ -51,8 +51,8 @@ export default function LeagueSidebar({
                   transition-all duration-200
                   ${
                     isActive
-                      ? 'bg-gradient-to-r from-cyber-500/20 to-electric-500/20 border-2 border-cyber-500/50 text-cyber-300 shadow-glow'
-                      : 'bg-dark-100/50 border-2 border-white/5 text-gray-400 hover:border-white/10 hover:text-white'
+                      ? 'bg-gradient-to-r from-cyber-500/20 to-electric-500/20 border-2 border-cyber-600/50 dark:border-cyber-500/50 text-cyber-700 dark:text-cyber-300 shadow-light-cyber dark:shadow-glow'
+                      : 'bg-light-100 dark:bg-dark-100/50 border-2 border-light-300 dark:border-white/5 text-light-700 dark:text-gray-400 hover:border-cyber-500/30 dark:hover:border-white/10 hover:text-light-900 dark:hover:text-white hover:bg-cyber-50 dark:hover:bg-white/5'
                   }
                 `}
               >
@@ -71,7 +71,7 @@ export default function LeagueSidebar({
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-dark-100/95 backdrop-blur-xl border-t border-white/10 z-40 safe-area-inset-bottom">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-light-50/95 dark:bg-dark-100/95 backdrop-blur-xl border-t border-cyber-500/20 dark:border-white/10 z-40 safe-area-inset-bottom">
         <div className="flex items-center justify-around px-1 py-2.5 overflow-x-auto scrollbar-hide">
           {sections.map((section) => {
             const Icon = section.icon;
@@ -86,8 +86,8 @@ export default function LeagueSidebar({
                   transition-all duration-200 min-w-[60px] flex-shrink-0
                   ${
                     isActive
-                      ? 'bg-cyber-500/20 text-cyber-400'
-                      : 'text-gray-400 active:bg-white/5'
+                      ? 'bg-cyber-500/20 text-cyber-700 dark:text-cyber-400 border border-cyber-600/30 dark:border-transparent'
+                      : 'text-light-700 dark:text-gray-400 active:bg-cyber-100 dark:active:bg-white/5'
                   }
                 `}
               >

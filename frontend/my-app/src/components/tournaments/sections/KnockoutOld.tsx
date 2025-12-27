@@ -116,7 +116,7 @@ function RoundSection({
       border: 'border-yellow-300',
       header: 'bg-gradient-to-r from-yellow-500 to-orange-500',
       accent: 'text-yellow-600',
-      button: 'bg-yellow-500 hover:bg-yellow-600 text-white'
+      button: 'bg-yellow-500 hover:bg-yellow-600 text-light-900 dark:text-white'
     }
   };
 
@@ -136,7 +136,7 @@ function RoundSection({
   return (
     <div className={`rounded-xl border-2 ${colors.bg} ${colors.border} overflow-hidden shadow-lg`}>
       {/* Round Header */}
-      <div className={`${colors.header} text-white px-4 sm:px-6 py-4 sm:py-5`}>
+      <div className={`${colors.header} text-light-900 dark:text-white px-4 sm:px-6 py-4 sm:py-5`}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h5 className="text-xl sm:text-2xl font-bold flex items-center gap-2 sm:gap-3">
             {roundNames[roundKey as keyof typeof roundNames] || roundKey.replace('_', ' ')}
@@ -190,7 +190,7 @@ function TieCard({
   return (
     <div className="border-2 rounded-xl overflow-hidden shadow-lg bg-gray-50 border-gray-300">
       {/* Main Match Header */}
-      <div className={`${roundColors.header} text-white px-4 sm:px-6 py-3 sm:py-4`}>
+      <div className={`${roundColors.header} text-light-900 dark:text-white px-4 sm:px-6 py-3 sm:py-4`}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="text-xl sm:text-2xl font-bold flex items-center gap-3 sm:gap-4">
             <span className="truncate max-w-[40vw] sm:max-w-none">{tie.team1}</span>
@@ -200,7 +200,7 @@ function TieCard({
           {tie.completed && tie.winner && (
             <div className="bg-black/30 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full flex items-center gap-2">
               <span className="text-xl sm:text-2xl">🏆</span>
-              <span className="font-bold text-white text-sm sm:text-base truncate">{tie.winner}</span>
+              <span className="font-bold text-light-900 dark:text-white text-sm sm:text-base truncate">{tie.winner}</span>
             </div>
           )}
         </div>
@@ -218,7 +218,7 @@ function TieCard({
                 <span className={tie.aggregateScore.team1Goals > tie.aggregateScore.team2Goals ? 'text-green-600' : 'text-gray-600'}>
                   {tie.aggregateScore.team1Goals}
                 </span>
-                <span className="text-gray-400">-</span>
+                <span className="text-light-600 dark:text-gray-400">-</span>
                 <span className={tie.aggregateScore.team2Goals > tie.aggregateScore.team1Goals ? 'text-green-600' : 'text-gray-600'}>
                   {tie.aggregateScore.team2Goals}
                 </span>
@@ -293,9 +293,9 @@ function LegCard({
       {/* Leg Header */}
       <div className="bg-gradient-to-r from-black/30 to-black/10 px-3 py-2">
         <div className="flex items-center justify-between">
-          <h4 className="font-bold text-xs sm:text-sm text-white drop-shadow-lg">{legName}</h4>
+          <h4 className="font-bold text-xs sm:text-sm text-light-900 dark:text-white drop-shadow-lg">{legName}</h4>
           {leg?.played && (
-            <span className="text-[10px] sm:text-xs bg-black/30 px-2 py-0.5 sm:py-1 rounded-full font-bold text-white">
+            <span className="text-[10px] sm:text-xs bg-black/30 px-2 py-0.5 sm:py-1 rounded-full font-bold text-light-900 dark:text-white">
               ✓ FINAL
             </span>
           )}
@@ -306,20 +306,20 @@ function LegCard({
         {/* Teams + Score */}
         <div className="text-center py-2.5 sm:py-3 mb-2.5 sm:mb-3">
           {leg?.played ? (
-            <div className="flex items-center justify-center gap-2.5 sm:gap-3 text-white">
+            <div className="flex items-center justify-center gap-2.5 sm:gap-3 text-light-900 dark:text-white">
               <span className="font-bold text-xs sm:text-sm drop-shadow-md truncate max-w-[38vw] sm:max-w-none">{leg?.homeTeam}</span>
               <div className="bg-black/40 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-white/20">
-                <span className="text-base sm:text-lg font-bold text-white drop-shadow-lg">
+                <span className="text-base sm:text-lg font-bold text-light-900 dark:text-white drop-shadow-lg">
                   {leg?.homeScore} - {leg?.awayScore}
                 </span>
               </div>
               <span className="font-bold text-xs sm:text-sm drop-shadow-md truncate max-w-[38vw] sm:max-w-none">{leg?.awayTeam}</span>
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-2.5 sm:gap-3 text-white">
+            <div className="flex items-center justify-center gap-2.5 sm:gap-3 text-light-900 dark:text-white">
               <span className="font-bold text-xs sm:text-sm drop-shadow-md truncate max-w-[38vw] sm:max-w-none">{leg?.homeTeam}</span>
               <div className="bg-black/40 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-white/20">
-                <span className="text-xs sm:text-sm font-bold text-white drop-shadow-lg">VS</span>
+                <span className="text-xs sm:text-sm font-bold text-light-900 dark:text-white drop-shadow-lg">VS</span>
               </div>
               <span className="font-bold text-xs sm:text-sm drop-shadow-md truncate max-w-[38vw] sm:max-w-none">{leg?.awayTeam}</span>
             </div>
@@ -338,16 +338,16 @@ function LegCard({
                   leg?.awayTeam
                 )}
                 disabled={isLoading}
-                className="w-full py-2 px-3 rounded-lg font-semibold transition-all duration-200 disabled:opacity-50 bg-black/30 hover:bg-black/40 text-white text-xs sm:text-sm border border-white/20 drop-shadow-md"
+                className="w-full py-2 px-3 rounded-lg font-semibold transition-all duration-200 disabled:opacity-50 bg-black/30 hover:bg-black/40 text-light-900 dark:text-white text-xs sm:text-sm border border-white/20 drop-shadow-md"
               >
                 {isLoading ? 'Recording...' : 'Record Result'}
               </button>
             ) : !firstLegPlayed ? (
-              <div className="text-center text-white text-xs sm:text-sm py-2 bg-black/20 rounded-lg border border-white/10 drop-shadow-md">
+              <div className="text-center text-light-900 dark:text-white text-xs sm:text-sm py-2 bg-black/20 rounded-lg border border-white/10 drop-shadow-md">
                 Complete first leg first
               </div>
             ) : (
-              <div className="text-center text-white text-xs sm:text-sm py-2 bg-black/30 rounded-lg font-semibold border border-white/20 drop-shadow-md">
+              <div className="text-center text-light-900 dark:text-white text-xs sm:text-sm py-2 bg-black/30 rounded-lg font-semibold border border-white/20 drop-shadow-md">
                 ⏳ Awaiting result
               </div>
             )}

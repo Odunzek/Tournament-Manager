@@ -278,6 +278,92 @@ export const recordBulkMatches = async (
 };
 
 /**
+ * Edit an existing match
+ */
+export const editMatch = async (
+  matchId: string,
+  updates: {
+    scoreA: number;
+    scoreB: number;
+  }
+): Promise<void> => {
+  try {
+    // Determine new winner
+    let winner: string | null = null;
+    const match = await getDoc(doc(db, MATCHES_COLLECTION, matchId));
+
+    if (!match.exists()) {
+      throw new Error('Match not found');
+    }
+
+    const matchData = match.data() as LeagueMatch;
+
+    if (updates.scoreA > updates.scoreB) {
+      winner = matchData.playerA;
+    } else if (updates.scoreB > updates.scoreA) {
+      winner = matchData.playerB;
+    }
+
+    // Update match document
+    await updateDoc(doc(db, MATCHES_COLLECTION, matchId), {
+      scoreA: updates.scoreA,
+      scoreB: updates.scoreB,
+      winner,
+      editedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error editing match:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a match
+ */
+export const deleteMatch = async (matchId: string, leagueId: string): Promise<void> => {
+  try {
+    await deleteDoc(doc(db, MATCHES_COLLECTION, matchId));
+
+    // Update league match count
+    const league = await getLeagueById(leagueId);
+    if (league && league.matchesPlayed > 0) {
+      await updateLeague(leagueId, {
+        matchesPlayed: league.matchesPlayed - 1,
+      });
+    }
+  } catch (error) {
+    console.error('Error deleting match:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete league and all associated matches
+ */
+export const deleteLeagueWithMatches = async (leagueId: string): Promise<void> => {
+  try {
+    // Delete all matches for this league
+    const matchesQuery = query(
+      collection(db, MATCHES_COLLECTION),
+      where('leagueId', '==', leagueId)
+    );
+    const matchesSnapshot = await getDocs(matchesQuery);
+
+    const deleteMatchPromises = matchesSnapshot.docs.map((matchDoc) =>
+      deleteDoc(doc(db, MATCHES_COLLECTION, matchDoc.id))
+    );
+
+    await Promise.all(deleteMatchPromises);
+
+    // Delete the league
+    await deleteLeague(leagueId);
+  } catch (error) {
+    console.error('Error deleting league with matches:', error);
+    throw error;
+  }
+};
+
+/**
  * Calculate league standings from matches
  */
 export const calculateStandings = async (

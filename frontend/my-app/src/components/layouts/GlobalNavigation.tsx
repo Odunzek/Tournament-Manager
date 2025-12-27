@@ -54,7 +54,7 @@ export default function GlobalNavigation() {
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="sticky top-0 z-50 bg-dark-50/80 backdrop-blur-xl border-b border-white/10"
+      className="sticky top-0 z-50 bg-light-50/90 dark:bg-dark-50/80 backdrop-blur-xl border-b border-cyber-500/20 dark:border-white/10 shadow-sm shadow-cyber-500/5 dark:shadow-none"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -88,13 +88,13 @@ export default function GlobalNavigation() {
                     relative px-3 sm:px-4 py-2 rounded-tech font-semibold text-sm
                     transition-all duration-200
                     ${active
-                      ? 'bg-gradient-cyber text-white shadow-glow'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-gradient-to-r from-cyber-600 to-electric-600 dark:from-cyber-500 dark:to-electric-600 text-white shadow-light-cyber-lg dark:shadow-glow'
+                      : 'text-light-700 dark:text-gray-400 hover:text-light-900 dark:hover:text-white hover:bg-cyber-100 dark:hover:bg-white/5'
                     }
                   `}
                 >
                   <div className="flex items-center gap-1.5">
-                    <Icon className={`w-4 h-4 ${active ? 'text-white' : 'text-gray-400'}`} />
+                    <Icon className={`w-4 h-4 ${active ? 'text-white' : 'text-light-600 dark:text-gray-400'}`} />
                     <span className="hidden sm:inline">{item.label}</span>
                   </div>
 

@@ -149,17 +149,17 @@ export default function TutorialOverlay() {
           className="absolute w-[90vw] max-w-md mx-4"
           style={getTooltipPosition()}
         >
-          <div className="bg-gradient-to-br from-dark-100 to-dark-200 border-2 border-cyber-500/50 rounded-2xl shadow-glow overflow-hidden">
+          <div className="bg-gradient-to-br from-light-100 to-light-200 dark:from-dark-100 dark:to-dark-200 border-2 border-cyber-500/50 rounded-2xl shadow-glow overflow-hidden">
             {/* Close Button */}
             <button
               onClick={skipTutorial}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+              className="absolute top-4 right-4 text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white transition-colors z-10"
             >
               <X className="w-5 h-5" />
             </button>
 
             {/* Progress Bar */}
-            <div className="h-1.5 bg-dark-200">
+            <div className="h-1.5 bg-light-200 dark:bg-dark-200">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
@@ -176,15 +176,15 @@ export default function TutorialOverlay() {
                   <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-gray-400 mb-1">
+                  <div className="text-xs text-light-600 dark:text-gray-400 mb-1">
                     Step {currentStep + 1} of {currentFlow.steps.length}
                   </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white break-words">{step.title}</h3>
+                  <h3 className="text-lg sm:text-xl font-bold text-light-900 dark:text-white break-words">{step.title}</h3>
                 </div>
               </div>
 
               {/* Description */}
-              <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6 leading-relaxed">{step.description}</p>
+              <p className="text-sm sm:text-base text-light-700 dark:text-gray-300 mb-4 sm:mb-6 leading-relaxed">{step.description}</p>
 
               {/* Navigation Buttons */}
               <div className="flex items-center justify-between gap-2 sm:gap-3">
@@ -192,7 +192,7 @@ export default function TutorialOverlay() {
                   variant="ghost"
                   size="sm"
                   onClick={skipTutorial}
-                  className="text-gray-400 hover:text-white text-xs sm:text-sm"
+                  className="text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white text-xs sm:text-sm"
                 >
                   Skip
                 </Button>

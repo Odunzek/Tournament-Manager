@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { getGroupMembers } from "./membershipUtils";
+import { getPlayers } from "./playerUtils";
 
 // TYPES
 export type RankingEntry = {
@@ -48,7 +49,7 @@ export function subscribeToRankings(
   });
 }
 
-// ENSURE RANKINGS FOR ALL MEMBERS
+// ENSURE RANKINGS FOR ALL MEMBERS (Legacy - uses group_members)
 export async function ensureRankingsForAllMembers(): Promise<RankingEntry[]> {
   const members = await getGroupMembers();
   const existing = await getAllRankings();
@@ -79,6 +80,43 @@ export async function ensureRankingsForAllMembers(): Promise<RankingEntry[]> {
 
   if (newEntries.length > 0) {
     await batch.commit();
+  }
+
+  return [...existing, ...newEntries].sort((a, b) => a.rank - b.rank);
+}
+
+// ENSURE RANKINGS FOR ALL PLAYERS (New - uses players collection)
+export async function ensureRankingsForAllPlayers(): Promise<RankingEntry[]> {
+  const players = await getPlayers();
+  const existing = await getAllRankings();
+
+  const existingIds = new Set(existing.map((r) => r.memberId));
+  const currentMaxRank = existing.length
+    ? Math.max(...existing.map((r) => r.rank))
+    : 0;
+  let nextRank = currentMaxRank + 1;
+
+  const batch = writeBatch(db);
+  const newEntries: RankingEntry[] = [];
+
+  for (const player of players) {
+    if (player.id && !existingIds.has(player.id)) {
+      const entry: RankingEntry = {
+        memberId: player.id,
+        name: player.name,
+        rank: nextRank++,
+        coolOff: "",
+        wildCard: "",
+        updatedAt: serverTimestamp(),
+      };
+      batch.set(doc(rankingsCol, player.id), entry);
+      newEntries.push(entry);
+    }
+  }
+
+  if (newEntries.length > 0) {
+    await batch.commit();
+    console.log(`✅ Added ${newEntries.length} players to P4P rankings`);
   }
 
   return [...existing, ...newEntries].sort((a, b) => a.rank - b.rank);

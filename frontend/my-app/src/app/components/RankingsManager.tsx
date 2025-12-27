@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import {
   RankingEntry,
-  ensureRankingsForAllMembers,
+  ensureRankingsForAllPlayers,
   moveUp,
   moveDown,
   updateRankingFields,
@@ -34,7 +34,7 @@ export default function RankingManager() {
 
   useEffect(() => {
     setLoading(true);
-    ensureRankingsForAllMembers().then(() => {
+    ensureRankingsForAllPlayers().then(() => {
       const unsubscribe = subscribeToRankings(setRankings);
       setLoading(false);
       return unsubscribe;

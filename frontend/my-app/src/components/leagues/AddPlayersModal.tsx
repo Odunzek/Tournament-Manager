@@ -97,11 +97,11 @@ export default function AddPlayersModal({
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <UserPlus className="w-6 h-6 text-cyber-400" />
-                    <h2 className="text-2xl font-bold text-white">Add Players to League</h2>
+                    <h2 className="text-2xl font-bold text-light-900 dark:text-white">Add Players to League</h2>
                   </div>
                   <button
                     onClick={handleClose}
-                    className="text-gray-400 hover:text-white transition-colors"
+                    className="text-light-600 dark:text-gray-400 hover:text-light-900 dark:text-white transition-colors"
                   >
                     <X className="w-6 h-6" />
                   </button>
@@ -117,7 +117,7 @@ export default function AddPlayersModal({
 
                     {availablePlayers.length > 0 ? (
                       <>
-                        <div className="max-h-96 overflow-y-auto bg-dark-100 border-2 border-white/10 rounded-xl p-4">
+                        <div className="max-h-96 overflow-y-auto bg-light-100 dark:bg-dark-100 border-2 border-black/10 dark:border-white/10 rounded-xl p-4">
                           <div className="space-y-2">
                             {availablePlayers.map((player) => (
                               <label
@@ -128,23 +128,23 @@ export default function AddPlayersModal({
                                   type="checkbox"
                                   checked={selectedPlayerIds.includes(player.id!)}
                                   onChange={() => togglePlayer(player.id!)}
-                                  className="w-5 h-5 rounded-lg border-2 border-white/20 bg-dark-100 text-cyber-500 focus:ring-cyber-500 focus:ring-offset-0 focus:ring-2"
+                                  className="w-5 h-5 rounded-lg border-2 border-white/20 bg-light-100 dark:bg-dark-100 text-cyber-500 focus:ring-cyber-500 focus:ring-offset-0 focus:ring-2"
                                 />
                                 <div className="flex-1">
-                                  <span className="text-white font-medium block">{player.name}</span>
-                                  <span className="text-gray-400 text-sm">@{player.psnId}</span>
+                                  <span className="text-light-900 dark:text-white font-medium block">{player.name}</span>
+                                  <span className="text-light-600 dark:text-gray-400 text-sm">@{player.psnId}</span>
                                 </div>
                               </label>
                             ))}
                           </div>
                         </div>
-                        <p className="text-sm text-gray-400 mt-2">
+                        <p className="text-sm text-light-600 dark:text-gray-400 mt-2">
                           {selectedPlayerIds.length} player(s) selected
                         </p>
                       </>
                     ) : (
-                      <div className="bg-dark-100 border-2 border-white/10 rounded-xl p-8 text-center">
-                        <p className="text-gray-400">
+                      <div className="bg-light-100 dark:bg-dark-100 border-2 border-black/10 dark:border-white/10 rounded-xl p-8 text-center">
+                        <p className="text-light-600 dark:text-gray-400">
                           All available players are already in this league
                         </p>
                       </div>

@@ -28,7 +28,7 @@ export default function StandingsTable({
   return (
     <div className="overflow-hidden">
       {groupName && (
-        <h3 className="text-xl font-bold text-white mb-4 bg-gradient-to-r from-cyber-400 to-electric-500 bg-clip-text text-transparent">
+        <h3 className="text-xl font-bold text-light-900 dark:text-white mb-4 bg-gradient-to-r from-cyber-400 to-electric-500 bg-clip-text text-transparent">
           {groupName}
         </h3>
       )}
@@ -37,35 +37,35 @@ export default function StandingsTable({
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-white/10">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-cyber-300 bg-gradient-to-r from-cyber-500/10 to-electric-500/10">
+            <tr className="border-b border-light-300 dark:border-white/10">
+              <th className="px-4 py-3 text-left text-xs font-semibold text-cyber-700 dark:text-cyber-300 bg-gradient-to-r from-cyber-500/15 to-electric-500/15 dark:from-cyber-500/10 dark:to-electric-500/10">
                 Pos
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-cyber-300 bg-gradient-to-r from-cyber-500/10 to-electric-500/10">
+              <th className="px-4 py-3 text-left text-xs font-semibold text-cyber-700 dark:text-cyber-300 bg-gradient-to-r from-cyber-500/15 to-electric-500/15 dark:from-cyber-500/10 dark:to-electric-500/10">
                 Team
               </th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-300 bg-gradient-to-r from-cyber-500/10 to-electric-500/10">
+              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-700 dark:text-cyber-300 bg-gradient-to-r from-cyber-500/15 to-electric-500/15 dark:from-cyber-500/10 dark:to-electric-500/10">
                 P
               </th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-300 bg-gradient-to-r from-cyber-500/10 to-electric-500/10">
+              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-700 dark:text-cyber-300 bg-gradient-to-r from-cyber-500/15 to-electric-500/15 dark:from-cyber-500/10 dark:to-electric-500/10">
                 W
               </th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-300 bg-gradient-to-r from-cyber-500/10 to-electric-500/10">
+              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-700 dark:text-cyber-300 bg-gradient-to-r from-cyber-500/15 to-electric-500/15 dark:from-cyber-500/10 dark:to-electric-500/10">
                 D
               </th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-300 bg-gradient-to-r from-cyber-500/10 to-electric-500/10">
+              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-700 dark:text-cyber-300 bg-gradient-to-r from-cyber-500/15 to-electric-500/15 dark:from-cyber-500/10 dark:to-electric-500/10">
                 L
               </th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-300 bg-gradient-to-r from-cyber-500/10 to-electric-500/10">
+              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-700 dark:text-cyber-300 bg-gradient-to-r from-cyber-500/15 to-electric-500/15 dark:from-cyber-500/10 dark:to-electric-500/10">
                 GF
               </th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-300 bg-gradient-to-r from-cyber-500/10 to-electric-500/10">
+              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-700 dark:text-cyber-300 bg-gradient-to-r from-cyber-500/15 to-electric-500/15 dark:from-cyber-500/10 dark:to-electric-500/10">
                 GA
               </th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-300 bg-gradient-to-r from-cyber-500/10 to-electric-500/10">
+              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-700 dark:text-cyber-300 bg-gradient-to-r from-cyber-500/15 to-electric-500/15 dark:from-cyber-500/10 dark:to-electric-500/10">
                 GD
               </th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-300 bg-gradient-to-r from-cyber-500/10 to-electric-500/10">
+              <th className="px-4 py-3 text-center text-xs font-semibold text-cyber-700 dark:text-cyber-300 bg-gradient-to-r from-cyber-500/15 to-electric-500/15 dark:from-cyber-500/10 dark:to-electric-500/10">
                 Pts
               </th>
             </tr>
@@ -78,8 +78,8 @@ export default function StandingsTable({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
                 className={`
-                  border-b border-white/5
-                  hover:bg-white/5 transition-colors
+                  border-b border-light-300/50 dark:border-white/5
+                  hover:bg-black/5 dark:hover:bg-white/5 transition-colors
                   ${isHighlighted(team.position) ? 'bg-cyber-500/10' : ''}
                 `}
               >
@@ -88,25 +88,25 @@ export default function StandingsTable({
                     w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs
                     ${isHighlighted(team.position)
                       ? 'bg-gradient-to-r from-cyber-500 to-electric-600 text-white'
-                      : 'text-gray-400'
+                      : 'text-light-600 dark:text-gray-400'
                     }
                   `}>
                     {team.position}
                   </div>
                 </td>
-                <td className="px-4 py-3 text-sm font-semibold text-white">
+                <td className="px-4 py-3 text-sm font-semibold text-light-900 dark:text-white">
                   {team.teamName}
                 </td>
-                <td className="px-4 py-3 text-sm text-center text-gray-300">{team.played}</td>
-                <td className="px-4 py-3 text-sm text-center text-gray-300">{team.won}</td>
-                <td className="px-4 py-3 text-sm text-center text-gray-300">{team.drawn}</td>
-                <td className="px-4 py-3 text-sm text-center text-gray-300">{team.lost}</td>
-                <td className="px-4 py-3 text-sm text-center text-gray-300">{team.goalsFor}</td>
-                <td className="px-4 py-3 text-sm text-center text-gray-300">{team.goalsAgainst}</td>
+                <td className="px-4 py-3 text-sm text-center text-light-700 dark:text-gray-300">{team.played}</td>
+                <td className="px-4 py-3 text-sm text-center text-light-700 dark:text-gray-300">{team.won}</td>
+                <td className="px-4 py-3 text-sm text-center text-light-700 dark:text-gray-300">{team.drawn}</td>
+                <td className="px-4 py-3 text-sm text-center text-light-700 dark:text-gray-300">{team.lost}</td>
+                <td className="px-4 py-3 text-sm text-center text-light-700 dark:text-gray-300">{team.goalsFor}</td>
+                <td className="px-4 py-3 text-sm text-center text-light-700 dark:text-gray-300">{team.goalsAgainst}</td>
                 <td className={`px-4 py-3 text-sm text-center font-semibold ${
                   team.goalDifference > 0 ? 'text-green-400' :
                   team.goalDifference < 0 ? 'text-red-400' :
-                  'text-gray-300'
+                  'text-light-700 dark:text-gray-300'
                 }`}>
                   {team.goalDifference > 0 ? '+' : ''}{team.goalDifference}
                 </td>
@@ -131,7 +131,7 @@ export default function StandingsTable({
               rounded-lg border
               ${isHighlighted(team.position)
                 ? 'bg-cyber-500/10 border-cyber-500/30'
-                : 'bg-dark-100/50 border-white/10'
+                : 'bg-light-100 dark:bg-dark-100/50 border-light-300 dark:border-white/10'
               }
             `}
           >
@@ -183,7 +183,7 @@ export default function StandingsTable({
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="border-t border-white/10 overflow-hidden"
+                  className="border-t border-light-300 dark:border-white/10 overflow-hidden"
                 >
                   <div className="grid grid-cols-3 gap-3 p-4">
                     <div className="text-center">
