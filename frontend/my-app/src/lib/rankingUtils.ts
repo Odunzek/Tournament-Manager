@@ -90,13 +90,28 @@ export async function ensureRankingsForAllPlayers(): Promise<RankingEntry[]> {
   const players = await getPlayers();
   const existing = await getAllRankings();
 
+  // Create a set of valid player IDs
+  const validPlayerIds = new Set(players.map((p) => p.id).filter(Boolean));
   const existingIds = new Set(existing.map((r) => r.memberId));
+
+  const batch = writeBatch(db);
+  let cleanupCount = 0;
+  let addCount = 0;
+
+  // 1. CLEANUP: Remove rankings for players that no longer exist
+  for (const ranking of existing) {
+    if (!validPlayerIds.has(ranking.memberId)) {
+      batch.delete(doc(rankingsCol, ranking.memberId));
+      cleanupCount++;
+    }
+  }
+
+  // 2. ADD: Add missing players to rankings
   const currentMaxRank = existing.length
     ? Math.max(...existing.map((r) => r.rank))
     : 0;
   let nextRank = currentMaxRank + 1;
 
-  const batch = writeBatch(db);
   const newEntries: RankingEntry[] = [];
 
   for (const player of players) {
@@ -111,15 +126,47 @@ export async function ensureRankingsForAllPlayers(): Promise<RankingEntry[]> {
       };
       batch.set(doc(rankingsCol, player.id), entry);
       newEntries.push(entry);
+      addCount++;
     }
   }
 
-  if (newEntries.length > 0) {
+  // Commit all changes
+  if (cleanupCount > 0 || addCount > 0) {
     await batch.commit();
-    console.log(`✅ Added ${newEntries.length} players to P4P rankings`);
+    if (cleanupCount > 0) {
+      console.log(`🧹 Removed ${cleanupCount} orphaned rankings`);
+    }
+    if (addCount > 0) {
+      console.log(`✅ Added ${addCount} players to P4P rankings`);
+    }
   }
 
-  return [...existing, ...newEntries].sort((a, b) => a.rank - b.rank);
+  // Return cleaned up rankings
+  const validRankings = existing.filter((r) => validPlayerIds.has(r.memberId));
+  const allRankings = [...validRankings, ...newEntries].sort((a, b) => a.rank - b.rank);
+
+  // 3. RENUMBER: Fix gaps in ranking numbers (always check, not just after cleanup)
+  const renumberBatch = writeBatch(db);
+  let hasGaps = false;
+
+  allRankings.forEach((ranking, index) => {
+    const correctRank = index + 1;
+    if (ranking.rank !== correctRank) {
+      hasGaps = true;
+      renumberBatch.update(doc(rankingsCol, ranking.memberId), {
+        rank: correctRank,
+        updatedAt: serverTimestamp(),
+      });
+      ranking.rank = correctRank; // Update in-memory
+    }
+  });
+
+  if (hasGaps) {
+    await renumberBatch.commit();
+    console.log(`🔢 Renumbered rankings to fix gaps (fixed ${allRankings.length} ranks)`);
+  }
+
+  return allRankings;
 }
 
 // UPDATE SINGLE ENTRY FIELDS

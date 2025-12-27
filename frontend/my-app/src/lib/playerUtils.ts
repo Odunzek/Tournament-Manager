@@ -18,7 +18,8 @@ import {
   where,
   Timestamp,
   serverTimestamp,
-  setDoc
+  setDoc,
+  writeBatch
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Player, PlayerFormData, calculateTier } from '@/types/player';
@@ -267,6 +268,25 @@ export const deletePlayer = async (playerId: string): Promise<void> => {
       if (rankingDoc.exists()) {
         await deleteDoc(rankingRef);
         console.log('✅ Removed from P4P rankings');
+
+        // Renumber remaining rankings to fix gaps
+        const rankingsCol = collection(db, 'rankings');
+        const rankingsSnapshot = await getDocs(query(rankingsCol, orderBy('rank', 'asc')));
+
+        const batch = writeBatch(db);
+        rankingsSnapshot.docs.forEach((rankDoc, index) => {
+          const correctRank = index + 1;
+          const currentRank = rankDoc.data().rank;
+          if (currentRank !== correctRank) {
+            batch.update(doc(db, 'rankings', rankDoc.id), {
+              rank: correctRank,
+              updatedAt: serverTimestamp()
+            });
+          }
+        });
+
+        await batch.commit();
+        console.log('✅ Renumbered P4P rankings');
       }
     } catch (error) {
       console.warn('⚠️ Could not remove from rankings:', error);
