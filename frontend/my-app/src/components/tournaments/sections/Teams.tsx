@@ -279,7 +279,7 @@ export default function Teams({ tournament, tournamentMembers }: TeamsProps) {
                 </h3>
                 <button
                   onClick={() => setIsAddModalOpen(false)}
-                  className="p-2 rounded-lg hover:bg-white/10 transition-colors text-light-600 dark:text-gray-400 hover:text-light-900 dark:text-white"
+                  className="p-2 rounded-lg hover:bg-white/10 transition-colors text-light-600 dark:text-white hover:text-light-900"
                 >
                   <X className="w-5 h-5" />
                 </button>

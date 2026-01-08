@@ -9,7 +9,7 @@
  * Hall of Fame Tier based on total titles
  * - Legend: 10+ titles
  * - Champion: 5-9 titles
- * - Veteran: 3-4 titles
+ * - Veteran: 1-4 titles
  */
 export type HallOfFameTier = 'legend' | 'champion' | 'veteran' | null;
 
@@ -21,7 +21,7 @@ export interface PlayerAchievements {
   tournamentWins: number;
   totalTitles: number;
   tier?: HallOfFameTier;
-  inductionDate?: string; // ISO date string when player reached 3+ titles
+  inductionDate?: string; // ISO date string when player reached 1+ titles
 }
 
 /**
@@ -90,7 +90,7 @@ export interface HallOfFameSection {
 export function calculateTier(totalTitles: number): HallOfFameTier {
   if (totalTitles >= 10) return 'legend';
   if (totalTitles >= 5) return 'champion';
-  if (totalTitles >= 3) return 'veteran';
+  if (totalTitles >= 1) return 'veteran';
   return null;
 }
 
@@ -127,7 +127,7 @@ export function getTierInfo(tier: HallOfFameTier): {
         color: 'text-orange-400',
         gradient: 'from-orange-600 to-amber-700',
         icon: '🎖️',
-        minTitles: 3,
+        minTitles: 1,
       };
     default:
       return {
@@ -160,7 +160,7 @@ export function getProgressToNextTier(totalTitles: number): {
     };
   }
 
-  if (totalTitles >= 3) {
+  if (totalTitles >= 1) {
     return {
       nextTier: 'champion',
       titlesNeeded: 5 - totalTitles,
@@ -170,7 +170,7 @@ export function getProgressToNextTier(totalTitles: number): {
 
   return {
     nextTier: 'veteran',
-    titlesNeeded: 3 - totalTitles,
-    percentage: (totalTitles / 3) * 100,
+    titlesNeeded: 1 - totalTitles,
+    percentage: (totalTitles / 1) * 100,
   };
 }

@@ -12,12 +12,14 @@ import TrophyDisplay from '@/components/players/TrophyDisplay';
 import PlayerFormModal from '@/components/players/PlayerFormModal';
 import { usePlayer } from '@/hooks/usePlayers';
 import { updatePlayer, deletePlayer } from '@/lib/playerUtils';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function PlayerDetailPage() {
   const params = useParams();
   const router = useRouter();
   const playerId = params.id as string;
   const { player, loading } = usePlayer(playerId);
+  const { isAuthenticated } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -158,38 +160,40 @@ export default function PlayerDetailPage() {
               )}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={handleEdit}
-                className="
-                  p-3 rounded-lg
-                  bg-cyber-500/20 border-2 border-cyber-500/30
-                  hover:bg-cyber-500/30 hover:border-cyber-500/50
-                  text-cyber-400 hover:text-cyber-300
-                  transition-all duration-300
-                  hover:shadow-glow
-                "
-                title="Edit Player"
-              >
-                <Edit className="w-5 h-5" />
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="
-                  p-3 rounded-lg
-                  bg-red-500/20 border-2 border-red-500/30
-                  hover:bg-red-500/30 hover:border-red-500/50
-                  text-red-400 hover:text-red-300
-                  transition-all duration-300
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                "
-                title="Delete Player"
-              >
-                {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
-              </button>
-            </div>
+            {/* Action Buttons - Admin Only */}
+            {isAuthenticated && (
+              <div className="flex gap-3">
+                <button
+                  onClick={handleEdit}
+                  className="
+                    p-3 rounded-lg
+                    bg-cyber-500/20 border-2 border-cyber-500/30
+                    hover:bg-cyber-500/30 hover:border-cyber-500/50
+                    text-cyber-400 hover:text-cyber-300
+                    transition-all duration-300
+                    hover:shadow-glow
+                  "
+                  title="Edit Player"
+                >
+                  <Edit className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="
+                    p-3 rounded-lg
+                    bg-red-500/20 border-2 border-red-500/30
+                    hover:bg-red-500/30 hover:border-red-500/50
+                    text-red-400 hover:text-red-300
+                    transition-all duration-300
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                  "
+                  title="Delete Player"
+                >
+                  {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                </button>
+              </div>
+            )}
           </div>
         </motion.div>
 

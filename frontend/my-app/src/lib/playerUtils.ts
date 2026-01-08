@@ -51,7 +51,7 @@ export const createPlayer = async (
     };
 
     // Only add inductionDate if Hall of Fame eligible (Firebase doesn't allow undefined)
-    if (totalTitles >= 3) {
+    if (totalTitles >= 1) {
       achievements.inductionDate = now.toISOString();
     }
 
@@ -204,7 +204,7 @@ export const updatePlayer = async (
 
       // Set induction date if reaching Hall of Fame for first time
       let inductionDate = currentPlayer.achievements.inductionDate;
-      if (totalTitles >= 3 && !inductionDate) {
+      if (totalTitles >= 1 && !inductionDate) {
         inductionDate = new Date().toISOString();
       }
 
@@ -371,12 +371,12 @@ export const searchPlayers = async (searchQuery: string): Promise<Player[]> => {
 };
 
 /**
- * Get Hall of Fame members (3+ titles)
+ * Get Hall of Fame members (1+ titles)
  */
 export const getHallOfFameMembers = async (): Promise<Player[]> => {
   try {
     const allPlayers = await getPlayers();
-    return allPlayers.filter(player => player.achievements.totalTitles >= 3);
+    return allPlayers.filter(player => player.achievements.totalTitles >= 1);
   } catch (error) {
     console.error('❌ Error getting Hall of Fame members:', error);
     return [];
@@ -584,8 +584,8 @@ export const subscribeToHallOfFame = (
       } as Player;
     });
 
-    // Filter for Hall of Fame members (3+ titles)
-    const hofMembers = allPlayers.filter(player => player.achievements.totalTitles >= 3);
+    // Filter for Hall of Fame members (1+ titles)
+    const hofMembers = allPlayers.filter(player => player.achievements.totalTitles >= 1);
     callback(hofMembers);
   }, (error) => {
     console.error('❌ Error in Hall of Fame subscription:', error);
