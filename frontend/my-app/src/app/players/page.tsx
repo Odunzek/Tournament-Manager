@@ -45,7 +45,7 @@ export default function PlayersPage() {
 
     // Hall of Fame filter
     if (filters.hallOfFameOnly) {
-      result = result.filter((p) => p.achievements.totalTitles >= 3);
+      result = result.filter((p) => p.achievements.totalTitles >= 1);
     }
 
     // Sort
@@ -64,7 +64,7 @@ export default function PlayersPage() {
     return result;
   }, [searchQuery, filters, players]);
 
-  const hallOfFameCount = players.filter((p) => p.achievements?.totalTitles >= 3).length || 0;
+  const hallOfFameCount = players.filter((p) => p.achievements?.totalTitles >= 1).length || 0;
 
   const handlePlayerClick = (player: Player) => {
     router.push(`/players/${player.id}`);

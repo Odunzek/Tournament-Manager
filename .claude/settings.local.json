@@ -10,7 +10,8 @@
       "Bash(npx vercel pull:*)",
       "Bash(npm run dev:*)",
       "Bash(taskkill:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate Hall of Fame qualification to 1 trophy and make delete player admin-only\n\n- Reduced Hall of Fame qualification from 3 trophies to 1 trophy\n- Updated tier calculation: Veteran tier now starts at 1 trophy \\(was 3\\)\n- Updated all Hall of Fame filters and induction date logic\n- Made delete/edit player buttons admin-only in player detail page\n- Added auth check to protect admin actions\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate Hall of Fame qualification to 1 trophy and make delete player admin-only\n\n- Reduced Hall of Fame qualification from 3 trophies to 1 trophy\n- Updated tier calculation: Veteran tier now starts at 1 trophy \\(was 3\\)\n- Updated all Hall of Fame filters and induction date logic\n- Made delete/edit player buttons admin-only in player detail page\n- Added auth check to protect admin actions\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)"
     ]
   }
 }

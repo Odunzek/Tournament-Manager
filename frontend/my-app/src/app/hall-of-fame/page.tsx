@@ -391,7 +391,7 @@ export default function HallOfFamePage() {
             <Crown className="w-24 h-24 text-gray-700 mx-auto mb-6" />
             <h3 className="text-2xl font-bold text-gray-400 mb-3">Hall of Fame Awaits</h3>
             <p className="text-gray-500 max-w-md mx-auto">
-              The Hall of Fame will honor players who achieve 3 or more total titles. Compete in
+              The Hall of Fame will honor players who achieve 1 or more total titles. Compete in
               leagues and tournaments to earn your place among the legends!
             </p>
           </motion.div>

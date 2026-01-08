@@ -144,12 +144,8 @@ export function useAllTimeRecords() {
 
     fetchRecords();
 
-    // Re-fetch when players change (could be optimized with a subscription)
-    const interval = setInterval(fetchRecords, 10000); // Refresh every 10 seconds
-
     return () => {
       mounted = false;
-      clearInterval(interval);
     };
   }, []);
 

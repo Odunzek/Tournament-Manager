@@ -23,7 +23,7 @@ export default function PlayerDetailPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const isHallOfFame = player ? player.achievements.totalTitles >= 3 : false;
+  const isHallOfFame = player ? player.achievements.totalTitles >= 1 : false;
 
   const handleEdit = () => {
     setIsEditModalOpen(true);
