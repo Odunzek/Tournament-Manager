@@ -35,7 +35,7 @@ const navItems = [
 export default function GlobalNavigation() {
   const pathname = usePathname();
   const router = useRouter();
-  const { isAuthenticated, setShowAuthModal, logout } = useAuth();
+  const { isAuthenticated, adminUser, setShowAuthModal, logout } = useAuth();
 
   /**
    * Check if a navigation item is currently active
@@ -113,10 +113,20 @@ export default function GlobalNavigation() {
 
           {/* Auth Button - Right */}
           <div className="flex items-center gap-1.5 sm:gap-3">
-            {isAuthenticated && (
+            {isAuthenticated && adminUser && (
               <div className="admin-badge flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-green-500/20 border border-green-500/30 rounded-full">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="hidden xs:inline text-green-400 font-semibold text-xs">Admin</span>
+                {adminUser.photoURL ? (
+                  <img
+                    src={adminUser.photoURL}
+                    alt={adminUser.displayName || 'Admin'}
+                    className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border border-green-400/50"
+                  />
+                ) : (
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                )}
+                <span className="hidden sm:inline text-green-400 font-semibold text-xs max-w-[100px] truncate">
+                  {adminUser.displayName || adminUser.email?.split('@')[0] || 'Admin'}
+                </span>
               </div>
             )}
             {isAuthenticated ? (
