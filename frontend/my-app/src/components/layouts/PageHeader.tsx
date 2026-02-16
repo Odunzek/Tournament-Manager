@@ -50,7 +50,7 @@ export default function PageHeader({
             ease: "easeInOut"
           }}
         >
-          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-neon-yellow to-neon-pink rounded-full shadow-glow-pink" />
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-neon-yellow to-neon-pink rounded-full shadow-light-pink dark:shadow-glow-pink" />
         </motion.div>
       </div>
 

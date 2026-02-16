@@ -12,7 +12,7 @@ function RankingsPageContent() {
   return (
     <MainLayout showBackground={false}>
       <GlobalNavigation />
-      <div className="min-h-screen bg-gradient-to-br from-dark-50 via-dark-100 to-dark-200">
+      <div className="min-h-screen bg-gradient-to-br from-light-100 via-light-200 to-light-300 dark:from-dark-50 dark:via-dark-100 dark:to-dark-200">
         <Container maxWidth="4xl" className="py-8 sm:py-12">
           <PageHeader
             title="P4P Rankings"

@@ -21,7 +21,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, Calendar, Trophy, Target, ChevronDown } from 'lucide-react';
-import { Tournament, GroupMatch, KnockoutTie, TournamentGroup, updateTournament, getTournamentById } from '@/lib/tournamentUtils';
+import { Tournament, GroupMatch, KnockoutTie, TournamentGroup, updateTournament, recordKnockoutMatch, getTournamentById } from '@/lib/tournamentUtils';
 import Card from '../../ui/Card';
 import Input from '../../ui/Input';
 import Button from '../../ui/Button';
@@ -141,27 +141,9 @@ export default function Fixtures({
   const [searchQuery, setSearchQuery] = useState('');
   const [recordingMatch, setRecordingMatch] = useState<UnifiedMatch | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [isMobile, setIsMobile] = useState(false);
+  const [expandedRounds, setExpandedRounds] = useState<Set<string>>(new Set());
 
-  // Detect mobile screen size
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Initialize all groups as expanded on desktop, collapsed on mobile
-  useEffect(() => {
-    if (!isMobile && tournament.groups) {
-      setExpandedGroups(new Set(tournament.groups.map(g => g.name)));
-    } else {
-      setExpandedGroups(new Set());
-    }
-  }, [isMobile, tournament.groups]);
+  // All groups and rounds start collapsed
 
   const toggleGroup = (groupName: string) => {
     setExpandedGroups(prev => {
@@ -170,6 +152,18 @@ export default function Fixtures({
         newSet.delete(groupName);
       } else {
         newSet.add(groupName);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleRound = (roundKey: string) => {
+    setExpandedRounds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(roundKey)) {
+        newSet.delete(roundKey);
+      } else {
+        newSet.add(roundKey);
       }
       return newSet;
     });
@@ -295,6 +289,19 @@ export default function Fixtures({
   }, [filteredMatches]);
 
   const knockoutMatches = filteredMatches.filter((m) => m.phase === 'knockout');
+
+  // Group knockout matches by round
+  const groupedByRound = useMemo(() => {
+    const grouped: Record<string, UnifiedMatch[]> = {};
+    knockoutMatches.forEach((match) => {
+      if (!grouped[match.round]) {
+        grouped[match.round] = [];
+      }
+      grouped[match.round].push(match);
+    });
+    return grouped;
+  }, [knockoutMatches]);
+
   const hasGroupMatches = Object.keys(groupedByGroup).length > 0;
   const hasKnockoutMatches = knockoutMatches.length > 0;
 
@@ -328,48 +335,16 @@ export default function Fixtures({
 
         await updateTournament(tournament.id!, { groups: updatedGroups });
       } else {
-        // Update knockout match
-        const updatedBracket = freshTournament.knockoutBracket?.map((tie) => {
-          if (tie.id !== recordingMatch.tieId) return tie;
-
-          if (recordingMatch.leg === 'first') {
-            return {
-              ...tie,
-              firstLeg: {
-                id: tie.firstLeg?.id || `${tie.id}_leg1`,
-                leg: 'first' as const,
-                homeTeam: recordingMatch.homeTeam,
-                awayTeam: recordingMatch.awayTeam,
-                homeScore,
-                awayScore,
-                played: true,
-              },
-            };
-          } else {
-            // Calculate aggregate for second leg
-            const firstLegHomeScore = tie.firstLeg?.homeScore || 0;
-            const firstLegAwayScore = tie.firstLeg?.awayScore || 0;
-            const aggregateHome = firstLegHomeScore + awayScore;
-            const aggregateAway = firstLegAwayScore + homeScore;
-
-            return {
-              ...tie,
-              secondLeg: {
-                id: tie.secondLeg?.id || `${tie.id}_leg2`,
-                leg: 'second' as const,
-                homeTeam: recordingMatch.homeTeam,
-                awayTeam: recordingMatch.awayTeam,
-                homeScore,
-                awayScore,
-                played: true,
-              },
-              winner: aggregateHome > aggregateAway ? tie.team1 : tie.team2,
-              completed: true,
-            };
-          }
-        });
-
-        await updateTournament(tournament.id!, { knockoutBracket: updatedBracket });
+        // Update knockout match using recordKnockoutMatch for proper round progression
+        await recordKnockoutMatch(
+          tournament.id!,
+          recordingMatch.tieId!,
+          recordingMatch.leg!,
+          recordingMatch.homeTeam,
+          recordingMatch.awayTeam,
+          homeScore,
+          awayScore
+        );
       }
 
       // Refresh tournament data
@@ -492,10 +467,10 @@ export default function Fixtures({
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-gradient-to-br from-cyber-500/10 to-electric-500/10 border-2 border-cyber-500/30 rounded-tech-lg overflow-hidden"
               >
-                {/* Group Header - Clickable on mobile */}
+                {/* Group Header - Always clickable */}
                 <button
-                  onClick={() => isMobile && toggleGroup(groupName)}
-                  className={`w-full flex items-center justify-between p-6 ${isMobile ? 'cursor-pointer hover:bg-cyber-500/5 active:bg-cyber-500/10' : 'cursor-default'} transition-colors ${!isExpanded ? 'pb-6' : 'pb-4 border-b-2 border-cyber-500/30'}`}
+                  onClick={() => toggleGroup(groupName)}
+                  className={`w-full flex items-center justify-between p-6 cursor-pointer hover:bg-cyber-500/5 active:bg-cyber-500/10 transition-colors select-none ${!isExpanded ? 'pb-6' : 'pb-4 border-b-2 border-cyber-500/30'}`}
                 >
                   <h3 className="text-xl font-bold text-light-900 dark:text-white flex items-center gap-2">
                     <div className="w-10 h-10 rounded-tech bg-gradient-cyber flex items-center justify-center">
@@ -507,11 +482,9 @@ export default function Fixtures({
                     <div className="text-sm text-light-600 dark:text-gray-400">
                       {playedCount}/{totalCount} matches
                     </div>
-                    {isMobile && (
-                      <ChevronDown
-                        className={`w-5 h-5 text-cyber-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                      />
-                    )}
+                    <ChevronDown
+                      className={`w-5 h-5 text-cyber-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                    />
                   </div>
                 </button>
 
@@ -519,9 +492,9 @@ export default function Fixtures({
                 <AnimatePresence>
                   {isExpanded && (
                     <motion.div
-                      initial={isMobile ? { height: 0, opacity: 0 } : false}
+                      initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
-                      exit={isMobile ? { height: 0, opacity: 0 } : {}}
+                      exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.3 }}
                       className="overflow-hidden"
                     >
@@ -546,25 +519,87 @@ export default function Fixtures({
         </div>
       )}
 
-      {/* Knockout Matches */}
+      {/* Knockout Matches - Grouped by Round */}
       {(phaseFilter === 'all' || phaseFilter === 'knockout') && hasKnockoutMatches && (
-        <div>
+        <div className="space-y-8">
           <h2 className="text-2xl font-bold text-light-900 dark:text-white mb-6 flex items-center gap-3">
             <Trophy className="w-7 h-7 text-pink-400" />
             Knockout Stage Fixtures
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {knockoutMatches.map((match, index) => (
-              <MatchCard
-                key={match.id}
-                match={match}
-                index={index}
-                isAuthenticated={isAuthenticated}
-                isLoading={isLoading}
-                onRecordMatch={setRecordingMatch}
-              />
-            ))}
-          </div>
+
+          {['Round of 16', 'Quarter Finals', 'Semi Finals', 'Final'].map((roundLabel) => {
+            const roundMatches = groupedByRound[roundLabel];
+            if (!roundMatches || roundMatches.length === 0) return null;
+
+            const playedCount = roundMatches.filter((m) => m.played).length;
+            const totalCount = roundMatches.length;
+            const isExpanded = expandedRounds.has(roundLabel);
+
+            const roundColors: Record<string, { gradient: string; border: string; text: string }> = {
+              'Round of 16': { gradient: 'from-cyan-500/10 to-blue-500/10', border: 'border-cyan-500/30', text: 'text-cyan-500 dark:text-cyan-400' },
+              'Quarter Finals': { gradient: 'from-pink-500/10 to-purple-500/10', border: 'border-pink-500/30', text: 'text-pink-500 dark:text-pink-400' },
+              'Semi Finals': { gradient: 'from-orange-500/10 to-red-500/10', border: 'border-orange-500/30', text: 'text-orange-500 dark:text-orange-400' },
+              'Final': { gradient: 'from-yellow-500/10 to-amber-500/10', border: 'border-yellow-500/30', text: 'text-yellow-600 dark:text-yellow-400' },
+            };
+
+            const colors = roundColors[roundLabel] || roundColors['Round of 16'];
+
+            return (
+              <motion.div
+                key={roundLabel}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`bg-gradient-to-br ${colors.gradient} border-2 ${colors.border} rounded-tech-lg overflow-hidden`}
+              >
+                {/* Round Header */}
+                <button
+                  onClick={() => toggleRound(roundLabel)}
+                  className={`w-full flex items-center justify-between p-6 cursor-pointer hover:opacity-80 transition-all select-none ${!isExpanded ? 'pb-6' : 'pb-4 border-b-2 ' + colors.border}`}
+                >
+                  <h3 className={`text-xl font-bold ${colors.text} flex items-center gap-2`}>
+                    <div className={`w-10 h-10 rounded-tech bg-gradient-to-br ${colors.gradient} border-2 ${colors.border} flex items-center justify-center`}>
+                      <Trophy className={`w-5 h-5 ${colors.text}`} />
+                    </div>
+                    {roundLabel}
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm text-light-600 dark:text-gray-400">
+                      {playedCount}/{totalCount} matches
+                    </div>
+                    <ChevronDown
+                      className={`w-5 h-5 ${colors.text} transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                    />
+                  </div>
+                </button>
+
+                {/* Round Matches - Collapsible */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-6 pt-4">
+                        {roundMatches.map((match, index) => (
+                          <MatchCard
+                            key={match.id}
+                            match={match}
+                            index={index}
+                            isAuthenticated={isAuthenticated}
+                            isLoading={isLoading}
+                            onRecordMatch={setRecordingMatch}
+                          />
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
         </div>
       )}
 
@@ -643,7 +678,7 @@ function MatchCard({ match, index, isAuthenticated, isLoading, onRecordMatch }: 
             ) : (
               <Trophy className="w-4 h-4 text-pink-400" />
             )}
-            <span className="text-sm font-semibold text-gray-300">
+            <span className="text-sm font-semibold text-light-700 dark:text-gray-300">
               {match.round}
               {match.groupName && ` - ${match.groupName}`}
               {match.leg && ` (${match.leg === 'first' ? '1st' : '2nd'} Leg)`}
@@ -664,8 +699,8 @@ function MatchCard({ match, index, isAuthenticated, isLoading, onRecordMatch }: 
         <div className="space-y-3">
           <div className={`flex items-center justify-between rounded-tech p-3 transition-all ${
             homeWon ? 'bg-green-500/10 border-2 border-green-500/30' :
-            awayWon ? 'bg-dark-100/20' :
-            'bg-dark-100/30'
+            awayWon ? 'bg-light-200/20 dark:bg-dark-100/20' :
+            'bg-light-200/30 dark:bg-dark-100/30'
           }`}>
             <span className={`font-bold ${homeWon ? 'text-green-400' : 'text-light-900 dark:text-white'}`}>
               {match.homeTeam}
@@ -673,7 +708,7 @@ function MatchCard({ match, index, isAuthenticated, isLoading, onRecordMatch }: 
             {match.played && match.homeScore !== undefined && (
               <span className={`text-2xl font-extrabold ${
                 homeWon ? 'text-green-400' :
-                awayWon ? 'text-gray-500' :
+                awayWon ? 'text-light-500 dark:text-gray-500' :
                 'text-light-900 dark:text-white'
               }`}>
                 {match.homeScore}
@@ -682,13 +717,13 @@ function MatchCard({ match, index, isAuthenticated, isLoading, onRecordMatch }: 
           </div>
 
           <div className="flex items-center justify-center">
-            <span className="text-gray-500 font-bold">vs</span>
+            <span className="text-light-500 dark:text-gray-500 font-bold">vs</span>
           </div>
 
           <div className={`flex items-center justify-between rounded-tech p-3 transition-all ${
             awayWon ? 'bg-green-500/10 border-2 border-green-500/30' :
-            homeWon ? 'bg-dark-100/20' :
-            'bg-dark-100/30'
+            homeWon ? 'bg-light-200/20 dark:bg-dark-100/20' :
+            'bg-light-200/30 dark:bg-dark-100/30'
           }`}>
             <span className={`font-bold ${awayWon ? 'text-green-400' : 'text-light-900 dark:text-white'}`}>
               {match.awayTeam}
@@ -696,7 +731,7 @@ function MatchCard({ match, index, isAuthenticated, isLoading, onRecordMatch }: 
             {match.played && match.awayScore !== undefined && (
               <span className={`text-2xl font-extrabold ${
                 awayWon ? 'text-green-400' :
-                homeWon ? 'text-gray-500' :
+                homeWon ? 'text-light-500 dark:text-gray-500' :
                 'text-light-900 dark:text-white'
               }`}>
                 {match.awayScore}

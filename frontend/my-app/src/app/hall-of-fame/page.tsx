@@ -92,7 +92,7 @@ export default function HallOfFamePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="text-xl text-gray-300 mb-6"
+            className="text-xl text-light-700 dark:text-gray-300 mb-6"
           >
             Honoring the legends who have achieved greatness
           </motion.p>
@@ -119,7 +119,7 @@ export default function HallOfFamePage() {
             className="text-center py-16"
           >
             <Loader2 className="w-12 h-12 text-yellow-400 mx-auto mb-4 animate-spin" />
-            <p className="text-gray-400">Loading Hall of Fame...</p>
+            <p className="text-light-600 dark:text-gray-400">Loading Hall of Fame...</p>
           </motion.div>
         )}
 
@@ -131,7 +131,7 @@ export default function HallOfFamePage() {
             transition={{ delay: 0.6 }}
             className="mb-12"
           >
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3">
+            <h2 className="text-3xl font-bold text-light-900 dark:text-white mb-6 flex items-center gap-3">
               <Trophy className="w-8 h-8 text-yellow-400" />
               All-Time Records
             </h2>
@@ -153,7 +153,7 @@ export default function HallOfFamePage() {
               >
                 <div className="flex items-center gap-3 mb-3">
                   <Trophy className="w-6 h-6 text-yellow-400" />
-                  <span className="text-sm text-gray-400 font-semibold">Most Titles</span>
+                  <span className="text-sm text-light-600 dark:text-gray-400 font-semibold">Most Titles</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <PlayerAvatar
@@ -164,7 +164,7 @@ export default function HallOfFamePage() {
                     borderColor="border-yellow-500/50"
                   />
                   <div>
-                    <div className="font-bold text-white">{allTimeRecords.mostTitles.name}</div>
+                    <div className="font-bold text-light-900 dark:text-white">{allTimeRecords.mostTitles.name}</div>
                     <div className="text-2xl font-black text-yellow-400">
                       {allTimeRecords.mostTitles.achievements.totalTitles}
                     </div>
@@ -181,14 +181,14 @@ export default function HallOfFamePage() {
                   border-2 border-cyber-500/30
                   rounded-2xl p-5
                   backdrop-blur-xl
-                  hover:shadow-glow
+                  hover:shadow-light-cyber dark:hover:shadow-glow
                   transition-all duration-300
                   cursor-pointer
                 "
               >
                 <div className="flex items-center gap-3 mb-3">
                   <Trophy className="w-6 h-6 text-cyber-400" />
-                  <span className="text-sm text-gray-400 font-semibold">Most Leagues</span>
+                  <span className="text-sm text-light-600 dark:text-gray-400 font-semibold">Most Leagues</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <PlayerAvatar
@@ -199,7 +199,7 @@ export default function HallOfFamePage() {
                     borderColor="border-cyber-500/50"
                   />
                   <div>
-                    <div className="font-bold text-white">{allTimeRecords.mostLeagues.name}</div>
+                    <div className="font-bold text-light-900 dark:text-white">{allTimeRecords.mostLeagues.name}</div>
                     <div className="text-2xl font-black text-cyber-400">
                       {allTimeRecords.mostLeagues.achievements.leagueWins}
                     </div>
@@ -216,14 +216,14 @@ export default function HallOfFamePage() {
                   border-2 border-electric-500/30
                   rounded-2xl p-5
                   backdrop-blur-xl
-                  hover:shadow-glow-purple
+                  hover:shadow-light-electric dark:hover:shadow-glow-purple
                   transition-all duration-300
                   cursor-pointer
                 "
               >
                 <div className="flex items-center gap-3 mb-3">
                   <Trophy className="w-6 h-6 text-electric-400" />
-                  <span className="text-sm text-gray-400 font-semibold">Most Tournaments</span>
+                  <span className="text-sm text-light-600 dark:text-gray-400 font-semibold">Most Tournaments</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <PlayerAvatar
@@ -234,7 +234,7 @@ export default function HallOfFamePage() {
                     borderColor="border-electric-500/50"
                   />
                   <div>
-                    <div className="font-bold text-white">{allTimeRecords.mostTournaments.name}</div>
+                    <div className="font-bold text-light-900 dark:text-white">{allTimeRecords.mostTournaments.name}</div>
                     <div className="text-2xl font-black text-electric-400">
                       {allTimeRecords.mostTournaments.achievements.tournamentWins}
                     </div>
@@ -258,7 +258,7 @@ export default function HallOfFamePage() {
               >
                 <div className="flex items-center gap-3 mb-3">
                   <TrendingUp className="w-6 h-6 text-green-400" />
-                  <span className="text-sm text-gray-400 font-semibold">Top Player</span>
+                  <span className="text-sm text-light-600 dark:text-gray-400 font-semibold">Top Player</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <PlayerAvatar
@@ -269,7 +269,7 @@ export default function HallOfFamePage() {
                     borderColor="border-green-500/50"
                   />
                   <div>
-                    <div className="font-bold text-white">{allTimeRecords.currentChampion.name}</div>
+                    <div className="font-bold text-light-900 dark:text-white">{allTimeRecords.currentChampion.name}</div>
                     <div className="text-2xl font-black text-green-400">
                       {allTimeRecords.currentChampion.achievements.totalTitles}
                     </div>
@@ -288,7 +288,7 @@ export default function HallOfFamePage() {
             transition={{ delay: 0.7 }}
             className="mb-12"
           >
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3">
+            <h2 className="text-3xl font-bold text-light-900 dark:text-white mb-6 flex items-center gap-3">
               <Calendar className="w-8 h-8 text-electric-400" />
               Recent Inductees
             </h2>
@@ -307,7 +307,7 @@ export default function HallOfFamePage() {
                     border-2 border-electric-500/30
                     rounded-2xl p-5
                     backdrop-blur-xl
-                    hover:shadow-glow-purple
+                    hover:shadow-light-electric dark:hover:shadow-glow-purple
                     transition-all duration-300
                     cursor-pointer
                   "
@@ -321,14 +321,14 @@ export default function HallOfFamePage() {
                       borderColor="border-electric-500/50"
                     />
                     <div className="flex-1">
-                      <div className="font-bold text-white text-lg">{player.name}</div>
+                      <div className="font-bold text-light-900 dark:text-white text-lg">{player.name}</div>
                       {player.psnId && player.psnId !== 'player' && (
-                        <div className="text-sm text-gray-400">@{player.psnId}</div>
+                        <div className="text-sm text-light-600 dark:text-gray-400">@{player.psnId}</div>
                       )}
                     </div>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-400">
+                    <span className="text-light-600 dark:text-gray-400">
                       {convertTimestamp(player.achievements.inductionDate!).toLocaleDateString('en-US', {
                         month: 'short',
                         year: 'numeric',
@@ -352,7 +352,7 @@ export default function HallOfFamePage() {
             transition={{ delay: 0.8 }}
             className="mb-12"
           >
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3">
+            <h2 className="text-3xl font-bold text-light-900 dark:text-white mb-6 flex items-center gap-3">
               <Trophy className="w-8 h-8 text-yellow-400" />
               Hall of Fame Members
             </h2>
@@ -389,8 +389,8 @@ export default function HallOfFamePage() {
             className="text-center py-20"
           >
             <Crown className="w-24 h-24 text-gray-700 mx-auto mb-6" />
-            <h3 className="text-2xl font-bold text-gray-400 mb-3">Hall of Fame Awaits</h3>
-            <p className="text-gray-500 max-w-md mx-auto">
+            <h3 className="text-2xl font-bold text-light-600 dark:text-gray-400 mb-3">Hall of Fame Awaits</h3>
+            <p className="text-light-500 dark:text-gray-500 max-w-md mx-auto">
               The Hall of Fame will honor players who achieve 1 or more total titles. Compete in
               leagues and tournaments to earn your place among the legends!
             </p>

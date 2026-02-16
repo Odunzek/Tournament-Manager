@@ -54,7 +54,7 @@ export default function DeleteLeagueModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-dark-100 to-dark-200 rounded-tech shadow-glow border border-red-500/30 max-w-md w-full mx-4 transform transition-all duration-300">
+      <div className="bg-gradient-to-br from-light-50 to-light-100 dark:from-dark-100 dark:to-dark-200 rounded-tech shadow-card-light dark:shadow-glow border border-red-500/30 max-w-md w-full mx-4 transform transition-all duration-300">
         <div className="p-8">
           {/* Icon */}
           <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-red-500/20 rounded-tech border-2 border-red-500/30">
@@ -62,19 +62,19 @@ export default function DeleteLeagueModal({
           </div>
 
           {/* Title */}
-          <h3 className="text-2xl font-bold text-white text-center mb-3">
+          <h3 className="text-2xl font-bold text-light-900 dark:text-white text-center mb-3">
             Delete League
           </h3>
-          <p className="text-gray-400 text-center mb-6 text-sm">
+          <p className="text-light-600 dark:text-gray-400 text-center mb-6 text-sm">
             This action cannot be undone!
           </p>
 
           {/* Warning Section */}
           <div className="bg-red-500/10 border border-red-500/30 rounded-tech p-4 mb-6">
-            <p className="text-sm text-gray-300 leading-relaxed mb-3">
+            <p className="text-sm text-light-700 dark:text-gray-300 leading-relaxed mb-3">
               Deleting this league will permanently remove:
             </p>
-            <ul className="space-y-2 text-sm text-gray-400">
+            <ul className="space-y-2 text-sm text-light-600 dark:text-gray-400">
               <li className="flex items-start gap-2">
                 <span className="text-red-400">•</span>
                 <span>The league "{league.name}"</span>
@@ -96,7 +96,7 @@ export default function DeleteLeagueModal({
 
           {/* Confirmation Input */}
           <div className="mb-6">
-            <label className="block text-sm font-bold text-gray-300 mb-3">
+            <label className="block text-sm font-bold text-light-700 dark:text-gray-300 mb-3">
               Type <span className="text-red-400 font-mono">delete</span> to confirm
             </label>
             <input
@@ -108,7 +108,7 @@ export default function DeleteLeagueModal({
               }}
               placeholder="Type 'delete' here"
               disabled={isDeleting}
-              className={`w-full px-4 py-4 rounded-tech bg-dark-50 text-white focus:outline-none transition-all duration-300 border-2 ${
+              className={`w-full px-4 py-4 rounded-tech bg-light-200 dark:bg-dark-50 text-light-900 dark:text-white focus:outline-none transition-all duration-300 border-2 ${
                 error
                   ? 'border-red-500/50 focus:border-red-500'
                   : 'border-red-500/30 focus:border-red-500'
@@ -129,7 +129,7 @@ export default function DeleteLeagueModal({
               type="button"
               onClick={handleClose}
               disabled={isDeleting}
-              className="flex-1 bg-dark-50 hover:bg-dark-100 text-gray-300 px-6 py-4 rounded-tech font-bold transition-all duration-300 border border-white/10 hover:border-white/20 disabled:opacity-50"
+              className="flex-1 bg-light-200 hover:bg-light-300 dark:bg-dark-50 dark:hover:bg-dark-100 text-light-700 dark:text-gray-300 px-6 py-4 rounded-tech font-bold transition-all duration-300 border border-black/10 dark:border-white/10 hover:border-black/20 dark:hover:border-white/20 disabled:opacity-50"
             >
               Cancel
             </button>

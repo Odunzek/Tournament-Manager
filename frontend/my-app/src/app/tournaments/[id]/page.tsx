@@ -265,7 +265,7 @@ function TournamentDetailContent() {
     return (
       <MainLayout showBackground={false}>
         <GlobalNavigation />
-        <div className="min-h-screen bg-gradient-to-br from-dark-50 via-dark-100 to-dark-200 flex items-center justify-center">
+        <div className="min-h-screen bg-gradient-to-br from-light-100 via-light-200 to-light-300 dark:from-dark-50 dark:via-dark-100 dark:to-dark-200 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="w-12 h-12 text-cyber-400 animate-spin mx-auto mb-4" />
             <p className="text-gray-400">Loading tournament...</p>
@@ -280,7 +280,7 @@ function TournamentDetailContent() {
     return (
       <MainLayout showBackground={false}>
         <GlobalNavigation />
-        <div className="min-h-screen bg-gradient-to-br from-dark-50 via-dark-100 to-dark-200 flex items-center justify-center">
+        <div className="min-h-screen bg-gradient-to-br from-light-100 via-light-200 to-light-300 dark:from-dark-50 dark:via-dark-100 dark:to-dark-200 flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-400 mb-4">{error || 'Tournament not found'}</p>
             <Button onClick={handleBack} variant="outline">
@@ -297,9 +297,9 @@ function TournamentDetailContent() {
   return (
     <MainLayout showBackground={false}>
       <GlobalNavigation />
-      <div className="min-h-screen bg-gradient-to-br from-dark-50 via-dark-100 to-dark-200">
+      <div className="min-h-screen bg-gradient-to-br from-light-100 via-light-200 to-light-300 dark:from-dark-50 dark:via-dark-100 dark:to-dark-200">
         {/* Mobile Header */}
-        <div className="md:hidden bg-dark-100/95 backdrop-blur-xl border-b border-white/10 sticky top-0 z-40 px-4 py-3">
+        <div className="md:hidden bg-light-50/95 dark:bg-dark-100/95 backdrop-blur-xl border-b border-black/10 dark:border-white/10 sticky top-0 z-40 px-4 py-3">
           <Button
             variant="ghost"
             size="sm"

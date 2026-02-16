@@ -66,14 +66,14 @@ export default function RankingCard({
 
   return (
     <div
-      className={`flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 sm:p-5 rounded-tech bg-gradient-to-r ${gradient} border backdrop-blur-sm transition-all duration-200 hover:shadow-glow`}
+      className={`flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 sm:p-5 rounded-tech bg-gradient-to-r ${gradient} border backdrop-blur-sm transition-all duration-200 hover:shadow-light-cyber dark:hover:shadow-glow`}
     >
       {/* Left side - rank + name */}
       <div className="flex items-center gap-3 mb-3 sm:mb-0">
-        <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-tech bg-dark-100/50 border border-white/10 font-bold text-white">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-tech bg-light-200/50 dark:bg-dark-100/50 border border-black/10 dark:border-white/10 font-bold text-light-900 dark:text-white">
           {icon ? <span className="text-xl">{icon}</span> : player.rank}
         </div>
-        <p className="font-semibold text-base sm:text-lg text-white">{player.name}</p>
+        <p className="font-semibold text-base sm:text-lg text-light-900 dark:text-white">{player.name}</p>
       </div>
 
       {/* Right side - cool off & wild card */}
@@ -89,7 +89,7 @@ export default function RankingCard({
                 })
               }
               placeholder="Cool Off"
-              className="px-3 py-1.5 rounded-tech border border-white/10 bg-dark-100/50 text-white placeholder-gray-500 w-24 sm:w-32 focus:outline-none focus:border-cyber-500/50"
+              className="px-3 py-1.5 rounded-tech border border-black/10 dark:border-white/10 bg-light-200/50 dark:bg-dark-100/50 text-light-900 dark:text-white placeholder-light-500 dark:placeholder-gray-500 w-24 sm:w-32 focus:outline-none focus:border-cyber-500/50"
             />
             <input
               type="text"
@@ -100,7 +100,7 @@ export default function RankingCard({
                 })
               }
               placeholder="Wild Card"
-              className="px-3 py-1.5 rounded-tech border border-white/10 bg-dark-100/50 text-white placeholder-gray-500 w-24 sm:w-32 focus:outline-none focus:border-cyber-500/50"
+              className="px-3 py-1.5 rounded-tech border border-black/10 dark:border-white/10 bg-light-200/50 dark:bg-dark-100/50 text-light-900 dark:text-white placeholder-light-500 dark:placeholder-gray-500 w-24 sm:w-32 focus:outline-none focus:border-cyber-500/50"
             />
             <div className="flex items-center gap-2">
               <button
@@ -138,10 +138,10 @@ export default function RankingCard({
           </>
         ) : (
           <>
-            <span className="text-gray-300 font-medium px-3">
+            <span className="text-light-700 dark:text-gray-300 font-medium px-3">
               {player.coolOff || "—"}
             </span>
-            <span className="text-gray-300 font-medium px-3">
+            <span className="text-light-700 dark:text-gray-300 font-medium px-3">
               {player.wildCard || "—"}
             </span>
           </>

@@ -171,7 +171,7 @@ function TournamentsContent() {
             className="text-center py-20"
           >
             <Filter className="w-20 h-20 text-gray-600 mx-auto mb-6" />
-            <h3 className="text-2xl font-bold text-white mb-2">No tournaments found</h3>
+            <h3 className="text-2xl font-bold text-light-900 dark:text-white mb-2">No tournaments found</h3>
             <p className="text-gray-400 mb-8">
               {searchQuery || statusFilter !== 'all'
                 ? 'Try adjusting your filters or search query'
@@ -215,10 +215,10 @@ function TournamentsContent() {
           ].map((stat, index) => (
             <div
               key={stat.label}
-              className="text-center p-4 bg-dark-100/50 backdrop-blur-md border border-white/10 rounded-xl"
+              className="text-center p-4 bg-light-200/50 dark:bg-dark-100/50 backdrop-blur-md border border-black/10 dark:border-white/10 rounded-xl"
             >
-              <p className="text-xs text-white mb-1">{stat.label}</p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-xs text-light-700 dark:text-gray-300 mb-1">{stat.label}</p>
+              <p className="text-2xl font-bold text-light-900 dark:text-white">
                 {stat.value}
               </p>
             </div>

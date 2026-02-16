@@ -50,20 +50,8 @@ export default function Knockout({
 
   const [editingTie, setEditingTie] = useState<KnockoutTie | null>(null);
   const [expandedRounds, setExpandedRounds] = useState<Set<string>>(new Set());
-  const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile/tablet screen size (collapsible on screens smaller than 1024px)
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Initialize expanded rounds (all expanded on desktop, final only on mobile)
+  // Initialize expanded rounds (all expanded by default)
   useEffect(() => {
     if (!tournament.knockoutBracket) return;
 
@@ -75,14 +63,8 @@ export default function Knockout({
     }, {} as Record<string, KnockoutTie[]>);
 
     const availableRounds = roundOrder.filter(round => tiesByRound[round]);
-
-    if (!isMobile) {
-      setExpandedRounds(new Set(availableRounds));
-    } else {
-      // On mobile, expand only the final or most recent round
-      setExpandedRounds(new Set([availableRounds[availableRounds.length - 1]]));
-    }
-  }, [isMobile, tournament.knockoutBracket]);
+    setExpandedRounds(new Set(availableRounds));
+  }, [tournament.knockoutBracket]);
 
   const toggleRound = (roundKey: string) => {
     setExpandedRounds(prev => {
@@ -189,9 +171,6 @@ export default function Knockout({
           <div>
             <h2 className="text-2xl font-bold text-light-900 dark:text-white mb-1">Knockout Stage</h2>
             <p className="text-light-600 dark:text-gray-400">Two-legged ties</p>
-            {isMobile && (
-              <p className="text-xs text-light-600 dark:text-gray-500 mt-2">💡 Tap rounds to expand/collapse</p>
-            )}
           </div>
           <div className="bg-light-100/50 dark:bg-dark-100/50 backdrop-blur-md border border-black/10 dark:border-white/10 rounded-xl px-4 py-2">
             <span className="text-sm text-light-600 dark:text-gray-400">
@@ -218,7 +197,6 @@ export default function Knockout({
                 onEditTie={setEditingTie}
                 isExpanded={expandedRounds.has(roundKey)}
                 onToggle={() => toggleRound(roundKey)}
-                isMobile={isMobile}
               />
             </motion.div>
           ))}
@@ -268,7 +246,6 @@ interface RoundSectionProps {
   onEditTie: (tie: KnockoutTie) => void;
   isExpanded: boolean;
   onToggle: () => void;
-  isMobile: boolean;
 }
 
 function RoundSection({
@@ -280,7 +257,6 @@ function RoundSection({
   onEditTie,
   isExpanded,
   onToggle,
-  isMobile,
 }: RoundSectionProps) {
   const roundNames: Record<string, string> = {
     'round_16': 'Round of 16',
@@ -318,10 +294,8 @@ function RoundSection({
     <Card variant="glass" className={`bg-gradient-to-br ${colors.gradient} border-2 ${colors.border}`}>
       {/* Round Header */}
       <div
-        className={`flex items-center justify-between pb-4 ${isExpanded ? 'mb-4 border-b-2' : 'mb-0'} ${colors.border} ${
-          isMobile ? 'cursor-pointer hover:opacity-80 active:scale-[0.99] transition-all' : ''
-        }`}
-        onClick={isMobile ? onToggle : undefined}
+        className={`flex items-center justify-between pb-4 ${isExpanded ? 'mb-4 border-b-2' : 'mb-0'} ${colors.border} cursor-pointer hover:opacity-80 active:scale-[0.99] transition-all select-none`}
+        onClick={onToggle}
       >
         <div className="flex items-center gap-3 flex-1">
           <div className={`p-3 rounded-xl bg-gradient-to-br ${colors.gradient} border-2 ${colors.border}`}>
@@ -334,19 +308,12 @@ function RoundSection({
             </span>
           </div>
         </div>
-        {isMobile && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-light-600 dark:text-gray-400 hidden sm:inline">
-              {isExpanded ? 'Collapse' : 'Expand'}
-            </span>
-            <motion.div
-              animate={{ rotate: isExpanded ? 180 : 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <ChevronDown className={`w-5 h-5 ${colors.text}`} />
-            </motion.div>
-          </div>
-        )}
+        <motion.div
+          animate={{ rotate: isExpanded ? 180 : 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <ChevronDown className={`w-5 h-5 ${colors.text}`} />
+        </motion.div>
       </div>
 
       {/* Ties */}

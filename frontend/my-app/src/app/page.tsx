@@ -112,9 +112,9 @@ function LandingPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
-          className="text-center py-8 border-t border-white/10"
+          className="text-center py-8 border-t border-black/10 dark:border-white/10"
         >
-          <p className="text-gray-400 font-medium">
+          <p className="text-light-600 dark:text-gray-400 font-medium">
             Created by Kempyre Group
           </p>
         </motion.footer>

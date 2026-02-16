@@ -57,7 +57,7 @@ export default function Groups({ tournament }: GroupsProps) {
           <h2 className="text-2xl font-bold text-light-900 dark:text-white mb-1">Group Stage Standings</h2>
           <p className="text-light-600 dark:text-gray-400">{tournament.groups.length} Groups</p>
         </div>
-        <div className="bg-dark-100/50 backdrop-blur-md border border-white/10 rounded-tech px-4 py-2">
+        <div className="bg-light-200/50 dark:bg-dark-100/50 backdrop-blur-md border border-black/10 dark:border-white/10 rounded-tech px-4 py-2">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-cyber-400" />
             <span className="text-sm text-light-600 dark:text-gray-400">
@@ -158,7 +158,7 @@ function GroupCard({ group, index, tournamentId }: GroupCardProps) {
             <div className="text-sm text-light-600 dark:text-gray-400 font-medium mb-1">
               {playedMatches}/{totalMatches} matches
             </div>
-            <div className="w-24 bg-dark-200 rounded-full h-2">
+            <div className="w-24 bg-light-300 dark:bg-dark-200 rounded-full h-2">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${completion}%` }}
@@ -181,14 +181,14 @@ function GroupCard({ group, index, tournamentId }: GroupCardProps) {
               return (
                 <div
                   key={standing.teamName}
-                  className="flex items-center justify-between bg-dark-100/50 backdrop-blur-sm rounded-tech p-3 border border-white/5 gap-2"
+                  className="flex items-center justify-between bg-light-200/50 dark:bg-dark-100/50 backdrop-blur-sm rounded-tech p-3 border border-black/5 dark:border-white/5 gap-2"
                 >
                   <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                     <div
                       className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                         i < 2
                           ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-light-900 dark:text-white'
-                          : 'bg-dark-200 text-light-600 dark:text-gray-400'
+                          : 'bg-light-300 dark:bg-dark-200 text-light-600 dark:text-gray-400'
                       }`}
                     >
                       {i + 1}

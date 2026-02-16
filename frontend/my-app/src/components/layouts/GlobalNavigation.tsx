@@ -19,9 +19,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
-import { Trophy, Users, Target, BarChart3, Home } from 'lucide-react';
+import { Trophy, Users, Target, BarChart3, Home, Sun, Moon } from 'lucide-react';
 import Button from '../ui/Button';
 import { useAuth } from '@/lib/AuthContext';
+import { useTheme } from '@/lib/ThemeContext';
 
 // Navigation menu items configuration
 const navItems = [
@@ -36,6 +37,11 @@ export default function GlobalNavigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated, adminUser, setShowAuthModal, logout } = useAuth();
+  const { resolvedTheme, setTheme } = useTheme();
+
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+  };
 
   /**
    * Check if a navigation item is currently active
@@ -64,7 +70,7 @@ export default function GlobalNavigation() {
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => router.push('/')}
           >
-            <div className="w-8 h-8 rounded-lg bg-gradient-cyber flex items-center justify-center shadow-glow">
+            <div className="w-8 h-8 rounded-lg bg-gradient-cyber flex items-center justify-center shadow-light-cyber dark:shadow-glow">
               <Trophy className="w-5 h-5 text-white" />
             </div>
             <span className="hidden sm:block text-lg font-bold bg-gradient-to-r from-cyber-400 to-electric-400 bg-clip-text text-transparent">
@@ -98,21 +104,26 @@ export default function GlobalNavigation() {
                     <span className="hidden sm:inline">{item.label}</span>
                   </div>
 
-                  {/* Active indicator */}
-                  {active && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyber-400 to-electric-400"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
                 </motion.button>
               );
             })}
           </div>
 
-          {/* Auth Button - Right */}
+          {/* Theme Toggle + Auth Button - Right */}
           <div className="flex items-center gap-1.5 sm:gap-3">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={toggleTheme}
+              className="p-2 rounded-tech text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white hover:bg-cyber-100 dark:hover:bg-white/5 transition-all"
+              aria-label="Toggle theme"
+            >
+              {resolvedTheme === 'dark' ? (
+                <Sun className="w-5 h-5" />
+              ) : (
+                <Moon className="w-5 h-5" />
+              )}
+            </motion.button>
             {isAuthenticated && adminUser && (
               <div className="admin-badge flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-green-500/20 border border-green-500/30 rounded-full">
                 {adminUser.photoURL ? (

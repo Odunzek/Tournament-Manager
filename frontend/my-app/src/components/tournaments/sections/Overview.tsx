@@ -109,9 +109,9 @@ export default function Overview({
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <Trophy className="w-6 h-6 text-cyber-400" />
-                <h1 className="text-2xl sm:text-3xl font-bold text-light-900 dark:text-light-900 dark:text-white">{tournament.name}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-light-900 dark:text-white">{tournament.name}</h1>
               </div>
-              <p className="text-light-600 dark:text-light-600 dark:text-gray-400 mb-3">{getTournamentTypeLabel(tournament.type)}</p>
+              <p className="text-light-600 dark:text-gray-400 mb-3">{getTournamentTypeLabel(tournament.type)}</p>
               <StatusBadge status={tournament.status} />
             </div>
           </div>
@@ -126,8 +126,8 @@ export default function Overview({
               <Users className="w-6 h-6 text-cyber-400" />
             </div>
             <div>
-              <p className="text-xs text-light-600 dark:text-light-600 dark:text-gray-400">Teams</p>
-              <p className="text-xl font-bold text-light-900 dark:text-light-900 dark:text-white">{tournament.currentTeams}/{tournament.maxTeams}</p>
+              <p className="text-xs text-light-600 dark:text-gray-400">Teams</p>
+              <p className="text-xl font-bold text-light-900 dark:text-white">{tournament.currentTeams}/{tournament.maxTeams}</p>
             </div>
           </div>
         </Card>
@@ -138,8 +138,8 @@ export default function Overview({
               <Target className="w-6 h-6 text-electric-400" />
             </div>
             <div>
-              <p className="text-xs text-light-600 dark:text-light-600 dark:text-gray-400">Groups</p>
-              <p className="text-xl font-bold text-light-900 dark:text-light-900 dark:text-white">{tournament.groups?.length || 0}</p>
+              <p className="text-xs text-light-600 dark:text-gray-400">Groups</p>
+              <p className="text-xl font-bold text-light-900 dark:text-white">{tournament.groups?.length || 0}</p>
             </div>
           </div>
         </Card>
@@ -180,7 +180,7 @@ export default function Overview({
             {Math.round(progress)}% Complete
           </span>
         </div>
-        <div className="w-full bg-dark-200 rounded-full h-3">
+        <div className="w-full bg-light-300 dark:bg-dark-200 rounded-full h-3">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}

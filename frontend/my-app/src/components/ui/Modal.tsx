@@ -81,10 +81,10 @@ export default function Modal({
               className={`
                 ${sizeClasses[size]}
                 w-full
-                bg-gradient-to-br from-dark-100 to-dark-200
-                border border-cyber-500/30
+                bg-gradient-to-br from-light-50 to-light-100 dark:from-dark-100 dark:to-dark-200
+                border border-cyber-500/20 dark:border-cyber-500/30
                 rounded-tech
-                shadow-glow
+                shadow-card-light dark:shadow-glow
                 overflow-hidden
               `}
               role="dialog"
@@ -93,16 +93,16 @@ export default function Modal({
             >
               {/* Header */}
               {title && (
-                <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-black/10 dark:border-white/10">
                   <h2
                     id="modal-title"
-                    className="text-xl font-bold text-white"
+                    className="text-xl font-bold text-light-900 dark:text-white"
                   >
                     {title}
                   </h2>
                   <button
                     onClick={onClose}
-                    className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
+                    className="text-light-500 dark:text-gray-400 hover:text-light-900 dark:hover:text-white transition-colors p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
                     aria-label="Close modal"
                   >
                     <X className="w-5 h-5" />
@@ -117,7 +117,7 @@ export default function Modal({
 
               {/* Footer */}
               {footer && (
-                <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10 bg-dark-200/50">
+                <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-black/10 dark:border-white/10 bg-light-200/50 dark:bg-dark-200/50">
                   {footer}
                 </div>
               )}

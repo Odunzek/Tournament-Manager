@@ -159,15 +159,15 @@ export function AuthModal() {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-dark-100 to-dark-200 rounded-tech shadow-glow border border-cyber-500/30 max-w-md w-full mx-4 transform transition-all duration-300">
+      <div className="bg-gradient-to-br from-light-50 to-light-100 dark:from-dark-100 dark:to-dark-200 rounded-tech shadow-card-light dark:shadow-glow border border-cyber-500/20 dark:border-cyber-500/30 max-w-md w-full mx-4 transform transition-all duration-300">
         <div className="p-8">
           <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-gradient-cyber rounded-tech shadow-glow">
             <span className="text-3xl">🔐</span>
           </div>
-          <h3 className="text-2xl font-bold text-white text-center mb-3">
+          <h3 className="text-2xl font-bold text-light-900 dark:text-white text-center mb-3">
             Admin Authentication
           </h3>
-          <p className="text-gray-400 text-center mb-8">
+          <p className="text-light-600 dark:text-gray-400 text-center mb-8">
             Sign in with your authorized Google account to access admin features
           </p>
 
@@ -218,7 +218,7 @@ export function AuthModal() {
               type="button"
               onClick={handleClose}
               disabled={isLoading}
-              className="w-full bg-dark-50 hover:bg-dark-100 text-gray-300 px-6 py-4 rounded-tech font-bold transition-all duration-300 border border-white/10 hover:border-white/20 disabled:opacity-50"
+              className="w-full bg-light-200 hover:bg-light-300 dark:bg-dark-50 dark:hover:bg-dark-100 text-light-700 dark:text-gray-300 px-6 py-4 rounded-tech font-bold transition-all duration-300 border border-black/10 dark:border-white/10 hover:border-black/20 dark:hover:border-white/20 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -227,7 +227,7 @@ export function AuthModal() {
           <div className="mt-6 p-4 bg-cyber-500/10 rounded-tech border border-cyber-500/20">
             <div className="flex items-start space-x-3">
               <span className="text-cyber-400 text-lg mt-0.5">ℹ️</span>
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-light-600 dark:text-gray-400">
                 <p>Only authorized Google accounts can access admin features. Contact the administrator if you need access.</p>
               </div>
             </div>

@@ -91,7 +91,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-gradient-to-br from-dark-100 to-dark-200 rounded-2xl shadow-glow border-2 border-cyber-500/30 max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+          className="bg-gradient-to-br from-light-50 to-light-100 dark:from-dark-100 dark:to-dark-200 rounded-2xl shadow-card-light dark:shadow-glow border-2 border-cyber-500/20 dark:border-cyber-500/30 max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         >
           {/* Header */}
           <div className="p-6 border-b border-black/10 dark:border-white/10 flex items-center justify-between">
@@ -123,6 +123,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
                   onChange={handlePlayerAChange}
                   options={playerOptions.filter((p) => p.value !== playerB?.id)}
                   placeholder="Select player..."
+                  searchable
                 />
               </div>
               <div>
@@ -132,6 +133,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
                   onChange={handlePlayerBChange}
                   options={playerOptions.filter((p) => p.value !== playerA?.id)}
                   placeholder="Select player..."
+                  searchable
                 />
               </div>
             </div>
@@ -196,7 +198,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
 
                 {/* Goals Statistics */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-dark-50/50 border border-black/10 dark:border-white/10 rounded-xl p-4">
+                  <div className="bg-light-200/50 dark:bg-dark-50/50 border border-black/10 dark:border-white/10 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Trophy className="w-5 h-5 text-cyber-400" />
                       <h4 className="font-bold text-light-900 dark:text-white">Goals</h4>
@@ -219,7 +221,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
                     </div>
                   </div>
 
-                  <div className="bg-dark-50/50 border border-black/10 dark:border-white/10 rounded-xl p-4">
+                  <div className="bg-light-200/50 dark:bg-dark-50/50 border border-black/10 dark:border-white/10 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <TrendingUp className="w-5 h-5 text-electric-400" />
                       <h4 className="font-bold text-light-900 dark:text-white">Competition Breakdown</h4>
@@ -285,7 +287,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
 
                 {/* Recent Matches */}
                 {stats.recentMatches.length > 0 && (
-                  <div className="bg-dark-50/50 border border-black/10 dark:border-white/10 rounded-xl p-4">
+                  <div className="bg-light-200/50 dark:bg-dark-50/50 border border-black/10 dark:border-white/10 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-4">
                       <Calendar className="w-5 h-5 text-light-600 dark:text-gray-400" />
                       <h4 className="font-bold text-light-900 dark:text-white">Recent Matches</h4>

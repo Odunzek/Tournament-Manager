@@ -1,14 +1,16 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #0f172a;
-  --surface: #f0f9ff;              /* cyber-50 tint for subtle color */
-  --surface-elevated: #e0f2fe;     /* cyber-100 for elevated cards */
-  --border: rgba(2, 132, 199, 0.2); /* cyber-600 with opacity for colored borders */
+  --surface: #f0f9ff;
+  --surface-elevated: #e0f2fe;
+  --border: rgba(2, 132, 199, 0.2);
   --text-primary: #0f172a;
   --text-secondary: #334155;
-  --text-tertiary: #475569;        /* light-700 for better contrast */
+  --text-tertiary: #475569;
 }
 
 @theme inline {
@@ -16,19 +18,116 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* ── Cyber (blue tech) ── */
+  --color-cyber-50: #f0f9ff;
+  --color-cyber-100: #e0f2fe;
+  --color-cyber-200: #bae6fd;
+  --color-cyber-300: #7dd3fc;
+  --color-cyber-400: #38bdf8;
+  --color-cyber-500: #0ea5e9;
+  --color-cyber-600: #0284c7;
+  --color-cyber-700: #0369a1;
+  --color-cyber-800: #075985;
+  --color-cyber-900: #0c4a6e;
+  --color-cyber-950: #082f49;
+
+  /* ── Electric (purple) ── */
+  --color-electric-50: #faf5ff;
+  --color-electric-100: #f3e8ff;
+  --color-electric-200: #e9d5ff;
+  --color-electric-300: #d8b4fe;
+  --color-electric-400: #c084fc;
+  --color-electric-500: #a855f7;
+  --color-electric-600: #9333ea;
+  --color-electric-700: #7e22ce;
+  --color-electric-800: #6b21a8;
+  --color-electric-900: #581c87;
+  --color-electric-950: #3b0764;
+
+  /* ── Neon (named accents) ── */
+  --color-neon-pink: #ff006e;
+  --color-neon-purple: #8338ec;
+  --color-neon-blue: #3a86ff;
+  --color-neon-cyan: #00f5ff;
+  --color-neon-green: #06ffa5;
+  --color-neon-yellow: #ffbe0b;
+
+  /* ── Dark scale (zinc tones) ── */
+  --color-dark-50: #18181b;
+  --color-dark-100: #27272a;
+  --color-dark-200: #3f3f46;
+  --color-dark-300: #52525b;
+  --color-dark-400: #71717a;
+  --color-dark-500: #a1a1aa;
+  --color-dark-600: #d4d4d8;
+  --color-dark-700: #e4e4e7;
+  --color-dark-800: #f4f4f5;
+  --color-dark-900: #fafafa;
+
+  /* ── Light scale (slate tones) ── */
+  --color-light-50: #ffffff;
+  --color-light-100: #f8fafc;
+  --color-light-200: #f1f5f9;
+  --color-light-300: #e2e8f0;
+  --color-light-400: #cbd5e1;
+  --color-light-500: #94a3b8;
+  --color-light-600: #64748b;
+  --color-light-700: #475569;
+  --color-light-800: #334155;
+  --color-light-900: #0f172a;
+
+  /* ── Background images / gradients ── */
+  --background-image-gradient-radial: radial-gradient(var(--tw-gradient-stops));
+  --background-image-gradient-conic: conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops));
+  --background-image-gradient-tech: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --background-image-gradient-cyber: linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%);
+  --background-image-gradient-electric: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  --background-image-gradient-neon: linear-gradient(135deg, #3a86ff 0%, #ff006e 100%);
+
+  /* ── Box shadows ── */
+  --shadow-glow-sm: 0 0 10px rgba(14, 165, 233, 0.3);
+  --shadow-glow: 0 0 20px rgba(14, 165, 233, 0.4);
+  --shadow-glow-lg: 0 0 30px rgba(14, 165, 233, 0.5);
+  --shadow-glow-purple: 0 0 20px rgba(168, 85, 247, 0.4);
+  --shadow-glow-pink: 0 0 20px rgba(236, 72, 153, 0.4);
+  --shadow-neon-blue: 0 0 5px #3a86ff, 0 0 10px #3a86ff, 0 0 15px #3a86ff;
+  --shadow-neon-purple: 0 0 5px #8338ec, 0 0 10px #8338ec, 0 0 15px #8338ec;
+  --shadow-neon-pink: 0 0 5px #ff006e, 0 0 10px #ff006e, 0 0 15px #ff006e;
+  --shadow-glow-light: 0 0 20px rgba(14, 165, 233, 0.15);
+  --shadow-glow-light-lg: 0 0 30px rgba(14, 165, 233, 0.2);
+  --shadow-glow-light-purple: 0 0 20px rgba(168, 85, 247, 0.15);
+  --shadow-glow-light-pink: 0 0 20px rgba(236, 72, 153, 0.15);
+  --shadow-light-cyber: 0 4px 14px rgba(2, 132, 199, 0.25);
+  --shadow-light-cyber-lg: 0 8px 24px rgba(2, 132, 199, 0.3);
+  --shadow-light-electric: 0 4px 14px rgba(147, 51, 234, 0.25);
+  --shadow-light-electric-lg: 0 8px 24px rgba(147, 51, 234, 0.3);
+  --shadow-light-pink: 0 4px 14px rgba(236, 72, 153, 0.25);
+  --shadow-card-light: 0 4px 20px rgba(15, 23, 42, 0.08), 0 0 1px rgba(15, 23, 42, 0.1);
+  --shadow-card-light-hover: 0 8px 30px rgba(2, 132, 199, 0.15), 0 0 1px rgba(2, 132, 199, 0.2);
+
+  /* ── Animations ── */
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-glow: glow 2s ease-in-out infinite alternate;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-gradient: gradient 8s linear infinite;
+
+  /* ── Border radius ── */
+  --radius-tech: 1.25rem;
+  --radius-tech-lg: 2rem;
+  --radius-tech-xl: 2.5rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #18181b;
-    --foreground: #ededed;
-    --surface: #27272a;
-    --surface-elevated: #3f3f46;
-    --border: rgba(255, 255, 255, 0.1);
-    --text-primary: #ededed;
-    --text-secondary: #d4d4d8;
-    --text-tertiary: #a1a1aa;
-  }
+.dark {
+  --background: #18181b;
+  --foreground: #ededed;
+  --surface: #27272a;
+  --surface-elevated: #3f3f46;
+  --border: rgba(255, 255, 255, 0.1);
+  --text-primary: #ededed;
+  --text-secondary: #d4d4d8;
+  --text-tertiary: #a1a1aa;
 }
 
 body {
@@ -36,19 +135,37 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ── Keyframes ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+@keyframes glow {
+  0% { box-shadow: 0 0 5px rgba(14, 165, 233, 0.2), 0 0 10px rgba(14, 165, 233, 0.2); }
+  100% { box-shadow: 0 0 10px rgba(14, 165, 233, 0.4), 0 0 20px rgba(14, 165, 233, 0.4), 0 0 30px rgba(14, 165, 233, 0.3); }
+}
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+@keyframes gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
 @keyframes bounce-in {
   0% { opacity: 0; transform: translateY(-20px); }
   50% { opacity: 1; transform: translateY(5px); }
   100% { transform: translateY(0); }
 }
-.animate-bounce-in {
-  animation: bounce-in 0.4s ease-out;
-}
-
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-3px); }
   75% { transform: translateX(3px); }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.4s ease-out;
 }
 .animate-shake {
   animation: shake 0.4s ease-in-out;
