@@ -217,8 +217,8 @@ function TournamentsContent() {
               key={stat.label}
               className="text-center p-4 bg-dark-100/50 backdrop-blur-md border border-white/10 rounded-xl"
             >
-              <p className="text-xs text-gray-400 mb-1">{stat.label}</p>
-              <p className="text-2xl font-bold bg-gradient-to-r from-cyber-400 to-electric-500 bg-clip-text text-transparent">
+              <p className="text-xs text-white mb-1">{stat.label}</p>
+              <p className="text-2xl font-bold text-white">
                 {stat.value}
               </p>
             </div>
