@@ -1013,7 +1013,118 @@ export const recordKnockoutMatch = async (
   }
 };
 
+/**
+ * Edit a knockout tie's matchup (change teams)
+ * Resets legs and results when teams change
+ */
+export const editKnockoutTie = async (
+  tournamentId: string,
+  tieId: string,
+  updates: { team1?: string; team2?: string }
+): Promise<void> => {
+  try {
+    const tournament = await getTournamentById(tournamentId);
+    if (!tournament || !tournament.knockoutBracket) {
+      throw new Error('Tournament or knockout bracket not found');
+    }
 
+    const knockoutBracket = [...tournament.knockoutBracket];
+    const tieIndex = knockoutBracket.findIndex(tie => tie.id === tieId);
+
+    if (tieIndex === -1) {
+      throw new Error('Tie not found in knockout bracket');
+    }
+
+    const tie = { ...knockoutBracket[tieIndex] };
+    const newTeam1 = updates.team1 || tie.team1;
+    const newTeam2 = updates.team2 || tie.team2;
+    const teamsChanged = newTeam1 !== tie.team1 || newTeam2 !== tie.team2;
+
+    tie.team1 = newTeam1;
+    tie.team2 = newTeam2;
+
+    if (teamsChanged) {
+      // Reset both legs
+      tie.firstLeg = {
+        id: tie.firstLeg?.id || `${tieId}_leg1`,
+        leg: 'first',
+        homeTeam: newTeam1,
+        awayTeam: newTeam2,
+        played: false,
+      };
+      tie.secondLeg = {
+        id: tie.secondLeg?.id || `${tieId}_leg2`,
+        leg: 'second',
+        homeTeam: newTeam2,
+        awayTeam: newTeam1,
+        played: false,
+      };
+      // Reset tie result
+      tie.winner = undefined as any;
+      tie.completed = false;
+      tie.aggregateScore = undefined as any;
+    } else {
+      // Just update home/away team names on legs
+      tie.firstLeg = { ...tie.firstLeg, homeTeam: newTeam1, awayTeam: newTeam2 };
+      tie.secondLeg = { ...tie.secondLeg, homeTeam: newTeam2, awayTeam: newTeam1 };
+    }
+
+    knockoutBracket[tieIndex] = tie;
+    await updateTournament(tournamentId, { knockoutBracket });
+  } catch (error) {
+    console.error('Error editing knockout tie:', error);
+    throw error;
+  }
+};
+
+/**
+ * Repair knockout progression — generate missing next rounds
+ * Idempotent: skips if next round already exists
+ */
+export const repairKnockoutProgression = async (
+  tournamentId: string
+): Promise<{ repaired: boolean; roundsGenerated: string[] }> => {
+  try {
+    const tournament = await getTournamentById(tournamentId);
+    if (!tournament || !tournament.knockoutBracket) {
+      throw new Error('Tournament or knockout bracket not found');
+    }
+
+    const knockoutBracket = [...tournament.knockoutBracket];
+    const roundsGenerated: string[] = [];
+    const roundOrder = ['round_16', 'quarter_final', 'semi_final'];
+
+    for (const round of roundOrder) {
+      const roundTies = knockoutBracket.filter(t => t.round === round && !t.originalTieId);
+      if (roundTies.length === 0) continue;
+
+      if (!isRoundComplete(knockoutBracket, round)) continue;
+
+      const nextRound = getNextRound(round);
+      if (!nextRound) continue;
+
+      // Check if next round already exists
+      const nextRoundTies = knockoutBracket.filter(t => t.round === nextRound && !t.originalTieId);
+      if (nextRoundTies.length > 0) continue;
+
+      const winners = getRoundWinners(knockoutBracket, round);
+      if (winners.length < 2) continue;
+
+      const newTies = generateNextRound(winners, nextRound);
+      knockoutBracket.push(...newTies);
+      roundsGenerated.push(nextRound);
+    }
+
+    if (roundsGenerated.length > 0) {
+      await updateTournament(tournamentId, { knockoutBracket });
+    }
+
+    return { repaired: roundsGenerated.length > 0, roundsGenerated };
+  } catch (error) {
+    console.error('Error repairing knockout progression:', error);
+    throw error;
+  }
+};
 
 // Replace your existing qualification logic with this:
 

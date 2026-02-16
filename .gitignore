@@ -1,2 +1,14 @@
+# dependencies
+node_modules/
+
+# claude code
+.claude/
+
+# misc
+nul
+
+# vercel
 .vercel
+
+# env files
 .env*.local

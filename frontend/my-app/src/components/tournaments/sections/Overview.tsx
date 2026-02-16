@@ -41,6 +41,7 @@ interface OverviewProps {
   areGroupMatchesComplete: (tournament: Tournament) => boolean;
   onDeleteTournament?: () => Promise<void>;
   onCompleteTournament?: () => Promise<void>;
+  onRepairKnockout?: () => Promise<void>;
 }
 
 /**
@@ -79,6 +80,7 @@ export default function Overview({
   areGroupMatchesComplete,
   onDeleteTournament,
   onCompleteTournament,
+  onRepairKnockout,
 }: OverviewProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   // Calculate stats
@@ -277,11 +279,24 @@ export default function Overview({
 
           {/* Knockout Phase */}
           {tournament.status === 'knockout' && (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-tech p-4">
-              <p className="text-green-400 font-semibold mb-1">Knockout Stage Active</p>
-              <p className="text-green-300/70 text-sm">
-                {playedKnockoutMatches}/{totalKnockoutMatches} knockout matches completed
-              </p>
+            <div className="space-y-4">
+              <div className="bg-green-500/10 border border-green-500/20 rounded-tech p-4">
+                <p className="text-green-400 font-semibold mb-1">Knockout Stage Active</p>
+                <p className="text-green-300/70 text-sm">
+                  {playedKnockoutMatches}/{totalKnockoutMatches} knockout matches completed
+                </p>
+              </div>
+              {onRepairKnockout && (
+                <Button
+                  variant="secondary"
+                  onClick={onRepairKnockout}
+                  disabled={isLoading}
+                  isLoading={isLoading}
+                  className="w-full"
+                >
+                  Generate Next Round
+                </Button>
+              )}
             </div>
           )}
 

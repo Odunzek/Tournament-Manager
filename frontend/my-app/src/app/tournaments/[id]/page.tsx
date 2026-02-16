@@ -39,6 +39,7 @@ import {
   TournamentParticipant,
   deleteTournament,
   updateTournament,
+  repairKnockoutProgression,
 } from '@/lib/tournamentUtils';
 
 // Section components
@@ -236,6 +237,29 @@ function TournamentDetailContent() {
     }
   };
 
+  /**
+   * Handle repair knockout progression (Admin only)
+   */
+  const handleRepairKnockout = async () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    if (!tournament) return;
+
+    try {
+      setLoading(true);
+      await repairKnockoutProgression(tournament.id!);
+      // Tournament will update via real-time listener
+    } catch (err) {
+      console.error('Error generating next round:', err);
+      setError('Failed to generate next round');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Show loading state
   if (!mounted || loading) {
     return (
@@ -334,6 +358,7 @@ function TournamentDetailContent() {
                   setTournament={setTournament}
                   onDeleteTournament={handleDeleteTournament}
                   onCompleteTournament={handleCompleteTournament}
+                  onRepairKnockout={handleRepairKnockout}
                 />
               </motion.div>
             </Container>

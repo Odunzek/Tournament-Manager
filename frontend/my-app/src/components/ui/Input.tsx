@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useId } from 'react';
 import { motion } from 'framer-motion';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -19,7 +19,8 @@ export default function Input({
   id,
   ...props
 }: InputProps) {
-  const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+  const reactId = useId();
+  const inputId = id || reactId;
 
   return (
     <div className="w-full">

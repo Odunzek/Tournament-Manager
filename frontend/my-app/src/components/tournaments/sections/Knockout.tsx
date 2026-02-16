@@ -18,9 +18,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Calendar, ChevronDown } from 'lucide-react';
-import { Tournament, KnockoutTie, updateTournament, getTournamentById } from '@/lib/tournamentUtils';
+import { Trophy, Calendar, ChevronDown, Pencil } from 'lucide-react';
+import { Tournament, KnockoutTie, recordKnockoutMatch, editKnockoutTie, getTournamentById } from '@/lib/tournamentUtils';
 import Card from '../../ui/Card';
+import Button from '../../ui/Button';
+import Modal from '../../ui/Modal';
+import CustomDropdown from '../../ui/CustomDropdown';
 import RecordResultModal from '../RecordResultModal';
 
 interface KnockoutProps {
@@ -41,8 +44,11 @@ export default function Knockout({
     leg: 'first' | 'second';
     homeTeam: string;
     awayTeam: string;
+    initialHomeScore?: number;
+    initialAwayScore?: number;
   } | null>(null);
 
+  const [editingTie, setEditingTie] = useState<KnockoutTie | null>(null);
   const [expandedRounds, setExpandedRounds] = useState<Set<string>>(new Set());
   const [isMobile, setIsMobile] = useState(false);
 
@@ -97,52 +103,15 @@ export default function Knockout({
     if (!recordingMatch) return;
 
     try {
-      const freshTournament = await getTournamentById(tournament.id!);
-      if (!freshTournament?.knockoutBracket) return;
-
-      const updatedBracket = freshTournament.knockoutBracket.map((tie) => {
-        if (tie.id !== recordingMatch.tieId) return tie;
-
-        // Update the appropriate leg
-        if (recordingMatch.leg === 'first') {
-          return {
-            ...tie,
-            firstLeg: {
-              id: tie.firstLeg?.id || `${tie.id}_leg1`,
-              leg: 'first' as const,
-              homeTeam: recordingMatch.homeTeam,
-              awayTeam: recordingMatch.awayTeam,
-              homeScore,
-              awayScore,
-              played: true,
-            },
-          };
-        } else {
-          // Calculate aggregate
-          const firstLegHomeScore = tie.firstLeg?.homeScore || 0;
-          const firstLegAwayScore = tie.firstLeg?.awayScore || 0;
-          const aggregateHome = firstLegHomeScore + awayScore; // Note: reversed for second leg
-          const aggregateAway = firstLegAwayScore + homeScore;
-
-          return {
-            ...tie,
-            secondLeg: {
-              id: tie.secondLeg?.id || `${tie.id}_leg2`,
-              leg: 'second' as const,
-              homeTeam: recordingMatch.homeTeam,
-              awayTeam: recordingMatch.awayTeam,
-              homeScore,
-              awayScore,
-              played: true,
-            },
-            winner: aggregateHome > aggregateAway ? tie.team1 : tie.team2,
-            completed: true,
-          };
-        }
-      });
-
-      // Update tournament in Firebase
-      await updateTournament(tournament.id!, { knockoutBracket: updatedBracket });
+      await recordKnockoutMatch(
+        tournament.id!,
+        recordingMatch.tieId,
+        recordingMatch.leg,
+        recordingMatch.homeTeam,
+        recordingMatch.awayTeam,
+        homeScore,
+        awayScore
+      );
 
       // Refresh tournament data
       const refreshed = await getTournamentById(tournament.id!);
@@ -154,6 +123,35 @@ export default function Knockout({
       console.error('Error recording knockout match:', error);
     }
   };
+
+  /**
+   * Handle editing a tie's matchup
+   */
+  const handleEditTieSubmit = async (team1: string, team2: string) => {
+    if (!editingTie) return;
+
+    try {
+      await editKnockoutTie(tournament.id!, editingTie.id!, { team1, team2 });
+      const refreshed = await getTournamentById(tournament.id!);
+      if (refreshed) setTournament(refreshed);
+      setEditingTie(null);
+    } catch (error) {
+      console.error('Error editing knockout tie:', error);
+    }
+  };
+
+  // Collect all unique team names for the edit tie dropdown
+  const allTeamNames = React.useMemo(() => {
+    const names = new Set<string>();
+    tournament.knockoutBracket?.forEach(tie => {
+      if (tie.team1) names.add(tie.team1);
+      if (tie.team2) names.add(tie.team2);
+    });
+    tournament.qualifiedTeams?.forEach(t => {
+      if (t.name) names.add(t.name);
+    });
+    return Array.from(names).sort();
+  }, [tournament.knockoutBracket, tournament.qualifiedTeams]);
 
   // Check if knockout bracket exists
   if (!tournament.knockoutBracket || tournament.knockoutBracket.length === 0) {
@@ -217,6 +215,7 @@ export default function Knockout({
                 isAuthenticated={isAuthenticated}
                 isLoading={isLoading}
                 onRecordMatch={setRecordingMatch}
+                onEditTie={setEditingTie}
                 isExpanded={expandedRounds.has(roundKey)}
                 onToggle={() => toggleRound(roundKey)}
                 isMobile={isMobile}
@@ -226,7 +225,7 @@ export default function Knockout({
         </div>
       </div>
 
-      {/* Record Match Modal */}
+      {/* Record/Edit Match Modal */}
       {recordingMatch && (
         <RecordResultModal
           isOpen={true}
@@ -234,7 +233,23 @@ export default function Knockout({
           onSubmit={handleMatchResultSubmit}
           homeTeam={recordingMatch.homeTeam}
           awayTeam={recordingMatch.awayTeam}
-          title={`Record ${recordingMatch.leg === 'first' ? 'First' : 'Second'} Leg`}
+          initialHomeScore={recordingMatch.initialHomeScore}
+          initialAwayScore={recordingMatch.initialAwayScore}
+          title={
+            recordingMatch.initialHomeScore !== undefined
+              ? `Edit ${recordingMatch.leg === 'first' ? 'First' : 'Second'} Leg`
+              : `Record ${recordingMatch.leg === 'first' ? 'First' : 'Second'} Leg`
+          }
+        />
+      )}
+
+      {/* Edit Tie Modal */}
+      {editingTie && (
+        <EditTieModal
+          tie={editingTie}
+          teamOptions={allTeamNames}
+          onClose={() => setEditingTie(null)}
+          onSubmit={handleEditTieSubmit}
         />
       )}
     </>
@@ -249,7 +264,8 @@ interface RoundSectionProps {
   ties: KnockoutTie[];
   isAuthenticated: boolean;
   isLoading: boolean;
-  onRecordMatch: (match: { tieId: string; leg: 'first' | 'second'; homeTeam: string; awayTeam: string }) => void;
+  onRecordMatch: (match: { tieId: string; leg: 'first' | 'second'; homeTeam: string; awayTeam: string; initialHomeScore?: number; initialAwayScore?: number }) => void;
+  onEditTie: (tie: KnockoutTie) => void;
   isExpanded: boolean;
   onToggle: () => void;
   isMobile: boolean;
@@ -261,6 +277,7 @@ function RoundSection({
   isAuthenticated,
   isLoading,
   onRecordMatch,
+  onEditTie,
   isExpanded,
   onToggle,
   isMobile,
@@ -351,6 +368,7 @@ function RoundSection({
                   isAuthenticated={isAuthenticated}
                   isLoading={isLoading}
                   onRecordMatch={onRecordMatch}
+                  onEditTie={onEditTie}
                   index={index}
                 />
               ))}
@@ -370,7 +388,8 @@ interface TieCardProps {
   colors: { gradient: string; border: string; text: string };
   isAuthenticated: boolean;
   isLoading: boolean;
-  onRecordMatch: (match: { tieId: string; leg: 'first' | 'second'; homeTeam: string; awayTeam: string }) => void;
+  onRecordMatch: (match: { tieId: string; leg: 'first' | 'second'; homeTeam: string; awayTeam: string; initialHomeScore?: number; initialAwayScore?: number }) => void;
+  onEditTie: (tie: KnockoutTie) => void;
   index: number;
 }
 
@@ -380,6 +399,7 @@ function TieCard({
   isAuthenticated,
   isLoading,
   onRecordMatch,
+  onEditTie,
   index,
 }: TieCardProps) {
   // Calculate aggregate scores
@@ -411,6 +431,15 @@ function TieCard({
               <span className="text-lg font-bold text-light-900 dark:text-white">{team2Aggregate}</span>
             )}
           </div>
+          {isAuthenticated && (
+            <button
+              onClick={() => onEditTie(tie)}
+              className="flex items-center gap-1.5 text-xs text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white transition-colors"
+            >
+              <Pencil className="w-3 h-3" />
+              Edit Matchup
+            </button>
+          )}
         </div>
 
         {/* Legs */}
@@ -429,6 +458,14 @@ function TieCard({
               homeTeam: tie.team1,
               awayTeam: tie.team2,
             })}
+            onEdit={() => onRecordMatch({
+              tieId: tie.id!,
+              leg: 'first',
+              homeTeam: tie.team1,
+              awayTeam: tie.team2,
+              initialHomeScore: tie.firstLeg?.homeScore,
+              initialAwayScore: tie.firstLeg?.awayScore,
+            })}
           />
 
           {/* Second Leg */}
@@ -445,6 +482,14 @@ function TieCard({
               leg: 'second',
               homeTeam: tie.team2,
               awayTeam: tie.team1,
+            })}
+            onEdit={() => onRecordMatch({
+              tieId: tie.id!,
+              leg: 'second',
+              homeTeam: tie.team2,
+              awayTeam: tie.team1,
+              initialHomeScore: tie.secondLeg?.homeScore,
+              initialAwayScore: tie.secondLeg?.awayScore,
             })}
           />
         </div>
@@ -473,6 +518,7 @@ interface LegRowProps {
   isLoading: boolean;
   disabled?: boolean;
   onRecord: () => void;
+  onEdit?: () => void;
 }
 
 function LegRow({
@@ -484,6 +530,7 @@ function LegRow({
   isLoading,
   disabled,
   onRecord,
+  onEdit,
 }: LegRowProps) {
   return (
     <div className={`bg-light-100/50 dark:bg-dark-100/50 rounded-tech p-3 ${disabled ? 'opacity-50' : ''}`}>
@@ -492,15 +539,27 @@ function LegRow({
           <Calendar className="w-4 h-4 text-light-600 dark:text-gray-400" />
           <span className="text-xs font-semibold text-light-700 dark:text-gray-300">{label}</span>
         </div>
-        {isAuthenticated && !leg?.played && !disabled && (
-          <button
-            onClick={onRecord}
-            disabled={isLoading}
-            className="bg-cyber-500 hover:bg-cyber-600 text-white text-xs px-3 py-1 rounded-tech font-semibold transition-colors disabled:opacity-50"
-          >
-            Record
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {isAuthenticated && leg?.played && onEdit && (
+            <button
+              onClick={onEdit}
+              disabled={isLoading}
+              className="flex items-center gap-1 text-yellow-400 hover:text-yellow-300 text-xs px-2 py-1 rounded-tech font-semibold transition-colors disabled:opacity-50 border border-yellow-500/30 hover:border-yellow-500/50"
+            >
+              <Pencil className="w-3 h-3" />
+              Edit
+            </button>
+          )}
+          {isAuthenticated && !leg?.played && !disabled && (
+            <button
+              onClick={onRecord}
+              disabled={isLoading}
+              className="bg-cyber-500 hover:bg-cyber-600 text-white text-xs px-3 py-1 rounded-tech font-semibold transition-colors disabled:opacity-50"
+            >
+              Record
+            </button>
+          )}
+        </div>
       </div>
 
       {leg?.played ? (
@@ -521,5 +580,91 @@ function LegRow({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Edit Tie Modal Component
+ */
+interface EditTieModalProps {
+  tie: KnockoutTie;
+  teamOptions: string[];
+  onClose: () => void;
+  onSubmit: (team1: string, team2: string) => Promise<void>;
+}
+
+function EditTieModal({ tie, teamOptions, onClose, onSubmit }: EditTieModalProps) {
+  const [team1, setTeam1] = useState(tie.team1);
+  const [team2, setTeam2] = useState(tie.team2);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const dropdownOptions = teamOptions.map(name => ({ value: name, label: name }));
+
+  const handleSave = async () => {
+    if (!team1 || !team2 || team1 === team2) return;
+    setIsSaving(true);
+    try {
+      await onSubmit(team1, team2);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const teamsChanged = team1 !== tie.team1 || team2 !== tie.team2;
+
+  return (
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="Edit Matchup"
+      size="sm"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSave}
+            isLoading={isSaving}
+            disabled={!team1 || !team2 || team1 === team2 || isSaving}
+            glow
+          >
+            Save Changes
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        {teamsChanged && (
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-tech p-3">
+            <p className="text-yellow-400 text-xs font-semibold">
+              Changing teams will reset all leg scores for this tie.
+            </p>
+          </div>
+        )}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Team 1 (Home first leg)</label>
+          <CustomDropdown
+            value={team1}
+            onChange={(val) => setTeam1(val as string)}
+            options={dropdownOptions}
+            placeholder="Select team 1"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Team 2 (Away first leg)</label>
+          <CustomDropdown
+            value={team2}
+            onChange={(val) => setTeam2(val as string)}
+            options={dropdownOptions}
+            placeholder="Select team 2"
+          />
+        </div>
+        {team1 === team2 && team1 !== '' && (
+          <p className="text-red-400 text-xs">Teams must be different.</p>
+        )}
+      </div>
+    </Modal>
   );
 }
