@@ -19,10 +19,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
-import { Trophy, Users, Target, BarChart3, Home, Sun, Moon } from 'lucide-react';
+import { Trophy, Users, Target, BarChart3, Home, Sun, Moon, Calendar } from 'lucide-react';
 import Button from '../ui/Button';
 import { useAuth } from '@/lib/AuthContext';
 import { useTheme } from '@/lib/ThemeContext';
+
 
 // Navigation menu items configuration
 const navItems = [
@@ -30,6 +31,7 @@ const navItems = [
   { label: 'Leagues', href: '/leagues', icon: Trophy },
   { label: 'Players', href: '/players', icon: Users },
   { label: 'Tournaments', href: '/tournaments', icon: Target },
+  { label: 'Seasons', href: '/seasons', icon: Calendar },
   { label: 'Rankings', href: '/rankings', icon: BarChart3 },
 ];
 
@@ -38,7 +40,6 @@ export default function GlobalNavigation() {
   const router = useRouter();
   const { isAuthenticated, adminUser, setShowAuthModal, logout } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
-
   const toggleTheme = () => {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   };

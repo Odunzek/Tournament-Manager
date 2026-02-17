@@ -267,7 +267,7 @@ export default function PlayersPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4"
           >
             {filteredPlayers.map((player, index) => (
               <motion.div
@@ -279,7 +279,7 @@ export default function PlayersPage() {
                 <PlayerCard
                   player={player}
                   onClick={() => handlePlayerClick(player)}
-                  size="md"
+                  size="sm"
                   showTier={true}
                 />
               </motion.div>

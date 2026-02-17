@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Crown, Star, Award, TrendingUp, Calendar, Loader2 } from 'lucide-react';
+import { Trophy, Crown, TrendingUp, Calendar, Loader2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layouts/MainLayout';
 import Container from '@/components/layouts/Container';
@@ -10,20 +10,62 @@ import GlobalNavigation from '@/components/layouts/GlobalNavigation';
 import PlayerAvatar from '@/components/players/PlayerAvatar';
 import PlayerCard from '@/components/players/PlayerCard';
 import { Player } from '@/types/player';
-import { useHallOfFame, useAllTimeRecords } from '@/hooks/usePlayers';
+import { useHallOfFame, useSeasonRecords } from '@/hooks/usePlayers';
+import { useSeasons } from '@/hooks/useSeasons';
+import { useAuth } from '@/lib/AuthContext';
 import { convertTimestamp } from '@/lib/tournamentUtils';
+import { removePlayerSeasonAchievements } from '@/lib/playerUtils';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 export default function HallOfFamePage() {
   const router = useRouter();
-  const { players: hallOfFameMembers, loading: hofLoading } = useHallOfFame();
-  const { records: allTimeRecords, loading: recordsLoading } = useAllTimeRecords();
+  const { seasons } = useSeasons();
+  const { isAuthenticated } = useAuth();
+  const [seasonFilter, setSeasonFilter] = useState<string>('all_time');
+
+  const handleRemoveFromSeason = async (player: Player) => {
+    if (!effectiveSeasonId) return;
+    const seasonName = seasons.find((s) => s.id === effectiveSeasonId)?.name ?? 'this season';
+    if (!confirm(`Remove ${player.name} from ${seasonName} Hall of Fame?`)) return;
+    try {
+      await removePlayerSeasonAchievements(player.id!, effectiveSeasonId);
+    } catch {
+      alert('Failed to remove player. Check console.');
+    }
+  };
+
+  const effectiveSeasonId = seasonFilter === 'all_time' ? null : seasonFilter;
+
+  const { players: hallOfFameMembers, loading: hofLoading } = useHallOfFame(effectiveSeasonId);
+  const { records: allTimeRecords, loading: recordsLoading } = useSeasonRecords(effectiveSeasonId);
+
+  // Helper to get the correct achievements for current filter
+  const getPlayerAchievements = (player: Player) => {
+    if (effectiveSeasonId) {
+      return player.seasonAchievements?.[effectiveSeasonId] ?? {
+        leagueWins: 0,
+        tournamentWins: 0,
+        totalTitles: 0,
+        tier: null,
+      };
+    }
+    return player.achievements;
+  };
+
+  // Get the induction date for the current filter context
+  const getInductionDate = (player: Player) => {
+    if (effectiveSeasonId) {
+      return player.seasonAchievements?.[effectiveSeasonId]?.inductionDate;
+    }
+    return player.achievements.inductionDate;
+  };
 
   // Get recent inductees (last 3 by induction date)
   const recentInductees = [...hallOfFameMembers]
-    .filter((p) => p.achievements.inductionDate)
+    .filter((p) => getInductionDate(p))
     .sort((a, b) => {
-      const dateA = convertTimestamp(a.achievements.inductionDate!).getTime();
-      const dateB = convertTimestamp(b.achievements.inductionDate!).getTime();
+      const dateA = convertTimestamp(getInductionDate(a)!).getTime();
+      const dateB = convertTimestamp(getInductionDate(b)!).getTime();
       return dateB - dateA;
     })
     .slice(0, 3);
@@ -33,6 +75,11 @@ export default function HallOfFamePage() {
   };
 
   const loading = hofLoading || recordsLoading;
+
+  // Get the selected season name for display
+  const selectedSeasonName = effectiveSeasonId
+    ? seasons.find((s) => s.id === effectiveSeasonId)?.name ?? 'Season'
+    : null;
 
   return (
     <MainLayout>
@@ -111,6 +158,28 @@ export default function HallOfFamePage() {
           </motion.div>
         </motion.div>
 
+        {/* Season Filter */}
+        {seasons.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+            className="flex items-center justify-center gap-3 mb-8"
+          >
+            <Calendar className="w-5 h-5 text-yellow-400" />
+            <span className="text-light-600 dark:text-gray-400 font-semibold">View:</span>
+            <CustomDropdown
+              value={seasonFilter}
+              onChange={(val) => setSeasonFilter(val as string)}
+              options={[
+                { value: 'all_time', label: 'All Time' },
+                ...seasons.map((s) => ({ value: s.id!, label: s.name })),
+              ]}
+              className="w-48"
+            />
+          </motion.div>
+        )}
+
         {/* Loading State */}
         {loading && (
           <motion.div
@@ -123,7 +192,7 @@ export default function HallOfFamePage() {
           </motion.div>
         )}
 
-        {/* All-Time Records Section */}
+        {/* Records Section */}
         {!loading && hallOfFameMembers.length > 0 && allTimeRecords.mostTitles && (
           <motion.section
             initial={{ opacity: 0, y: 30 }}
@@ -133,7 +202,7 @@ export default function HallOfFamePage() {
           >
             <h2 className="text-3xl font-bold text-light-900 dark:text-white mb-6 flex items-center gap-3">
               <Trophy className="w-8 h-8 text-yellow-400" />
-              All-Time Records
+              {selectedSeasonName ? `${selectedSeasonName} Records` : 'All-Time Records'}
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -166,7 +235,7 @@ export default function HallOfFamePage() {
                   <div>
                     <div className="font-bold text-light-900 dark:text-white">{allTimeRecords.mostTitles.name}</div>
                     <div className="text-2xl font-black text-yellow-400">
-                      {allTimeRecords.mostTitles.achievements.totalTitles}
+                      {getPlayerAchievements(allTimeRecords.mostTitles).totalTitles}
                     </div>
                   </div>
                 </div>
@@ -201,7 +270,7 @@ export default function HallOfFamePage() {
                   <div>
                     <div className="font-bold text-light-900 dark:text-white">{allTimeRecords.mostLeagues.name}</div>
                     <div className="text-2xl font-black text-cyber-400">
-                      {allTimeRecords.mostLeagues.achievements.leagueWins}
+                      {getPlayerAchievements(allTimeRecords.mostLeagues).leagueWins}
                     </div>
                   </div>
                 </div>
@@ -236,7 +305,7 @@ export default function HallOfFamePage() {
                   <div>
                     <div className="font-bold text-light-900 dark:text-white">{allTimeRecords.mostTournaments.name}</div>
                     <div className="text-2xl font-black text-electric-400">
-                      {allTimeRecords.mostTournaments.achievements.tournamentWins}
+                      {getPlayerAchievements(allTimeRecords.mostTournaments).tournamentWins}
                     </div>
                   </div>
                 </div>
@@ -271,7 +340,7 @@ export default function HallOfFamePage() {
                   <div>
                     <div className="font-bold text-light-900 dark:text-white">{allTimeRecords.currentChampion.name}</div>
                     <div className="text-2xl font-black text-green-400">
-                      {allTimeRecords.currentChampion.achievements.totalTitles}
+                      {getPlayerAchievements(allTimeRecords.currentChampion).totalTitles}
                     </div>
                   </div>
                 </div>
@@ -281,7 +350,7 @@ export default function HallOfFamePage() {
         )}
 
         {/* Recent Inductees */}
-        {recentInductees.length > 0 && (
+        {!loading && recentInductees.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -329,13 +398,13 @@ export default function HallOfFamePage() {
                   </div>
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-light-600 dark:text-gray-400">
-                      {convertTimestamp(player.achievements.inductionDate!).toLocaleDateString('en-US', {
+                      {convertTimestamp(getInductionDate(player)!).toLocaleDateString('en-US', {
                         month: 'short',
                         year: 'numeric',
                       })}
                     </span>
                     <span className="text-electric-400 font-bold">
-                      {player.achievements.totalTitles} Titles
+                      {getPlayerAchievements(player).totalTitles} Titles
                     </span>
                   </div>
                 </motion.div>
@@ -354,25 +423,52 @@ export default function HallOfFamePage() {
           >
             <h2 className="text-3xl font-bold text-light-900 dark:text-white mb-6 flex items-center gap-3">
               <Trophy className="w-8 h-8 text-yellow-400" />
-              Hall of Fame Members
+              {selectedSeasonName ? `${selectedSeasonName} Hall of Fame` : 'Hall of Fame Members'}
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {hallOfFameMembers
-                .sort((a, b) => b.achievements.totalTitles - a.achievements.totalTitles)
+              {[...hallOfFameMembers]
+                .sort((a, b) => getPlayerAchievements(b).totalTitles - getPlayerAchievements(a).totalTitles)
                 .map((player, index) => (
                   <motion.div
                     key={player.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.9 + index * 0.05 }}
+                    className="relative"
                   >
+                    {/* Admin remove button (season view only) */}
+                    {isAuthenticated && effectiveSeasonId && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveFromSeason(player);
+                        }}
+                        className="absolute -top-2 -right-2 z-10 w-6 h-6 flex items-center justify-center bg-red-500/80 hover:bg-red-500 rounded-full text-white transition-colors shadow-lg"
+                        title={`Remove ${player.name} from this season`}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <PlayerCard
-                      player={player}
+                      player={
+                        effectiveSeasonId
+                          ? {
+                              ...player,
+                              achievements: {
+                                ...player.achievements,
+                                leagueWins: getPlayerAchievements(player).leagueWins,
+                                tournamentWins: getPlayerAchievements(player).tournamentWins,
+                                totalTitles: getPlayerAchievements(player).totalTitles,
+                                tier: getPlayerAchievements(player).tier,
+                              },
+                            }
+                          : player
+                      }
                       onClick={() => handlePlayerClick(player)}
                       size="md"
                       showTier={false}
-                      variant={player.achievements.totalTitles >= 10 ? 'premium' : 'default'}
+                      variant={getPlayerAchievements(player).totalTitles >= 10 ? 'premium' : 'default'}
                     />
                   </motion.div>
                 ))}
@@ -389,10 +485,14 @@ export default function HallOfFamePage() {
             className="text-center py-20"
           >
             <Crown className="w-24 h-24 text-gray-700 mx-auto mb-6" />
-            <h3 className="text-2xl font-bold text-light-600 dark:text-gray-400 mb-3">Hall of Fame Awaits</h3>
+            <h3 className="text-2xl font-bold text-light-600 dark:text-gray-400 mb-3">
+              {selectedSeasonName ? `No ${selectedSeasonName} Champions Yet` : 'Hall of Fame Awaits'}
+            </h3>
             <p className="text-light-500 dark:text-gray-500 max-w-md mx-auto">
-              The Hall of Fame will honor players who achieve 1 or more total titles. Compete in
-              leagues and tournaments to earn your place among the legends!
+              {selectedSeasonName
+                ? `No players have earned titles in ${selectedSeasonName} yet. Complete leagues and tournaments to see champions here!`
+                : 'The Hall of Fame will honor players who achieve 1 or more total titles. Compete in leagues and tournaments to earn your place among the legends!'
+              }
             </p>
           </motion.div>
         )}

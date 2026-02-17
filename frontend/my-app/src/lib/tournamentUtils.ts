@@ -177,6 +177,7 @@ export interface Tournament {
   name: string;
   type: 'league' | 'champions_league' | 'knockout' | 'custom';
   status: 'setup' | 'group_stage' | 'knockout' | 'completed';
+  seasonId?: string; // references seasons collection doc ID
   createdAt: Date;
   startDate?: Date;
   endDate?: Date;
@@ -185,7 +186,7 @@ export interface Tournament {
   groups?: TournamentGroup[];
   knockoutBracket?: KnockoutTie[];
   settings: TournamentSettings;
-  qualifiedTeams?: TournamentParticipant[];  
+  qualifiedTeams?: TournamentParticipant[];
 }
 
 export interface TournamentGroup {

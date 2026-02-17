@@ -39,7 +39,9 @@ export default function Overview({
   const startDate = convertTimestamp(league.startDate);
   const endDate = league.endDate ? convertTimestamp(league.endDate) : null;
 
-  const matchProgress = league.totalMatches > 0 ? (league.matchesPlayed / league.totalMatches) * 100 : 0;
+  const totalMatches = league.totalMatches || 0;
+  const matchesPlayed = league.matchesPlayed || 0;
+  const matchProgress = totalMatches > 0 ? (matchesPlayed / totalMatches) * 100 : 0;
 
   const getStatusBadge = () => {
     const badges = {
@@ -109,7 +111,7 @@ export default function Overview({
             <div className="flex items-center justify-between text-sm text-light-600 dark:text-gray-400 mb-2">
               <span>League Progress</span>
               <span>
-                {league.matchesPlayed} / {league.totalMatches} matches ({Math.round(matchProgress)}%)
+                {matchesPlayed} / {totalMatches} matches ({Math.round(matchProgress)}%)
               </span>
             </div>
             <div className="w-full bg-dark-200 rounded-full h-3 overflow-hidden">
@@ -186,7 +188,7 @@ export default function Overview({
               <TrendingUp className="w-8 h-8 text-electric-400" />
               <div>
                 <p className="text-xs text-light-600 dark:text-gray-400">Matches Played</p>
-                <p className="text-2xl font-bold text-light-900 dark:text-white">{league.matchesPlayed}</p>
+                <p className="text-2xl font-bold text-light-900 dark:text-white">{matchesPlayed}</p>
               </div>
             </div>
           </Card>
@@ -205,7 +207,7 @@ export default function Overview({
               <CheckCircle className="w-8 h-8 text-green-400" />
               <div>
                 <p className="text-xs text-light-600 dark:text-gray-400">Remaining</p>
-                <p className="text-2xl font-bold text-light-900 dark:text-white">{league.totalMatches - league.matchesPlayed}</p>
+                <p className="text-2xl font-bold text-light-900 dark:text-white">{(league.totalMatches || 0) - (league.matchesPlayed || 0)}</p>
               </div>
             </div>
           </Card>

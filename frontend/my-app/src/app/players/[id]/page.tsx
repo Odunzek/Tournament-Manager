@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Edit, Trash2, Calendar, TrendingUp, Loader2 } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Calendar, TrendingUp, Loader2, Trophy, Target } from 'lucide-react';
 import MainLayout from '@/components/layouts/MainLayout';
 import Container from '@/components/layouts/Container';
 import GlobalNavigation from '@/components/layouts/GlobalNavigation';
@@ -11,6 +11,7 @@ import PlayerAvatar from '@/components/players/PlayerAvatar';
 import TrophyDisplay from '@/components/players/TrophyDisplay';
 import PlayerFormModal from '@/components/players/PlayerFormModal';
 import { usePlayer } from '@/hooks/usePlayers';
+import { useSeasons } from '@/hooks/useSeasons';
 import { updatePlayer, deletePlayer } from '@/lib/playerUtils';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -19,6 +20,7 @@ export default function PlayerDetailPage() {
   const router = useRouter();
   const playerId = params.id as string;
   const { player, loading } = usePlayer(playerId);
+  const { seasons } = useSeasons();
   const { isAuthenticated } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -219,6 +221,55 @@ export default function PlayerDetailPage() {
           />
         </motion.div>
 
+        {/* Per-Season Breakdown */}
+        {player.seasonAchievements && Object.keys(player.seasonAchievements).length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mb-8"
+          >
+            <h2 className="text-2xl font-bold text-light-900 dark:text-white mb-4 flex items-center gap-2">
+              <Calendar className="w-6 h-6 text-cyber-400" />
+              Season Breakdown
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Object.entries(player.seasonAchievements)
+                .sort(([, a], [, b]) => b.totalTitles - a.totalTitles)
+                .map(([seasonId, achievements]) => {
+                  const seasonName = seasons.find((s) => s.id === seasonId)?.name ?? seasonId;
+                  return (
+                    <div
+                      key={seasonId}
+                      className="bg-gradient-to-br from-light-200/50 to-light-300/50 dark:from-white/5 dark:to-white/10 border border-black/10 dark:border-white/10 rounded-2xl p-4 backdrop-blur-sm"
+                    >
+                      <h3 className="text-lg font-bold text-light-900 dark:text-white mb-3">{seasonName}</h3>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-2 text-sm text-light-600 dark:text-gray-400">
+                            <Trophy className="w-4 h-4 text-cyber-400" />
+                            Leagues
+                          </span>
+                          <span className="font-bold text-cyber-600 dark:text-cyber-400">{achievements.leagueWins}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-2 text-sm text-light-600 dark:text-gray-400">
+                            <Target className="w-4 h-4 text-electric-400" />
+                            Tournaments
+                          </span>
+                          <span className="font-bold text-electric-600 dark:text-electric-400">{achievements.tournamentWins}</span>
+                        </div>
+                        <div className="pt-2 border-t border-black/10 dark:border-white/10 flex items-center justify-between">
+                          <span className="text-sm font-semibold text-light-600 dark:text-gray-400">Total Titles</span>
+                          <span className="font-black text-lg text-yellow-600 dark:text-yellow-400">{achievements.totalTitles}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </motion.div>
+        )}
 
         {/* Career Stats */}
         <motion.div

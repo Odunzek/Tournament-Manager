@@ -18,9 +18,9 @@ interface PlayerCardProps {
 
 const sizeConfig = {
   sm: {
-    card: 'p-4',
+    card: 'p-2 sm:p-4',
     avatar: 'md' as const,
-    title: 'text-lg',
+    title: 'text-xs sm:text-base font-bold truncate',
     subtitle: 'text-sm',
     badge: 'sm' as const,
   },
@@ -85,22 +85,22 @@ export default function PlayerCard({
           size={config.avatar}
           showBorder={true}
           borderColor={isPremium ? 'border-yellow-500/50' : 'border-cyber-600/60 dark:border-cyber-500/50'}
-          className="mb-4"
+          className={`mb-4 ${size === 'sm' ? '!w-8 !h-8 sm:!w-12 sm:!h-12 !mb-2 sm:!mb-4' : ''}`}
         />
 
         {/* Player Name */}
-        <h3 className={`${config.title} font-bold text-light-900 dark:text-white mb-1`}>
+        <h3 className={`${config.title} ${size !== 'sm' ? 'font-bold' : ''} text-light-900 dark:text-white mb-1`}>
           {player.name}
         </h3>
 
-        {/* PSN ID - Only show if provided */}
+        {/* PSN ID - Only show if provided (hidden on mobile for sm size) */}
         {player.psnId && player.psnId !== 'player' && (
-          <p className={`${config.subtitle} text-light-600 dark:text-gray-400 mb-3`}>
+          <p className={`${config.subtitle} text-light-600 dark:text-gray-400 mb-3 ${size === 'sm' ? 'hidden sm:block' : ''}`}>
             @{player.psnId}
           </p>
         )}
 
-        {/* Total Titles Badge */}
+        {/* Total Titles Badge (hidden on mobile for sm size) */}
         <div
           className={`
             inline-flex items-center gap-2
@@ -113,6 +113,7 @@ export default function PlayerCard({
             border
             backdrop-blur-sm
             ${!player.psnId || player.psnId === 'player' ? 'mt-2' : ''}
+            ${size === 'sm' ? 'hidden sm:inline-flex' : ''}
           `}
         >
           <Trophy

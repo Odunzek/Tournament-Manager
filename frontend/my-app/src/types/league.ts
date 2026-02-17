@@ -45,6 +45,7 @@ export interface League {
   id?: string;
   name: string;
   season: string;
+  seasonId?: string; // references seasons collection doc ID
   status: 'active' | 'upcoming' | 'completed';
   startDate: any; // Firestore Timestamp
   endDate?: any; // Firestore Timestamp

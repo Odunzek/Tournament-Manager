@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trophy, Calendar, Users } from 'lucide-react';
 import { Player } from '@/types/player';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
+import { useActiveSeason } from '@/hooks/useActiveSeason';
 
 interface CreateLeagueModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface CreateLeagueModalProps {
   onSubmit: (data: {
     name: string;
     season: string;
+    seasonId?: string;
     status: 'active' | 'upcoming' | 'completed';
     startDate: string;
     endDate: string;
@@ -27,9 +29,11 @@ export default function CreateLeagueModal({
   onSubmit,
   players,
 }: CreateLeagueModalProps) {
+  const { activeSeason } = useActiveSeason();
   const [formData, setFormData] = useState({
     name: '',
     season: '',
+    seasonId: undefined as string | undefined,
     status: 'upcoming' as 'active' | 'upcoming' | 'completed',
     startDate: '',
     endDate: '',
@@ -37,6 +41,17 @@ export default function CreateLeagueModal({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Auto-fill season info from active season
+  useEffect(() => {
+    if (activeSeason) {
+      setFormData((prev) => ({
+        ...prev,
+        season: prev.season || activeSeason.name,
+        seasonId: activeSeason.id,
+      }));
+    }
+  }, [activeSeason]);
 
   const handleChange = (field: string, value: any) => {
     setFormData({ ...formData, [field]: value });
@@ -97,7 +112,8 @@ export default function CreateLeagueModal({
       // Reset form
       setFormData({
         name: '',
-        season: '',
+        season: activeSeason?.name || '',
+        seasonId: activeSeason?.id,
         status: 'upcoming',
         startDate: '',
         endDate: '',
@@ -153,6 +169,26 @@ export default function CreateLeagueModal({
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Active Season Badge */}
+                  {activeSeason ? (
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-cyber-500/10 border border-cyber-500/30 rounded-xl">
+                      <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                      <span className="text-sm text-light-700 dark:text-gray-300">
+                        Auto-assigning to season:
+                      </span>
+                      <span className="text-sm font-bold text-cyber-600 dark:text-cyber-400">
+                        {activeSeason.name}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                      <div className="w-2 h-2 rounded-full bg-amber-400" />
+                      <span className="text-sm text-amber-400">
+                        No active season — this league won&apos;t be linked to any season. Achievements won&apos;t be tracked per-season.
+                      </span>
+                    </div>
+                  )}
+
                   {/* League Name */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-300 mb-2">

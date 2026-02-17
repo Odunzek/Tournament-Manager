@@ -41,6 +41,8 @@ import {
   updateTournament,
   repairKnockoutProgression,
 } from '@/lib/tournamentUtils';
+import { incrementTournamentWins } from '@/lib/playerUtils';
+import { usePlayers } from '@/hooks/usePlayers';
 
 // Section components
 import Overview from '../../../components/tournaments/sections/Overview';
@@ -63,6 +65,7 @@ function TournamentDetailContent() {
   const params = useParams();
   const router = useRouter();
   const { isAuthenticated, setShowAuthModal } = useAuth();
+  const { players } = usePlayers();
   const tournamentId = params?.id as string;
 
   // State management
@@ -229,6 +232,18 @@ function TournamentDetailContent() {
     try {
       setLoading(true);
       await updateTournament(tournament.id!, { status: 'completed' });
+
+      // Auto-award tournament title to the winner
+      const finalTie = tournament.knockoutBracket?.find(
+        (tie) => tie.round === 'final' && tie.completed && tie.winner
+      );
+      if (finalTie?.winner) {
+        const winnerPlayer = players.find((p) => p.name === finalTie.winner);
+        if (winnerPlayer?.id) {
+          await incrementTournamentWins(winnerPlayer.id, tournament.seasonId);
+        }
+      }
+
       setLoading(false);
     } catch (err) {
       console.error('Error completing tournament:', err);
@@ -348,7 +363,7 @@ function TournamentDetailContent() {
                 <ActiveSectionComponent
                   tournament={tournament}
                   tournamentMembers={tournamentMembers}
-                  isAuthenticated={isAuthenticated}
+                  isAuthenticated={isAuthenticated && tournament.status !== 'completed'}
                   isLoading={loading}
                   onGenerateGroups={handleGenerateGroups}
                   onGenerateKnockout={handleGenerateKnockout}

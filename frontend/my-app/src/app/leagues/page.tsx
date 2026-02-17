@@ -12,6 +12,10 @@ import LeagueCard from '@/components/leagues/LeagueCard';
 import { useLeagues } from '@/hooks/useLeagues';
 import { usePlayers } from '@/hooks/usePlayers';
 import { useAuth } from '@/lib/AuthContext';
+import { useActiveSeason } from '@/hooks/useActiveSeason';
+import { useSeasons } from '@/hooks/useSeasons';
+import { Calendar } from 'lucide-react';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 import { LeagueFilters } from '@/types/league';
 import { calculateStandings, createLeague } from '@/lib/leagueUtils';
 import { Timestamp } from 'firebase/firestore';
@@ -22,7 +26,10 @@ export default function LeaguesPage() {
   const { leagues, loading: leaguesLoading } = useLeagues();
   const { players } = usePlayers();
   const { isAuthenticated } = useAuth();
+  const { activeSeason } = useActiveSeason();
+  const { seasons } = useSeasons();
   const [searchQuery, setSearchQuery] = useState('');
+  const [seasonFilter, setSeasonFilter] = useState<string>('active_season');
   const [filters, setFilters] = useState<LeagueFilters>({
     search: '',
     status: 'all',
@@ -66,6 +73,20 @@ export default function LeaguesPage() {
   const filteredLeagues = useMemo(() => {
     let result = [...leagues];
 
+    // Season filter
+    if (seasonFilter === 'active_season' && activeSeason?.id) {
+      result = result.filter((league) =>
+        league.seasonId === activeSeason.id ||
+        (!league.seasonId && league.season === activeSeason.name)
+      );
+    } else if (seasonFilter !== 'all' && seasonFilter !== 'active_season') {
+      const selectedSeason = seasons.find((s) => s.id === seasonFilter);
+      result = result.filter((league) =>
+        league.seasonId === seasonFilter ||
+        (!league.seasonId && selectedSeason && league.season === selectedSeason.name)
+      );
+    }
+
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -82,11 +103,11 @@ export default function LeaguesPage() {
     }
 
     return result;
-  }, [searchQuery, filters, leagues]);
+  }, [searchQuery, filters, leagues, seasonFilter, activeSeason]);
 
-  const activeLeaguesCount = leagues.filter((l) => l.status === 'active').length;
-  const upcomingLeaguesCount = leagues.filter((l) => l.status === 'upcoming').length;
-  const completedLeaguesCount = leagues.filter((l) => l.status === 'completed').length;
+  const activeLeaguesCount = filteredLeagues.filter((l) => l.status === 'active').length;
+  const upcomingLeaguesCount = filteredLeagues.filter((l) => l.status === 'upcoming').length;
+  const completedLeaguesCount = filteredLeagues.filter((l) => l.status === 'completed').length;
 
   const handleLeagueClick = (leagueId: string) => {
     router.push(`/leagues/${leagueId}`);
@@ -99,6 +120,7 @@ export default function LeaguesPage() {
   const handleCreateLeagueSubmit = async (data: {
     name: string;
     season: string;
+    seasonId?: string;
     status: 'active' | 'upcoming' | 'completed';
     startDate: string;
     endDate: string;
@@ -112,6 +134,7 @@ export default function LeaguesPage() {
       await createLeague({
         name: data.name,
         season: data.season,
+        ...(data.seasonId && { seasonId: data.seasonId }),
         status: data.status,
         startDate: Timestamp.fromDate(new Date(data.startDate)),
         endDate: data.endDate ? Timestamp.fromDate(new Date(data.endDate)) : undefined,
@@ -136,7 +159,13 @@ export default function LeaguesPage() {
         {/* Header */}
         <PageHeader
           title="LEAGUES"
-          subtitle={`Manage your ${leagues.length} leagues`}
+          subtitle={`Manage your ${filteredLeagues.length} league${filteredLeagues.length !== 1 ? 's' : ''}${
+            seasonFilter === 'active_season' && activeSeason
+              ? ` in ${activeSeason.name}`
+              : seasonFilter !== 'all' && seasonFilter !== 'active_season'
+                ? ` in ${seasons.find((s) => s.id === seasonFilter)?.name ?? 'Season'}`
+                : ''
+          }`}
           gradient="electric"
         />
 
@@ -230,10 +259,30 @@ export default function LeaguesPage() {
 
           {/* Filter Options */}
           <div className="flex flex-wrap gap-3 mt-4">
+            {/* Season Filter */}
+            {seasons.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-gray-400" />
+                <span className="text-light-600 dark:text-gray-400 text-sm">Season:</span>
+                <CustomDropdown
+                  value={seasonFilter}
+                  onChange={(val) => setSeasonFilter(val as string)}
+                  options={[
+                    ...(activeSeason ? [{ value: 'active_season', label: `● ${activeSeason.name}` }] : []),
+                    { value: 'all', label: 'All Seasons' },
+                    ...seasons
+                      .filter((s) => s.id !== activeSeason?.id)
+                      .map((s) => ({ value: s.id!, label: s.name })),
+                  ]}
+                  className="w-48"
+                />
+              </div>
+            )}
+
             {/* Status Filter */}
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-400" />
-              <span className="text-gray-400 text-sm">Status:</span>
+              <span className="text-light-600 dark:text-gray-400 text-sm">Status:</span>
               {(['all', 'active', 'upcoming', 'completed'] as const).map((status) => (
                 <button
                   key={status}

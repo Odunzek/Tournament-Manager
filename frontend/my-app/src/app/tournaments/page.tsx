@@ -19,7 +19,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Filter, Loader2 } from 'lucide-react';
+import { Plus, Search, Filter, Loader2, Calendar } from 'lucide-react';
 import MainLayout from '../../components/layouts/MainLayout';
 import PageHeader from '../../components/layouts/PageHeader';
 import Container from '../../components/layouts/Container';
@@ -30,6 +30,9 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { Tournament, subscribeToTournaments } from '@/lib/tournamentUtils';
 import { AuthProvider, AuthModal, useAuth } from '@/lib/AuthContext';
+import { useActiveSeason } from '@/hooks/useActiveSeason';
+import { useSeasons } from '@/hooks/useSeasons';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 // Firebase Tournament status types for filtering
 type TournamentStatusFilter = 'setup' | 'group_stage' | 'knockout' | 'completed' | 'all';
@@ -37,10 +40,13 @@ type TournamentStatusFilter = 'setup' | 'group_stage' | 'knockout' | 'completed'
 function TournamentsContent() {
   const router = useRouter();
   const { isAuthenticated } = useAuth(); // Get admin authentication status
+  const { activeSeason } = useActiveSeason();
+  const { seasons } = useSeasons();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<TournamentStatusFilter>('all');
+  const [seasonFilter, setSeasonFilter] = useState<string>('active_season');
   const [showCreateModal, setShowCreateModal] = useState(false); // Modal visibility state
 
   // Subscribe to Firebase tournaments in real-time
@@ -55,6 +61,13 @@ function TournamentsContent() {
   }, []);
 
   const filteredTournaments = tournaments.filter(tournament => {
+    // Filter by season
+    if (seasonFilter === 'active_season' && activeSeason?.id) {
+      if (tournament.seasonId !== activeSeason.id) return false;
+    } else if (seasonFilter !== 'all' && seasonFilter !== 'active_season') {
+      if (tournament.seasonId !== seasonFilter) return false;
+    }
+
     // Filter by status
     if (statusFilter !== 'all' && tournament.status !== statusFilter) return false;
 
@@ -108,6 +121,26 @@ function TournamentsContent() {
           </div>
 
           <div className="flex gap-2 flex-wrap">
+            {/* Season Filter */}
+            {seasons.length > 0 && (
+              <>
+                <CustomDropdown
+                  value={seasonFilter}
+                  onChange={(val) => setSeasonFilter(val as string)}
+                  options={[
+                    ...(activeSeason ? [{ value: 'active_season', label: `● ${activeSeason.name}` }] : []),
+                    { value: 'all', label: 'All Seasons' },
+                    ...seasons
+                      .filter((s) => s.id !== activeSeason?.id)
+                      .map((s) => ({ value: s.id!, label: s.name })),
+                  ]}
+                  className="w-48"
+                />
+                <div className="w-px bg-white/10 mx-1 self-stretch" />
+              </>
+            )}
+
+            {/* Status Filter */}
             {([
               { value: 'all', label: 'All' },
               { value: 'setup', label: 'Setup' },
@@ -199,18 +232,18 @@ function TournamentsContent() {
           className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4"
         >
           {[
-            { label: 'Total Tournaments', value: tournaments.length },
+            { label: 'Total Tournaments', value: filteredTournaments.length },
             {
               label: 'Active',
-              value: tournaments.filter(t => t.status === 'group_stage' || t.status === 'knockout').length,
+              value: filteredTournaments.filter(t => t.status === 'group_stage' || t.status === 'knockout').length,
             },
             {
               label: 'Setup',
-              value: tournaments.filter(t => t.status === 'setup').length,
+              value: filteredTournaments.filter(t => t.status === 'setup').length,
             },
             {
               label: 'Completed',
-              value: tournaments.filter(t => t.status === 'completed').length,
+              value: filteredTournaments.filter(t => t.status === 'completed').length,
             },
           ].map((stat, index) => (
             <div

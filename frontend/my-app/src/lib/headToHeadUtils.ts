@@ -18,6 +18,7 @@ export interface HeadToHeadMatch {
   winner: 'playerA' | 'playerB' | 'draw';
   competition: string;
   competitionType: 'league' | 'tournament';
+  leagueId?: string;
 }
 
 export interface HeadToHeadStats {
@@ -56,7 +57,8 @@ export interface HeadToHeadStats {
  */
 async function getLeagueMatchesBetweenPlayers(
   playerAId: string,
-  playerBId: string
+  playerBId: string,
+  seasonLeagueIds?: Set<string>
 ): Promise<HeadToHeadMatch[]> {
   const matchesRef = collection(db, 'leagueMatches');
 
@@ -97,9 +99,14 @@ async function getLeagueMatchesBetweenPlayers(
         winner,
         competition: `League`, // We could fetch league name if needed
         competitionType: 'league',
+        leagueId: match.leagueId,
       });
     }
   });
+
+  if (seasonLeagueIds) {
+    return allMatches.filter((m) => m.leagueId && seasonLeagueIds.has(m.leagueId));
+  }
 
   return allMatches;
 }
@@ -109,13 +116,18 @@ async function getLeagueMatchesBetweenPlayers(
  */
 async function getTournamentMatchesBetweenPlayers(
   playerAName: string,
-  playerBName: string
+  playerBName: string,
+  seasonId?: string
 ): Promise<HeadToHeadMatch[]> {
   const allMatches: HeadToHeadMatch[] = [];
 
   try {
     // Get all tournaments
-    const tournaments = await getTournaments();
+    let tournaments = await getTournaments();
+
+    if (seasonId) {
+      tournaments = tournaments.filter((t) => t.seasonId === seasonId);
+    }
 
     tournaments.forEach((tournament) => {
       // Check group stage matches
@@ -237,13 +249,23 @@ export async function getGlobalHeadToHead(
   playerAId: string,
   playerAName: string,
   playerBId: string,
-  playerBName: string
+  playerBName: string,
+  seasonId?: string
 ): Promise<HeadToHeadStats> {
+  // Build season league IDs set if filtering by season
+  let seasonLeagueIds: Set<string> | undefined;
+  if (seasonId) {
+    const leaguesSnap = await getDocs(
+      query(collection(db, 'leagues'), where('seasonId', '==', seasonId))
+    );
+    seasonLeagueIds = new Set(leaguesSnap.docs.map((doc) => doc.id));
+  }
+
   // Fetch all matches between the two players
   // League matches use player IDs, tournament matches use player names
   const [leagueMatches, tournamentMatches] = await Promise.all([
-    getLeagueMatchesBetweenPlayers(playerAId, playerBId),
-    getTournamentMatchesBetweenPlayers(playerAName, playerBName),
+    getLeagueMatchesBetweenPlayers(playerAId, playerBId, seasonLeagueIds),
+    getTournamentMatchesBetweenPlayers(playerAName, playerBName, seasonId),
   ]);
 
   const allMatches = [...leagueMatches, ...tournamentMatches].sort(

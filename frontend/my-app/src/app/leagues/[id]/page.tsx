@@ -17,6 +17,7 @@ import { useLeague, useLeagueMatches } from '@/hooks/useLeagues';
 import { usePlayers } from '@/hooks/usePlayers';
 import { useAuth } from '@/lib/AuthContext';
 import { calculateStandings, calculateWinStreaks, addPlayersToLeague, updateLeague } from '@/lib/leagueUtils';
+import { incrementLeagueWins } from '@/lib/playerUtils';
 import { LeaguePlayer, WinStreak } from '@/types/league';
 
 export default function LeagueDetailPage() {
@@ -146,6 +147,14 @@ export default function LeagueDetailPage() {
       await updateLeague(league.id, {
         status: 'completed',
       });
+
+      // Auto-award league title to the winner
+      if (leaguePlayers.length > 0) {
+        const finalStandings = await calculateStandings(league.id, leaguePlayers);
+        if (finalStandings.length > 0 && finalStandings[0].id) {
+          await incrementLeagueWins(finalStandings[0].id, league.seasonId);
+        }
+      }
     } catch (error) {
       console.error('Error ending league:', error);
       alert('Failed to end league. Please try again.');
@@ -171,6 +180,8 @@ export default function LeagueDetailPage() {
     }
   };
 
+  // Disable admin actions if league is already completed
+  const isEditable = isAuthenticated && league?.status !== 'completed';
   const loading = leagueLoading || matchesLoading;
 
   if (loading) {
@@ -221,7 +232,7 @@ export default function LeagueDetailPage() {
             recentMatches={matches.slice(0, 5)}
             totalGoals={totalGoals}
             playerCount={leaguePlayers.length}
-            isAuthenticated={isAuthenticated}
+            isAuthenticated={isEditable}
             onAddPlayers={() => setIsAddPlayersModalOpen(true)}
             onEndLeague={handleEndLeague}
             onMatchUpdated={handleMatchUpdated}
@@ -231,7 +242,7 @@ export default function LeagueDetailPage() {
       case 'standings':
         return <Standings standings={standings} leagueId={league.id!} {...sectionProps} />;
       case 'results':
-        return <Results matches={matches} players={leaguePlayers} onMatchUpdated={handleMatchUpdated} {...sectionProps} />;
+        return <Results matches={matches} players={leaguePlayers} onMatchUpdated={isEditable ? handleMatchUpdated : undefined} {...sectionProps} />;
       case 'streaks':
         return <StreaksAndStats streaks={streaks} standings={standings} {...sectionProps} />;
       case 'record':
@@ -239,7 +250,7 @@ export default function LeagueDetailPage() {
           <RecordMatch
             leagueId={league.id!}
             players={leaguePlayers}
-            isAuthenticated={isAuthenticated}
+            isAuthenticated={isEditable}
           />
         );
       default:

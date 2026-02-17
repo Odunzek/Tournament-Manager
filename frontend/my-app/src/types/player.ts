@@ -25,6 +25,18 @@ export interface PlayerAchievements {
 }
 
 /**
+ * Per-season achievement statistics
+ * Stored as a map on the Player document: seasonAchievements[seasonId]
+ */
+export interface SeasonAchievements {
+  leagueWins: number;
+  tournamentWins: number;
+  totalTitles: number;
+  tier?: HallOfFameTier;
+  inductionDate?: string;
+}
+
+/**
  * Main Player interface
  */
 export interface Player {
@@ -33,6 +45,7 @@ export interface Player {
   psnId: string;
   avatar?: string;
   achievements: PlayerAchievements;
+  seasonAchievements?: Record<string, SeasonAchievements>;
   createdAt: string;
   updatedAt: string;
 }

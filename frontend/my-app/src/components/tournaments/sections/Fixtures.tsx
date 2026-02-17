@@ -669,7 +669,7 @@ function MatchCard({ match, index, isAuthenticated, isLoading, onRecordMatch }: 
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
     >
-      <Card variant="glass" className={`bg-gradient-to-br ${gradient} border ${border}`}>
+      <Card variant="glass" className={`bg-gradient-to-br ${gradient} border ${border} ${!isAuthenticated ? '!p-3 sm:!p-6' : ''}`}>
         {/* Match Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -678,7 +678,7 @@ function MatchCard({ match, index, isAuthenticated, isLoading, onRecordMatch }: 
             ) : (
               <Trophy className="w-4 h-4 text-pink-400" />
             )}
-            <span className="text-sm font-semibold text-light-700 dark:text-gray-300">
+            <span className={`${!isAuthenticated ? 'text-xs' : 'text-sm'} font-semibold text-light-700 dark:text-gray-300`}>
               {match.round}
               {match.groupName && ` - ${match.groupName}`}
               {match.leg && ` (${match.leg === 'first' ? '1st' : '2nd'} Leg)`}
@@ -697,16 +697,16 @@ function MatchCard({ match, index, isAuthenticated, isLoading, onRecordMatch }: 
 
         {/* Teams with Winner/Loser Styling */}
         <div className="space-y-3">
-          <div className={`flex items-center justify-between rounded-tech p-3 transition-all ${
+          <div className={`flex items-center justify-between rounded-tech ${!isAuthenticated ? 'p-2 sm:p-3' : 'p-3'} transition-all ${
             homeWon ? 'bg-green-500/10 border-2 border-green-500/30' :
             awayWon ? 'bg-light-200/20 dark:bg-dark-100/20' :
             'bg-light-200/30 dark:bg-dark-100/30'
           }`}>
-            <span className={`font-bold ${homeWon ? 'text-green-400' : 'text-light-900 dark:text-white'}`}>
+            <span className={`font-bold ${!isAuthenticated ? 'text-sm sm:text-base' : ''} ${homeWon ? 'text-green-400' : 'text-light-900 dark:text-white'}`}>
               {match.homeTeam}
             </span>
             {match.played && match.homeScore !== undefined && (
-              <span className={`text-2xl font-extrabold ${
+              <span className={`${!isAuthenticated ? 'text-lg sm:text-2xl' : 'text-2xl'} font-extrabold ${
                 homeWon ? 'text-green-400' :
                 awayWon ? 'text-light-500 dark:text-gray-500' :
                 'text-light-900 dark:text-white'
@@ -716,20 +716,20 @@ function MatchCard({ match, index, isAuthenticated, isLoading, onRecordMatch }: 
             )}
           </div>
 
-          <div className="flex items-center justify-center">
+          <div className={`flex items-center justify-center ${!isAuthenticated ? 'hidden sm:flex' : ''}`}>
             <span className="text-light-500 dark:text-gray-500 font-bold">vs</span>
           </div>
 
-          <div className={`flex items-center justify-between rounded-tech p-3 transition-all ${
+          <div className={`flex items-center justify-between rounded-tech ${!isAuthenticated ? 'p-2 sm:p-3' : 'p-3'} transition-all ${
             awayWon ? 'bg-green-500/10 border-2 border-green-500/30' :
             homeWon ? 'bg-light-200/20 dark:bg-dark-100/20' :
             'bg-light-200/30 dark:bg-dark-100/30'
           }`}>
-            <span className={`font-bold ${awayWon ? 'text-green-400' : 'text-light-900 dark:text-white'}`}>
+            <span className={`font-bold ${!isAuthenticated ? 'text-sm sm:text-base' : ''} ${awayWon ? 'text-green-400' : 'text-light-900 dark:text-white'}`}>
               {match.awayTeam}
             </span>
             {match.played && match.awayScore !== undefined && (
-              <span className={`text-2xl font-extrabold ${
+              <span className={`${!isAuthenticated ? 'text-lg sm:text-2xl' : 'text-2xl'} font-extrabold ${
                 awayWon ? 'text-green-400' :
                 homeWon ? 'text-light-500 dark:text-gray-500' :
                 'text-light-900 dark:text-white'
