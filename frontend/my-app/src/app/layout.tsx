@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "Football League Manager",
   description: "Created by Kachy",
   icons: {
-    icon: "/ea.png",
+    icon: "/icons/favicon.svg",
   },
 
 };
