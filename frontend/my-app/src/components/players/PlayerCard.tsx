@@ -120,7 +120,7 @@ export default function PlayerCard({
             className={`w-4 h-4 ${isHallOfFame ? 'text-yellow-400' : 'text-light-600 dark:text-gray-400'}`}
           />
           <span className={`text-sm font-semibold ${isHallOfFame ? 'text-yellow-400' : 'text-light-700 dark:text-gray-300'}`}>
-            {player.achievements.totalTitles} {player.achievements.totalTitles === 1 ? 'Title' : 'Titles'}
+            {player.achievements.totalTitles}
           </span>
         </div>
 

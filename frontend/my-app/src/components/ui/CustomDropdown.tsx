@@ -75,7 +75,7 @@ export default function CustomDropdown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-light-200 dark:bg-dark-100/50 border-2 border-black/10 dark:border-white/10 rounded-tech text-light-900 dark:text-white text-sm font-medium hover:border-cyber-500/50 focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm"
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 sm:px-4 sm:py-3 bg-light-200 dark:bg-dark-100/50 border-2 border-black/10 dark:border-white/10 rounded-tech text-light-900 dark:text-white text-xs sm:text-sm font-medium hover:border-cyber-500/50 focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm"
       >
         <span className="text-light-700 dark:text-gray-200">{selectedOption ? selectedOption.label : placeholder}</span>
         <motion.div

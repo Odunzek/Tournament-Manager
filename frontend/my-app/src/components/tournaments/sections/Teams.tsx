@@ -24,6 +24,7 @@ import { useAuth } from '@/lib/AuthContext';
 import Card from '../../ui/Card';
 import Input from '../../ui/Input';
 import Button from '../../ui/Button';
+import PlayerStatsModal from '../PlayerStatsModal';
 
 interface TeamsProps {
   tournament: Tournament;
@@ -32,6 +33,7 @@ interface TeamsProps {
 
 export default function Teams({ tournament, tournamentMembers }: TeamsProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
@@ -199,7 +201,8 @@ export default function Teams({ tournament, tournamentMembers }: TeamsProps) {
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: index * 0.1 + teamIndex * 0.05 }}
-                      className="bg-dark-100/50 backdrop-blur-sm rounded-tech p-4 border border-black/10 dark:border-white/10 hover:border-cyber-500/50 transition-all"
+                      onClick={() => setSelectedPlayer(team.name)}
+                      className="bg-dark-100/50 backdrop-blur-sm rounded-tech p-4 border border-black/10 dark:border-white/10 hover:border-cyber-500/50 transition-all cursor-pointer"
                     >
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyber-500/20 to-electric-500/20 flex items-center justify-center">
@@ -388,38 +391,43 @@ export default function Teams({ tournament, tournamentMembers }: TeamsProps) {
         </>
       )}
 
+      {/* Player Stats Modal */}
+      {selectedPlayer && (
+        <PlayerStatsModal
+          tournament={tournament}
+          playerName={selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+        />
+      )}
+
       {/* Stats Footer */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card variant="glass">
-          <div className="text-center">
-            <Users className="w-6 h-6 text-cyber-400 mx-auto mb-2" />
-            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Total Teams</p>
+          <div className="flex items-center justify-center gap-2">
+            <Users className="w-5 h-5 text-cyber-400" />
             <p className="text-2xl font-bold text-light-900 dark:text-white">{tournamentMembers.length}</p>
           </div>
         </Card>
 
         <Card variant="glass">
-          <div className="text-center">
-            <Target className="w-6 h-6 text-electric-400 mx-auto mb-2" />
-            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Max Teams</p>
+          <div className="flex items-center justify-center gap-2">
+            <Target className="w-5 h-5 text-electric-400" />
             <p className="text-2xl font-bold text-light-900 dark:text-white">{tournament.maxTeams}</p>
           </div>
         </Card>
 
         <Card variant="glass">
-          <div className="text-center">
-            <Trophy className="w-6 h-6 text-pink-400 mx-auto mb-2" />
-            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Groups</p>
+          <div className="flex items-center justify-center gap-2">
+            <Trophy className="w-5 h-5 text-pink-400" />
             <p className="text-2xl font-bold text-light-900 dark:text-white">{tournament.groups?.length || 0}</p>
           </div>
         </Card>
 
         <Card variant="glass">
-          <div className="text-center">
-            <div className="w-6 h-6 mx-auto mb-2 rounded-full bg-gradient-cyber flex items-center justify-center">
-              <span className="text-xs font-bold text-light-900 dark:text-white">%</span>
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-5 h-5 rounded-full bg-gradient-cyber flex items-center justify-center">
+              <span className="text-[10px] font-bold text-light-900 dark:text-white">%</span>
             </div>
-            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Filled</p>
             <p className="text-2xl font-bold text-light-900 dark:text-white">
               {Math.round((tournamentMembers.length / tournament.maxTeams) * 100)}%
             </p>

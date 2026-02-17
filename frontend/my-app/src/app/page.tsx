@@ -117,8 +117,8 @@ function LandingPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-4 text-sm">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 w-full sm:w-auto">
+                  <div className="flex items-center gap-4 text-sm flex-wrap">
                     <div className="flex items-center gap-1.5">
                       <Trophy className="w-4 h-4 text-cyber-500 dark:text-cyber-400" />
                       <span className="text-light-700 dark:text-gray-300 font-medium">

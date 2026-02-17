@@ -16,7 +16,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import { Trophy, Users, Target, BarChart3, Home, Sun, Moon, Calendar } from 'lucide-react';
@@ -44,17 +44,10 @@ export default function GlobalNavigation() {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   };
 
-  /**
-   * Check if a navigation item is currently active
-   * @param href - The route path to check
-   * @returns true if the current route matches the href
-   */
-  const isActive = (href: string) => {
-    if (href === '/') {
-      return pathname === '/';
-    }
+  const isActive = useCallback((href: string) => {
+    if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
-  };
+  }, [pathname]);
 
   return (
     <motion.nav
@@ -68,7 +61,7 @@ export default function GlobalNavigation() {
           {/* Logo/Title - Left */}
           <motion.div
             whileHover={{ scale: 1.05 }}
-            className="flex items-center gap-2 cursor-pointer"
+            className="hidden sm:flex items-center gap-2 cursor-pointer"
             onClick={() => router.push('/')}
           >
             <div className="w-8 h-8 rounded-lg bg-gradient-cyber flex items-center justify-center shadow-light-cyber dark:shadow-glow">

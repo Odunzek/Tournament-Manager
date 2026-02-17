@@ -102,32 +102,23 @@ export default function PlayersPage() {
           className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8"
         >
           <div className="bg-gradient-to-br from-cyber-500/20 to-cyber-600/20 border-2 border-cyber-500/30 rounded-tech-lg p-4 backdrop-blur-xl">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center gap-3">
               <Users className="w-6 h-6 text-cyber-400" />
-              <div>
-                <div className="text-2xl font-bold text-white">{players.length || 0}</div>
-                <div className="text-sm text-gray-400">Total Players</div>
-              </div>
+              <div className="text-2xl font-bold text-white">{players.length || 0}</div>
             </div>
           </div>
 
           <div className="bg-gradient-to-br from-yellow-500/20 to-amber-600/20 border-2 border-yellow-500/30 rounded-tech-lg p-4 backdrop-blur-xl">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center gap-3">
               <Trophy className="w-6 h-6 text-yellow-400" />
-              <div>
-                <div className="text-2xl font-bold text-white">{hallOfFameCount || 0}</div>
-                <div className="text-sm text-gray-400">Hall of Fame</div>
-              </div>
+              <div className="text-2xl font-bold text-white">{hallOfFameCount || 0}</div>
             </div>
           </div>
 
           <div className="bg-gradient-to-br from-electric-500/20 to-electric-600/20 border-2 border-electric-500/30 rounded-tech-lg p-4 backdrop-blur-xl">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center gap-3">
               <Filter className="w-6 h-6 text-electric-400" />
-              <div>
-                <div className="text-2xl font-bold text-white">{filteredPlayers.length || 0}</div>
-                <div className="text-sm text-gray-400">Showing</div>
-              </div>
+              <div className="text-2xl font-bold text-white">{filteredPlayers.length || 0}</div>
             </div>
           </div>
         </motion.div>

@@ -134,7 +134,7 @@ function TournamentsContent() {
                       .filter((s) => s.id !== activeSeason?.id)
                       .map((s) => ({ value: s.id!, label: s.name })),
                   ]}
-                  className="w-48"
+                  className="w-40 sm:w-48"
                 />
                 <div className="w-px bg-white/10 mx-1 self-stretch" />
               </>
@@ -187,6 +187,7 @@ function TournamentsContent() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 + index * 0.05 }}
+                className="h-full"
               >
                 <TournamentCard
                   tournament={tournament}

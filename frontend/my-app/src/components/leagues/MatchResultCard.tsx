@@ -32,20 +32,20 @@ export default function MatchResultCard({ match, index = 0, onMatchUpdated }: Ma
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
     >
-      <Card variant="glass" className={!isAuthenticated ? '!p-3 sm:!p-6' : ''}>
+      <Card variant="glass" className="!p-2.5 sm:!p-5">
         <div className="flex items-center justify-between gap-4">
           {/* Player A */}
           <div className={`flex-1 text-right ${playerAWon ? 'opacity-100' : 'opacity-60'}`}>
             <div className="flex items-center justify-end gap-2">
-              {playerAWon && <Trophy className={`${!isAuthenticated ? 'w-3 h-3 sm:w-4 sm:h-4' : 'w-4 h-4'} text-yellow-400`} />}
-              <span className={`font-bold text-light-900 dark:text-white ${!isAuthenticated ? 'text-xs sm:text-sm' : ''}`}>{match.playerAName}</span>
+              {playerAWon && <Trophy className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400" />}
+              <span className="font-bold text-light-900 dark:text-white text-xs sm:text-sm">{match.playerAName}</span>
             </div>
           </div>
 
           {/* Score */}
-          <div className={`flex items-center ${!isAuthenticated ? 'gap-1.5 sm:gap-3 px-2 sm:px-4' : 'gap-3 px-4'}`}>
+          <div className="flex items-center gap-1.5 sm:gap-3 px-2 sm:px-4">
             <div
-              className={`${!isAuthenticated ? 'text-lg sm:text-2xl' : 'text-2xl'} font-black ${
+              className={`text-lg sm:text-2xl font-black ${
                 playerAWon ? 'text-green-400' : isDraw ? 'text-yellow-400' : 'text-light-600 dark:text-gray-400'
               }`}
             >
@@ -53,7 +53,7 @@ export default function MatchResultCard({ match, index = 0, onMatchUpdated }: Ma
             </div>
             <div className="text-gray-500 font-bold">-</div>
             <div
-              className={`${!isAuthenticated ? 'text-lg sm:text-2xl' : 'text-2xl'} font-black ${
+              className={`text-lg sm:text-2xl font-black ${
                 playerBWon ? 'text-green-400' : isDraw ? 'text-yellow-400' : 'text-light-600 dark:text-gray-400'
               }`}
             >
@@ -64,14 +64,14 @@ export default function MatchResultCard({ match, index = 0, onMatchUpdated }: Ma
           {/* Player B */}
           <div className={`flex-1 text-left ${playerBWon ? 'opacity-100' : 'opacity-60'}`}>
             <div className="flex items-center gap-2">
-              <span className={`font-bold text-light-900 dark:text-white ${!isAuthenticated ? 'text-xs sm:text-sm' : ''}`}>{match.playerBName}</span>
-              {playerBWon && <Trophy className={`${!isAuthenticated ? 'w-3 h-3 sm:w-4 sm:h-4' : 'w-4 h-4'} text-yellow-400`} />}
+              <span className="font-bold text-light-900 dark:text-white text-xs sm:text-sm">{match.playerBName}</span>
+              {playerBWon && <Trophy className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400" />}
             </div>
           </div>
         </div>
 
         {/* Date and Edit Button */}
-        <div className={`flex items-center justify-between gap-2 ${!isAuthenticated ? 'text-[10px] sm:text-xs' : 'text-xs'} text-light-600 dark:text-gray-400 mt-3 pt-3 border-t border-light-300 dark:border-white/10`}>
+        <div className={`flex items-center justify-between gap-2 text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mt-2 pt-2 border-t border-light-300 dark:border-white/10`}>
           <div className="flex items-center gap-2">
             <Calendar className="w-3 h-3" />
             <span>
@@ -96,14 +96,6 @@ export default function MatchResultCard({ match, index = 0, onMatchUpdated }: Ma
           )}
         </div>
 
-        {/* Result Badge */}
-        {isDraw && (
-          <div className="text-center mt-2">
-            <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full border border-yellow-500/30">
-              Draw
-            </span>
-          </div>
-        )}
       </Card>
 
       {/* Edit Match Modal */}

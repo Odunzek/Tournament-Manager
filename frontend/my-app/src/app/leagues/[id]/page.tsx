@@ -261,7 +261,7 @@ export default function LeagueDetailPage() {
   return (
     <MainLayout>
       <GlobalNavigation />
-      <Container maxWidth="2xl" className="py-8 sm:py-12">
+      <Container maxWidth="2xl" className="py-8 sm:py-12 pb-24 md:pb-12">
         {/* Back Button */}
         <button
           onClick={() => router.push('/leagues')}

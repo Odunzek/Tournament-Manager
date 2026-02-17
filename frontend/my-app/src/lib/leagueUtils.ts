@@ -241,12 +241,15 @@ export const recordMatch = async (matchData: Omit<LeagueMatch, 'id'>): Promise<s
       date: matchData.date || Timestamp.now(),
     });
 
-    // Update league match count
+    // Update league match count, and bump totalMatches if exceeded
     const league = await getLeagueById(matchData.leagueId);
     if (league) {
-      await updateLeague(matchData.leagueId, {
-        matchesPlayed: (league.matchesPlayed || 0) + 1,
-      });
+      const newMatchesPlayed = (league.matchesPlayed || 0) + 1;
+      const updates: Record<string, number> = { matchesPlayed: newMatchesPlayed };
+      if (newMatchesPlayed > (league.totalMatches || 0)) {
+        updates.totalMatches = newMatchesPlayed;
+      }
+      await updateLeague(matchData.leagueId, updates);
     }
 
     return matchRef.id;

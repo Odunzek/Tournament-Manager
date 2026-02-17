@@ -158,18 +158,18 @@ export default function Overview({
       )}
 
       {/* Statistics Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card variant="glass" className="bg-gradient-to-br from-cyber-500/20 to-cyber-600/20 border-cyber-500/30">
-            <div className="flex items-center gap-3">
-              <Users className="w-8 h-8 text-cyber-400" />
+          <Card variant="glass" className="bg-gradient-to-br from-cyber-500/20 to-cyber-600/20 border-cyber-500/30 !p-3 sm:!p-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Users className="w-6 h-6 sm:w-8 sm:h-8 text-cyber-400" />
               <div>
-                <p className="text-xs text-light-600 dark:text-gray-400">Players</p>
-                <p className="text-2xl font-bold text-light-900 dark:text-white">{playerCount}</p>
+                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400">Players</p>
+                <p className="text-xl sm:text-2xl font-bold text-light-900 dark:text-white">{playerCount}</p>
               </div>
             </div>
           </Card>
@@ -182,13 +182,13 @@ export default function Overview({
         >
           <Card
             variant="glass"
-            className="bg-gradient-to-br from-electric-500/20 to-electric-600/20 border-electric-500/30"
+            className="bg-gradient-to-br from-electric-500/20 to-electric-600/20 border-electric-500/30 !p-3 sm:!p-6"
           >
-            <div className="flex items-center gap-3">
-              <TrendingUp className="w-8 h-8 text-electric-400" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-electric-400" />
               <div>
-                <p className="text-xs text-light-600 dark:text-gray-400">Matches Played</p>
-                <p className="text-2xl font-bold text-light-900 dark:text-white">{matchesPlayed}</p>
+                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400">Played</p>
+                <p className="text-xl sm:text-2xl font-bold text-light-900 dark:text-white">{matchesPlayed}</p>
               </div>
             </div>
           </Card>
@@ -201,13 +201,13 @@ export default function Overview({
         >
           <Card
             variant="glass"
-            className="bg-gradient-to-br from-green-500/20 to-green-600/20 border-green-500/30"
+            className="bg-gradient-to-br from-green-500/20 to-green-600/20 border-green-500/30 !p-3 sm:!p-6"
           >
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-8 h-8 text-green-400" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-400" />
               <div>
-                <p className="text-xs text-light-600 dark:text-gray-400">Remaining</p>
-                <p className="text-2xl font-bold text-light-900 dark:text-white">{(league.totalMatches || 0) - (league.matchesPlayed || 0)}</p>
+                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400">Remaining</p>
+                <p className="text-xl sm:text-2xl font-bold text-light-900 dark:text-white">{Math.max(0, (league.totalMatches || 0) - (league.matchesPlayed || 0))}</p>
               </div>
             </div>
           </Card>
@@ -220,13 +220,13 @@ export default function Overview({
         >
           <Card
             variant="glass"
-            className="bg-gradient-to-br from-pink-500/20 to-pink-600/20 border-pink-500/30"
+            className="bg-gradient-to-br from-pink-500/20 to-pink-600/20 border-pink-500/30 !p-3 sm:!p-6"
           >
-            <div className="flex items-center gap-3">
-              <Target className="w-8 h-8 text-pink-400" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Target className="w-6 h-6 sm:w-8 sm:h-8 text-pink-400" />
               <div>
-                <p className="text-xs text-light-600 dark:text-gray-400">Total Goals</p>
-                <p className="text-2xl font-bold text-light-900 dark:text-white">{totalGoals || 0}</p>
+                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400">Total Goals</p>
+                <p className="text-xl sm:text-2xl font-bold text-light-900 dark:text-white">{totalGoals || 0}</p>
               </div>
             </div>
           </Card>
