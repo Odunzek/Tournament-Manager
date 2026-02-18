@@ -170,3 +170,18 @@ body {
 .animate-shake {
   animation: shake 0.4s ease-in-out;
 }
+
+/* Tutorial spotlight pulse */
+@keyframes spotlight-pulse {
+  0%, 100% {
+    border-color: rgba(0, 217, 255, 0.6);
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 217, 255, 0.4);
+  }
+  50% {
+    border-color: rgba(0, 255, 136, 0.6);
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 24px rgba(0, 255, 136, 0.5);
+  }
+}
+.tutorial-spotlight {
+  animation: spotlight-pulse 2s ease-in-out infinite;
+}
