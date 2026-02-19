@@ -57,7 +57,7 @@ export default function NavigationCard({
             backdrop-blur-xl
             border-2
             rounded-2xl
-            p-6 sm:p-8
+            p-3 sm:p-5 lg:p-8
             transition-all duration-300
             ${glowClasses[gradient]}
           `}
@@ -80,9 +80,9 @@ export default function NavigationCard({
             <motion.div
               whileHover={{ rotate: 5, scale: 1.1 }}
               transition={{ duration: 0.2 }}
-              className="mb-6 inline-block"
+              className="mb-2.5 sm:mb-4 lg:mb-6 inline-block"
             >
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/60 dark:bg-white/10 rounded-2xl p-3 sm:p-4 backdrop-blur-sm shadow-sm dark:shadow-none">
+              <div className="w-11 h-11 sm:w-14 sm:h-14 lg:w-20 lg:h-20 bg-white/60 dark:bg-white/10 rounded-2xl p-2 sm:p-3 lg:p-4 backdrop-blur-sm shadow-sm dark:shadow-none">
                 <Image
                   src={icon}
                   alt={`${title} icon`}
@@ -95,11 +95,11 @@ export default function NavigationCard({
 
             {/* Content */}
             <div className="flex-1">
-              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white mb-3 dark:group-hover:bg-gradient-to-r dark:group-hover:from-white dark:group-hover:to-gray-300 dark:group-hover:bg-clip-text dark:group-hover:text-transparent transition-all duration-300">
+              <h3 className="text-base sm:text-xl lg:text-3xl font-bold text-gray-800 dark:text-white mb-1.5 sm:mb-3 dark:group-hover:bg-gradient-to-r dark:group-hover:from-white dark:group-hover:to-gray-300 dark:group-hover:bg-clip-text dark:group-hover:text-transparent transition-all duration-300">
                 {title}
               </h3>
 
-              <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base leading-relaxed mb-4">
+              <p className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm lg:text-base leading-relaxed line-clamp-2 sm:line-clamp-none mb-2 sm:mb-4">
                 {description}
               </p>
 
@@ -112,13 +112,13 @@ export default function NavigationCard({
 
             {/* Arrow Icon */}
             <motion.div
-              className="mt-6 flex items-center gap-2 text-gray-800 dark:text-white font-semibold"
+              className="mt-2 sm:mt-4 lg:mt-6 flex items-center gap-1.5 sm:gap-2 text-gray-800 dark:text-white font-semibold"
               initial={{ x: 0 }}
               whileHover={{ x: 5 }}
               transition={{ duration: 0.2 }}
             >
-              <span>Explore</span>
-              <ArrowRight className="w-5 h-5" />
+              <span className="hidden sm:inline">Explore</span>
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </motion.div>
           </div>
 

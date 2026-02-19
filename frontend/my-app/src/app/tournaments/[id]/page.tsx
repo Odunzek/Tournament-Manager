@@ -51,7 +51,6 @@ import Fixtures from '../../../components/tournaments/sections/Fixtures';
 import Teams from '../../../components/tournaments/sections/Teams';
 import Knockout from '../../../components/tournaments/sections/Knockout';
 import Results from '../../../components/tournaments/sections/Results';
-
 const sectionComponents: Record<TournamentSection, React.ComponentType<any>> = {
   overview: Overview,
   groups: Groups,

@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Users, TrendingUp, Target, Calendar, Edit, CheckCircle, UserPlus, Trash2 } from 'lucide-react';
+import { Trophy, Users, TrendingUp, Target, Calendar, Edit, CheckCircle, UserPlus, Trash2, ScrollText, ChevronDown, ChevronUp, Edit3, Check, X } from 'lucide-react';
 import { League, LeaguePlayer, LeagueMatch } from '@/types/league';
-import { convertTimestamp } from '@/lib/leagueUtils';
+import { convertTimestamp, updateLeague } from '@/lib/leagueUtils';
 import Card from '../../ui/Card';
 import Button from '../../ui/Button';
 import MatchResultCard from '../MatchResultCard';
@@ -36,6 +36,36 @@ export default function Overview({
   onMatchUpdated,
 }: OverviewProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [isEditingRules, setIsEditingRules] = useState(false);
+  const [editedRules, setEditedRules] = useState(league.rules || '');
+  const [isSavingRules, setIsSavingRules] = useState(false);
+  const [saveRulesError, setSaveRulesError] = useState('');
+  const [rulesExpanded, setRulesExpanded] = useState(false);
+
+  const RULES_THRESHOLD = 300;
+  const hasRules = Boolean(league.rules?.trim());
+  const rulesIsLong = (league.rules?.length ?? 0) > RULES_THRESHOLD;
+  const rulesDisplayText = !rulesExpanded && rulesIsLong
+    ? league.rules!.slice(0, RULES_THRESHOLD) + '...'
+    : league.rules;
+
+  const handleSaveRules = async () => {
+    if (!league.id) return;
+    setIsSavingRules(true);
+    setSaveRulesError('');
+    try {
+      await updateLeague(league.id, {
+        rules: editedRules.trim() || undefined,
+      });
+      setIsEditingRules(false);
+    } catch {
+      setSaveRulesError('Failed to save rules. Please try again.');
+    } finally {
+      setIsSavingRules(false);
+    }
+  };
+
   const startDate = convertTimestamp(league.startDate);
   const endDate = league.endDate ? convertTimestamp(league.endDate) : null;
 
@@ -122,6 +152,78 @@ export default function Overview({
                 className="h-3 bg-gradient-to-r from-cyber-400 to-electric-500"
               />
             </div>
+          </div>
+        )}
+      </Card>
+
+      {/* League Rules */}
+      <Card variant="glass">
+        <button
+          onClick={() => { setRulesOpen(!rulesOpen); setIsEditingRules(false); setSaveRulesError(''); }}
+          className="w-full flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2">
+            <ScrollText className="w-4 h-4 text-cyber-400" />
+            <span className="font-semibold text-sm text-light-900 dark:text-white">League Rules</span>
+            {!hasRules && !rulesOpen && (
+              <span className="text-[11px] text-light-500 dark:text-gray-500 ml-1">None set</span>
+            )}
+          </div>
+          {rulesOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+        </button>
+
+        {rulesOpen && (
+          <div className="mt-3 pt-3 border-t border-black/10 dark:border-white/10 space-y-3">
+            {isEditingRules ? (
+              <>
+                <textarea
+                  value={editedRules}
+                  onChange={(e) => setEditedRules(e.target.value)}
+                  placeholder="Enter league rules. Line breaks will be preserved..."
+                  rows={6}
+                  disabled={isSavingRules}
+                  className="w-full px-4 py-2.5 bg-light-50 dark:bg-dark-100/50 border-2 border-cyber-500/25 dark:border-white/10 rounded-tech text-light-900 dark:text-gray-100 placeholder-light-500 dark:placeholder-gray-500 focus:outline-none focus:border-cyber-500 focus:ring-2 focus:ring-cyber-500/20 transition-all resize-none disabled:opacity-50"
+                />
+                {saveRulesError && (
+                  <p className="text-red-400 text-xs">{saveRulesError}</p>
+                )}
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" leftIcon={<X className="w-4 h-4" />} onClick={() => { setIsEditingRules(false); setSaveRulesError(''); }} disabled={isSavingRules} className="flex-1">
+                    Cancel
+                  </Button>
+                  <Button variant="primary" size="sm" leftIcon={<Check className="w-4 h-4" />} onClick={handleSaveRules} isLoading={isSavingRules} glow className="flex-1">
+                    Save
+                  </Button>
+                </div>
+              </>
+            ) : hasRules ? (
+              <>
+                <p className="whitespace-pre-wrap text-sm text-light-700 dark:text-gray-300 leading-relaxed">
+                  {rulesDisplayText}
+                </p>
+                {rulesIsLong && (
+                  <button onClick={() => setRulesExpanded(!rulesExpanded)} className="flex items-center gap-1 text-cyber-600 dark:text-cyber-400 text-xs font-semibold hover:underline">
+                    {rulesExpanded ? <><ChevronUp className="w-3 h-3" /> Show less</> : <><ChevronDown className="w-3 h-3" /> Read more</>}
+                  </button>
+                )}
+                {isAuthenticated && (
+                  <Button variant="ghost" size="sm" leftIcon={<Edit3 className="w-4 h-4" />} onClick={() => { setEditedRules(league.rules || ''); setIsEditingRules(true); }}>
+                    Edit Rules
+                  </Button>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-light-500 dark:text-gray-500">
+                  {isAuthenticated ? 'No rules set yet.' : 'No rules have been defined for this league.'}
+                </p>
+                {isAuthenticated && (
+                  <Button variant="ghost" size="sm" leftIcon={<Edit3 className="w-4 h-4" />} onClick={() => { setEditedRules(''); setIsEditingRules(true); }}>
+                    Add Rules
+                  </Button>
+                )}
+              </>
+            )}
           </div>
         )}
       </Card>

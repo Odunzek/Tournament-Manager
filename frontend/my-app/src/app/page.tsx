@@ -48,18 +48,18 @@ function LandingPage() {
       gradient: 'cyber' as const,
     },
     {
-      title: 'Players',
-      description: 'Manage player profiles, track statistics, and organize your team roster.',
-      icon: '/icons/Players.svg',
-      route: '/players',
-      gradient: 'electric' as const,
-    },
-    {
       title: 'Tournaments',
       description: 'Champions League-style tournaments with group stages and knockout rounds.',
       icon: '/icons/tournaments.svg',
       route: '/tournaments',
       gradient: 'neon' as const,
+    },
+    {
+      title: 'Players',
+      description: 'Manage player profiles, track statistics, and organize your team roster.',
+      icon: '/icons/Players.svg',
+      route: '/players',
+      gradient: 'electric' as const,
     },
     {
       title: 'P4P Rankings',
@@ -70,7 +70,7 @@ function LandingPage() {
     },
     {
       title: 'Hall of Fame',
-      description: 'Legendary players with 3+ titles. View achievements, records, and champion tiers.',
+      description: 'Legendary players honoured for their achievements. View records and champion tiers.',
       icon: '/icons/halloffame.svg',
       route: '/hall-of-fame',
       gradient: 'gold' as const,
@@ -148,25 +148,21 @@ function LandingPage() {
         )}
 
         {/* Navigation Cards */}
-        <div className="mb-12 mt-12">
-          {/* First 4 cards in 2x2 grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-            {navigationCards.slice(0, 4).map((card, index) => (
-              <NavigationCard
-                key={card.route}
-                {...card}
-                delay={0.1 * index + 0.5}
-              />
-            ))}
+        <div className="mb-8 mt-8 sm:mt-12 space-y-3 md:space-y-5">
+          {/* Top 3: 2-col mobile → 3-col desktop */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
+            <NavigationCard {...navigationCards[0]} delay={0.5} />
+            <NavigationCard {...navigationCards[1]} delay={0.6} />
+            {/* Players: full-width on mobile, 1-col on desktop */}
+            <div className="col-span-2 md:col-span-1">
+              <NavigationCard {...navigationCards[2]} delay={0.7} />
+            </div>
           </div>
 
-          {/* Hall of Fame card centered */}
-          <div className="max-w-2xl mx-auto">
-            <NavigationCard
-              key={navigationCards[4].route}
-              {...navigationCards[4]}
-              delay={0.9}
-            />
+          {/* Bottom 2: 2-col, centered at 2/3 width on desktop */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 md:w-2/3 md:mx-auto">
+            <NavigationCard {...navigationCards[3]} delay={0.8} />
+            <NavigationCard {...navigationCards[4]} delay={0.9} />
           </div>
         </div>
 

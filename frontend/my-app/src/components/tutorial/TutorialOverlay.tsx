@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { useTutorial } from './TutorialContext';
+import Button from '../ui/Button';
 
 export default function TutorialOverlay() {
   const { isActive, currentFlow, currentStep, nextStep, prevStep, skipTutorial } = useTutorial();
@@ -46,7 +47,7 @@ export default function TutorialOverlay() {
     };
   }, [step, isActive, targetElement]);
 
-  // Scroll target into view (account for bottom sheet height)
+  // Scroll target into view
   useEffect(() => {
     if (targetElement && step?.target) {
       targetElement.scrollIntoView({
@@ -72,13 +73,13 @@ export default function TutorialOverlay() {
         className="fixed inset-0 z-[9999]"
         style={{ pointerEvents: isActive ? 'auto' : 'none' }}
       >
-        {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm">
+        {/* Backdrop — only blur when no spotlight target (blur would obscure the highlighted element) */}
+        <div className={`absolute inset-0 bg-black/1 ${!targetRect ? 'backdrop-blur-sm' : ''}`}>
           {/* Spotlight cutout for target element */}
           {targetRect && (
             <motion.div
               key={`spotlight-${currentStep}`}
-              initial={{ opacity: 0, scale: 0.8 }}
+              initial={{ opacity: 1, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
               className="absolute rounded-xl border-2 border-cyber-400 tutorial-spotlight"
@@ -94,17 +95,27 @@ export default function TutorialOverlay() {
           )}
         </div>
 
-        {/* Bottom Sheet */}
-        <motion.div
-          ref={sheetRef}
-          key={`sheet-${currentStep}`}
-          initial={{ y: '100%', opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: '100%', opacity: 0 }}
-          transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-          className="fixed bottom-0 left-0 right-0 sm:bottom-4 sm:left-auto sm:right-auto sm:left-1/2 sm:-translate-x-1/2 sm:max-w-lg sm:w-[calc(100%-2rem)] z-[10000]"
-        >
-          <div className="bg-gradient-to-br from-light-100 to-light-200 dark:from-dark-100 dark:to-dark-200 border-t-2 sm:border-2 border-cyber-500/40 rounded-t-2xl sm:rounded-2xl shadow-glow">
+        {/* Card wrapper: full-width bottom sheet on mobile, centered modal on md+ */}
+        <div className="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center md:p-6 z-[10000]">
+          <motion.div
+            ref={sheetRef}
+            key={`sheet-${currentStep}`}
+            initial={{ y: 50, opacity: 0, scale: 0.97 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 50, opacity: 0, scale: 0.97 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            className="
+              relative w-full md:max-w-md
+              max-h-[52vh] md:max-h-[85vh] overflow-y-auto
+              rounded-t-2xl md:rounded-2xl
+              bg-gradient-to-br from-cyber-50 to-electric-50
+              dark:from-dark-100/80 dark:to-dark-200/80
+              backdrop-blur-xl
+              border-t-2 border-x-2 md:border-2
+              border-cyber-500/25 dark:border-white/10
+              shadow-light-cyber-lg dark:shadow-glow
+            "
+          >
             {/* Progress Bar */}
             <div className="h-1 bg-light-300 dark:bg-dark-300 rounded-t-2xl overflow-hidden">
               <motion.div
@@ -116,64 +127,80 @@ export default function TutorialOverlay() {
             </div>
 
             {/* Content */}
-            <div className="px-4 pt-3 pb-4 sm:px-5 sm:pt-4 sm:pb-5" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
-              {/* Header Row: Icon + Title + Step Counter + Close */}
-              <div className="flex items-center gap-2.5 mb-2">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-cyber flex items-center justify-center shadow-glow shrink-0">
+            <div
+              className="px-4 sm:px-5 pt-3 sm:pt-4 pb-4 sm:pb-5"
+              style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+            >
+              {/* Header: icon + title + close */}
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-cyber flex items-center justify-center shadow-glow shrink-0">
                   <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm sm:text-base font-bold text-light-900 dark:text-white truncate">
-                    {step.title}
-                  </h3>
-                </div>
-                <span className="text-[10px] sm:text-xs text-light-500 dark:text-gray-500 font-medium shrink-0">
-                  {currentStep + 1}/{currentFlow.steps.length}
-                </span>
+                <h3 className="flex-1 min-w-0 text-xs sm:text-sm font-bold text-light-900 dark:text-white truncate">
+                  {step.title}
+                </h3>
                 <button
                   onClick={skipTutorial}
-                  className="text-light-500 dark:text-gray-500 hover:text-light-900 dark:hover:text-white transition-colors shrink-0 p-0.5"
+                  className="p-1 rounded-lg text-light-500 dark:text-gray-500 hover:text-light-900 dark:hover:text-white hover:bg-light-200 dark:hover:bg-white/10 transition-colors shrink-0"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Description */}
-              <p className="text-xs sm:text-sm text-light-600 dark:text-gray-400 leading-relaxed mb-3 line-clamp-2">
+              <p className="text-xs sm:text-sm text-light-600 dark:text-gray-400 leading-relaxed mb-2 sm:mb-3">
                 {step.description}
               </p>
 
-              {/* Navigation Row */}
+              {/* Step dots */}
+              <div className="flex items-center justify-center gap-1.5 mb-3 sm:mb-4">
+                {currentFlow.steps.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`rounded-full transition-all duration-300 ${
+                      i === currentStep
+                        ? 'w-5 h-2 bg-cyber-500'
+                        : i < currentStep
+                        ? 'w-2 h-2 bg-cyber-400/50'
+                        : 'w-2 h-2 bg-light-300 dark:bg-dark-300'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {/* Navigation */}
               <div className="flex items-center justify-between">
                 <button
                   onClick={skipTutorial}
-                  className="text-[11px] sm:text-xs text-light-500 dark:text-gray-500 hover:text-light-800 dark:hover:text-gray-300 transition-colors font-medium"
+                  className="text-xs text-light-500 dark:text-gray-500 hover:text-light-800 dark:hover:text-gray-300 transition-colors font-medium"
                 >
                   Skip tour
                 </button>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   {!isFirstStep && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      leftIcon={<ChevronLeft className="w-3.5 h-3.5" />}
                       onClick={prevStep}
-                      className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] sm:text-xs font-medium text-light-700 dark:text-gray-300 bg-light-200 dark:bg-white/5 hover:bg-light-300 dark:hover:bg-white/10 rounded-lg transition-colors border border-light-300 dark:border-white/10"
                     >
-                      <ChevronLeft className="w-3 h-3" />
                       Back
-                    </button>
+                    </Button>
                   )}
-                  <button
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={nextStep}
-                    className="flex items-center gap-1 px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-white bg-gradient-to-r from-cyber-500 to-electric-600 hover:from-cyber-600 hover:to-electric-700 rounded-lg transition-all shadow-sm shadow-cyber-500/20"
+                    rightIcon={!isLastStep ? <ChevronRight className="w-3.5 h-3.5" /> : undefined}
                   >
                     {isLastStep ? "Let's go!" : 'Next'}
-                    {!isLastStep && <ChevronRight className="w-3 h-3" />}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </motion.div>
     </AnimatePresence>
   );

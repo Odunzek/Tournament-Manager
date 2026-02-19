@@ -49,6 +49,7 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
   const [maxTeams, setMaxTeams] = useState(32);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [rules, setRules] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -100,6 +101,7 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
         startDate: startDate ? new Date(startDate) : undefined,
         endDate: endDate ? new Date(endDate) : undefined,
         settings,
+        rules: rules.trim() || undefined,
       });
 
       // Reset form and close modal
@@ -108,6 +110,7 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
       setMaxTeams(32);
       setStartDate('');
       setEndDate('');
+      setRules('');
 
       onSuccess?.();
       onClose();
@@ -286,6 +289,22 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
                       disabled={isSubmitting}
                     />
                   </div>
+                </div>
+
+                {/* Tournament Rules */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-light-900 dark:text-white">
+                    Tournament Rules (Optional)
+                  </label>
+                  <textarea
+                    value={rules}
+                    onChange={(e) => setRules(e.target.value)}
+                    placeholder="e.g., No rage-quitting. Results must be submitted within 24 hours..."
+                    rows={4}
+                    disabled={isSubmitting}
+                    className="w-full px-4 py-2.5 bg-light-50 dark:bg-dark-100/50 backdrop-blur-sm border-2 border-cyber-500/25 dark:border-white/10 rounded-tech text-light-900 dark:text-gray-100 placeholder-light-500 dark:placeholder-gray-500 focus:outline-none focus:border-cyber-500 focus:ring-2 focus:ring-cyber-500/20 transition-all duration-200 resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                  <p className="text-xs text-light-600 dark:text-gray-400">Line breaks will be preserved when displayed.</p>
                 </div>
 
                 {/* Settings Preview */}

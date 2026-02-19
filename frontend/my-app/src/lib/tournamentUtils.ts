@@ -187,6 +187,7 @@ export interface Tournament {
   knockoutBracket?: KnockoutTie[];
   settings: TournamentSettings;
   qualifiedTeams?: TournamentParticipant[];
+  rules?: string;
 }
 
 export interface TournamentGroup {

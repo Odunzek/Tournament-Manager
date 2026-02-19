@@ -8,7 +8,7 @@ import {
   Calendar,
   Trophy,
   Target,
-  BarChart3
+  BarChart3,
 } from 'lucide-react';
 import { TournamentSidebarProps, TournamentSection } from '@/types/tournament';
 

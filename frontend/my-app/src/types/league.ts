@@ -52,6 +52,7 @@ export interface League {
   playerIds: string[]; // Array of player IDs participating
   totalMatches: number;
   matchesPlayed: number;
+  rules?: string;
   createdAt: any; // Firestore Timestamp
   updatedAt: any; // Firestore Timestamp
 }
