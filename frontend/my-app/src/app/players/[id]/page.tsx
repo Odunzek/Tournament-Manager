@@ -3,10 +3,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Edit, Trash2, Calendar, TrendingUp, Loader2, Trophy, Target } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Calendar, Loader2, Trophy } from 'lucide-react';
 import MainLayout from '@/components/layouts/MainLayout';
 import Container from '@/components/layouts/Container';
 import GlobalNavigation from '@/components/layouts/GlobalNavigation';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 import PlayerAvatar from '@/components/players/PlayerAvatar';
 import TrophyDisplay from '@/components/players/TrophyDisplay';
 import PlayerFormModal from '@/components/players/PlayerFormModal';
@@ -27,10 +29,6 @@ export default function PlayerDetailPage() {
 
   const isHallOfFame = player ? player.achievements.totalTitles >= 1 : false;
 
-  const handleEdit = () => {
-    setIsEditModalOpen(true);
-  };
-
   const handleSubmitEdit = async (data: any) => {
     try {
       await updatePlayer(playerId, data);
@@ -44,7 +42,6 @@ export default function PlayerDetailPage() {
     if (!confirm('Are you sure you want to delete this player? This action cannot be undone.')) {
       return;
     }
-
     try {
       setIsDeleting(true);
       await deletePlayer(playerId);
@@ -97,14 +94,10 @@ export default function PlayerDetailPage() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => router.push('/players')}
-          className="
-            flex items-center gap-2 mb-6
-            text-gray-400 hover:text-white
-            transition-colors duration-200
-          "
+          className="flex items-center gap-2 mb-6 text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white transition-colors duration-200"
         >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back to Players</span>
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Back to Players</span>
         </motion.button>
 
         {/* Player Header Card */}
@@ -112,91 +105,79 @@ export default function PlayerDetailPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className={`
-            relative overflow-hidden
-            bg-gradient-to-br ${
-              isHallOfFame
-                ? 'from-yellow-500/10 via-amber-600/10 to-yellow-500/10 border-yellow-500/30'
-                : 'from-gray-800/50 to-gray-900/50 border-white/10'
-            }
-            border-2 rounded-tech-lg
-            p-6 sm:p-8 mb-8
-            backdrop-blur-xl
-            ${isHallOfFame ? 'shadow-[0_0_30px_rgba(234,179,8,0.2)]' : ''}
-          `}
+          className="mb-6"
         >
-          {/* Background Gradient Effect */}
-          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent opacity-50" />
+          <Card
+            variant="gradient"
+            glow={isHallOfFame}
+            className={isHallOfFame ? 'border-yellow-500/30 shadow-[0_0_30px_rgba(234,179,8,0.2)]' : ''}
+          >
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+              {/* Avatar */}
+              <PlayerAvatar
+                src={player.avatar}
+                alt={player.name}
+                size="xl"
+                showBorder={true}
+                borderColor={isHallOfFame ? 'border-yellow-500/50' : 'border-cyber-500/50'}
+              />
 
-          <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6">
-            {/* Avatar */}
-            <PlayerAvatar
-              src={player.avatar}
-              alt={player.name}
-              size="xl"
-              showBorder={true}
-              borderColor={isHallOfFame ? 'border-yellow-500/50' : 'border-cyber-500/50'}
-            />
+              {/* Player Info */}
+              <div className="flex-1 text-center sm:text-left">
+                <h1 className="text-2xl sm:text-3xl font-bold text-light-900 dark:text-white mb-1">
+                  {player.name}
+                </h1>
+                {player.psnId && player.psnId !== 'player' && (
+                  <p className="text-sm text-light-600 dark:text-gray-400 mb-2">@{player.psnId}</p>
+                )}
 
-            {/* Player Info */}
-            <div className="flex-1 text-center sm:text-left">
-              <h1 className="text-3xl sm:text-4xl font-black text-white mb-2">
-                {player.name}
-              </h1>
-              {player.psnId && player.psnId !== 'player' && (
-                <p className="text-xl text-gray-400 mb-4">@{player.psnId}</p>
-              )}
+                {player.achievements.inductionDate && (
+                  <div className="flex items-center gap-1.5 text-xs text-light-600 dark:text-gray-400 justify-center sm:justify-start">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>
+                      Hall of Fame since{' '}
+                      {new Date(player.achievements.inductionDate).toLocaleDateString('en-US', {
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                )}
 
-              {/* Induction Date */}
-              {player.achievements.inductionDate && (
-                <div className="flex items-center gap-2 text-sm text-gray-400 justify-center sm:justify-start mt-2">
-                  <Calendar className="w-4 h-4" />
+                <div className="flex items-center gap-1.5 text-xs text-light-600 dark:text-gray-400 mt-1 justify-center sm:justify-start">
+                  <Calendar className="w-3.5 h-3.5" />
                   <span>
-                    Hall of Fame since{' '}
-                    {new Date(player.achievements.inductionDate).toLocaleDateString('en-US', {
-                      month: 'long',
+                    Member since{' '}
+                    {new Date(player.createdAt).toLocaleDateString('en-US', {
+                      month: 'short',
                       year: 'numeric',
                     })}
                   </span>
                 </div>
+              </div>
+
+              {/* Admin Action Buttons */}
+              {isAuthenticated && (
+                <div className="flex gap-2 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={<Edit className="w-4 h-4" />}
+                    onClick={() => setIsEditModalOpen(true)}
+                    title="Edit Player"
+                  />
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    leftIcon={isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    title="Delete Player"
+                  />
+                </div>
               )}
             </div>
-
-            {/* Action Buttons - Admin Only */}
-            {isAuthenticated && (
-              <div className="flex gap-3">
-                <button
-                  onClick={handleEdit}
-                  className="
-                    p-3 rounded-lg
-                    bg-cyber-500/20 border-2 border-cyber-500/30
-                    hover:bg-cyber-500/30 hover:border-cyber-500/50
-                    text-cyber-400 hover:text-cyber-300
-                    transition-all duration-300
-                    hover:shadow-glow
-                  "
-                  title="Edit Player"
-                >
-                  <Edit className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                  className="
-                    p-3 rounded-lg
-                    bg-red-500/20 border-2 border-red-500/30
-                    hover:bg-red-500/30 hover:border-red-500/50
-                    text-red-400 hover:text-red-300
-                    transition-all duration-300
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                  "
-                  title="Delete Player"
-                >
-                  {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
-                </button>
-              </div>
-            )}
-          </div>
+          </Card>
         </motion.div>
 
         {/* Achievements Section */}
@@ -204,21 +185,23 @@ export default function PlayerDetailPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mb-8"
+          className="mb-6"
         >
-          <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-            <span className="text-2xl">🏆</span>
+          <h2 className="text-lg font-bold text-light-900 dark:text-white mb-3 flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-yellow-400" />
             Achievements
           </h2>
-          <TrophyDisplay
-            leagueWins={player.achievements.leagueWins}
-            tournamentWins={player.achievements.tournamentWins}
-            totalTitles={player.achievements.totalTitles}
-            layout="horizontal"
-            size="lg"
-            showLabels={true}
-            animated={true}
-          />
+          <div className="overflow-x-auto">
+            <TrophyDisplay
+              leagueWins={player.achievements.leagueWins}
+              tournamentWins={player.achievements.tournamentWins}
+              totalTitles={player.achievements.totalTitles}
+              layout="horizontal"
+              size="sm"
+              showLabels={true}
+              animated={true}
+            />
+          </div>
         </motion.div>
 
         {/* Per-Season Breakdown */}
@@ -227,10 +210,10 @@ export default function PlayerDetailPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="mb-8"
+            className="mb-6"
           >
-            <h2 className="text-2xl font-bold text-light-900 dark:text-white mb-4 flex items-center gap-2">
-              <Calendar className="w-6 h-6 text-cyber-400" />
+            <h2 className="text-lg font-bold text-light-900 dark:text-white mb-3 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-cyber-400" />
               Season Breakdown
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -243,7 +226,7 @@ export default function PlayerDetailPage() {
                       key={seasonId}
                       className="bg-gradient-to-br from-light-200/50 to-light-300/50 dark:from-white/5 dark:to-white/10 border border-black/10 dark:border-white/10 rounded-2xl p-4 backdrop-blur-sm"
                     >
-                      <h3 className="text-lg font-bold text-light-900 dark:text-white mb-3">{seasonName}</h3>
+                      <h3 className="text-base font-bold text-light-900 dark:text-white mb-3">{seasonName}</h3>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="flex items-center gap-2 text-sm text-light-600 dark:text-gray-400">
@@ -254,7 +237,7 @@ export default function PlayerDetailPage() {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="flex items-center gap-2 text-sm text-light-600 dark:text-gray-400">
-                            <Target className="w-4 h-4 text-electric-400" />
+                            <Trophy className="w-4 h-4 text-electric-400" />
                             Tournaments
                           </span>
                           <span className="font-bold text-electric-600 dark:text-electric-400">{achievements.tournamentWins}</span>
@@ -271,44 +254,22 @@ export default function PlayerDetailPage() {
           </motion.div>
         )}
 
-        {/* Career Stats */}
+        {/* Membership Info */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
+          className="max-w-sm"
         >
-          <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-            <span className="text-2xl">📊</span>
-            Career Stats
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Win Rate Card */}
-            <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 border-2 border-green-500/30 rounded-tech-lg p-6 backdrop-blur-xl">
-              <h3 className="text-lg font-bold text-white mb-4">Competition Stats</h3>
+          <Card variant="default">
+            <h3 className="text-sm font-bold text-light-900 dark:text-white mb-3 flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-cyber-400" />
+              Membership Info
+            </h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-300">League Win Rate</span>
-                  <span className="text-green-400 font-bold">
-                    {player.achievements.leagueWins > 0 ? '100%' : '0%'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-300">Tournament Win Rate</span>
-                  <span className="text-green-400 font-bold">
-                    {player.achievements.tournamentWins > 0 ? '100%' : '0%'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Member Since Card */}
-            <div className="bg-gradient-to-br from-purple-500/20 to-pink-600/20 border-2 border-purple-500/30 rounded-tech-lg p-6 backdrop-blur-xl">
-              <h3 className="text-lg font-bold text-white mb-4">Membership Info</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-300">Member Since</span>
-                  <span className="text-purple-400 font-bold">
+                  <span className="text-sm text-light-600 dark:text-gray-300">Member Since</span>
+                  <span className="text-cyber-600 dark:text-cyber-400 font-bold text-sm">
                     {new Date(player.createdAt).toLocaleDateString('en-US', {
                       month: 'short',
                       year: 'numeric',
@@ -316,8 +277,8 @@ export default function PlayerDetailPage() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-300">Last Updated</span>
-                  <span className="text-purple-400 font-bold">
+                  <span className="text-sm text-light-600 dark:text-gray-300">Last Updated</span>
+                  <span className="text-electric-600 dark:text-electric-400 font-bold text-sm">
                     {new Date(player.updatedAt).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
@@ -325,8 +286,7 @@ export default function PlayerDetailPage() {
                   </span>
                 </div>
               </div>
-            </div>
-          </div>
+          </Card>
         </motion.div>
       </Container>
 

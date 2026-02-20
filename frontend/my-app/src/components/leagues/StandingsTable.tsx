@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowUpRight, ChevronUp, ChevronDown, Crown, Medal } from 'lucide-react';
 import { LeaguePlayer } from '@/types/league';
 import { useRouter } from 'next/navigation';
 
@@ -49,21 +49,21 @@ export default function StandingsTable({ players, leagueId, currentUserId }: Sta
     if (position === 1) {
       return (
         <div className="flex items-center gap-1">
-          <span className="text-2xl">🥇</span>
+          <Crown className="w-4 h-4 text-yellow-400" />
           <span className="font-bold text-yellow-400">1</span>
         </div>
       );
     } else if (position === 2) {
       return (
         <div className="flex items-center gap-1">
-          <span className="text-2xl">🥈</span>
+          <Medal className="w-4 h-4 text-light-500 dark:text-gray-300" />
           <span className="font-bold text-light-700 dark:text-gray-300">2</span>
         </div>
       );
     } else if (position === 3) {
       return (
         <div className="flex items-center gap-1">
-          <span className="text-2xl">🥉</span>
+          <Medal className="w-4 h-4 text-orange-400" />
           <span className="font-bold text-orange-400">3</span>
         </div>
       );
@@ -73,10 +73,10 @@ export default function StandingsTable({ players, leagueId, currentUserId }: Sta
 
   const getFormIndicator = (form: ('W' | 'D' | 'L')[]) => {
     if (!form || form.length === 0) {
-      return <span className="text-xs text-gray-500">No data</span>;
+      return <span className="text-xs text-gray-500">—</span>;
     }
     return (
-      <div className="flex gap-1">
+      <div className="flex gap-0.5">
         {form.slice(0, 5).map((result, index) => {
           const colors = {
             W: 'bg-green-500',
@@ -86,7 +86,7 @@ export default function StandingsTable({ players, leagueId, currentUserId }: Sta
           return (
             <div
               key={index}
-              className={`w-2 h-6 ${colors[result]} rounded-sm`}
+              className={`w-1.5 h-5 ${colors[result]} rounded-sm`}
               title={result === 'W' ? 'Win' : result === 'D' ? 'Draw' : 'Loss'}
             />
           );
@@ -95,10 +95,10 @@ export default function StandingsTable({ players, leagueId, currentUserId }: Sta
     );
   };
 
-  const SortHeader = ({ field, label }: { field: SortField; label: string }) => (
+  const SortHeader = ({ field, label, className }: { field: SortField; label: string; className?: string }) => (
     <th
       onClick={() => handleSort(field)}
-      className="px-3 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-cyber-400 transition-colors"
+      className={`px-2 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-cyber-400 transition-colors ${className ?? ''}`}
     >
       <div className="flex items-center gap-1">
         {label}
@@ -113,38 +113,21 @@ export default function StandingsTable({ players, leagueId, currentUserId }: Sta
 
   return (
     <div className="overflow-x-auto">
-      {/* Scroll indicator for mobile */}
-      <div className="md:hidden text-xs text-gray-500 text-center mb-2">
-        ← Scroll to see all stats →
-      </div>
-
       <div className="inline-block min-w-full align-middle">
         <table className="min-w-full">
           <thead>
             <tr className="border-b border-black/10 dark:border-white/10">
               <SortHeader field="position" label="Pos" />
               <SortHeader field="name" label="Player" />
-              <th className="px-3 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">
-                P
-              </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">
-                W
-              </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">
-                D
-              </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">
-                L
-              </th>
-              <SortHeader field="goalsFor" label="GF" />
-              <th className="px-3 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">
-                GA
-              </th>
+              <th className="px-2 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">P</th>
+              <th className="px-2 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">W</th>
+              <th className="px-2 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">D</th>
+              <th className="px-2 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">L</th>
+              <th className="px-2 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">GF</th>
+              <th className="px-2 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">GA</th>
               <SortHeader field="goalDifference" label="GD" />
               <SortHeader field="points" label="Pts" />
-              <th className="px-3 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">
-                Form
-              </th>
+              <th className="px-2 py-3 text-left text-xs font-semibold text-light-600 dark:text-gray-400 uppercase tracking-wider">Form</th>
             </tr>
           </thead>
           <tbody>
@@ -168,30 +151,27 @@ export default function StandingsTable({ players, leagueId, currentUserId }: Sta
                     ${isTopThree ? 'bg-gradient-to-r from-yellow-500/5 to-transparent' : ''}
                   `}
                 >
-                  {/* Position */}
-                  <td className="px-3 py-4 whitespace-nowrap">
+                  <td className="px-2 py-2.5 whitespace-nowrap">
                     {getPositionBadge(player.position)}
                   </td>
 
-                  {/* Player Name - CLICKABLE with visual cues */}
-                  <td className="px-3 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2 group">
-                      <span className="font-bold text-cyber-400 group-hover:text-cyber-300 transition-colors">
+                  <td className="px-2 py-2.5 whitespace-nowrap">
+                    <div className="flex items-center gap-1.5 group">
+                      <span className="font-bold text-cyber-400 group-hover:text-cyber-300 transition-colors text-sm">
                         {player.name}
                       </span>
-                      <ArrowUpRight className="w-4 h-4 text-cyber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <ArrowUpRight className="w-3 h-3 text-cyber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </td>
 
-                  {/* Stats */}
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-light-900 dark:text-white">{player.played || 0}</td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-green-400">{player.won || 0}</td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-yellow-400">{player.draw || 0}</td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-red-400">{player.lost || 0}</td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-light-900 dark:text-white">{player.goalsFor || 0}</td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-light-900 dark:text-white">{player.goalsAgainst || 0}</td>
+                  <td className="px-2 py-2.5 whitespace-nowrap text-xs text-light-900 dark:text-white">{player.played || 0}</td>
+                  <td className="px-2 py-2.5 whitespace-nowrap text-xs text-green-400">{player.won || 0}</td>
+                  <td className="px-2 py-2.5 whitespace-nowrap text-xs text-yellow-400">{player.draw || 0}</td>
+                  <td className="px-2 py-2.5 whitespace-nowrap text-xs text-red-400">{player.lost || 0}</td>
+                  <td className="px-2 py-2.5 whitespace-nowrap text-xs text-light-900 dark:text-white hidden sm:table-cell">{player.goalsFor || 0}</td>
+                  <td className="px-2 py-2.5 whitespace-nowrap text-xs text-light-900 dark:text-white hidden sm:table-cell">{player.goalsAgainst || 0}</td>
                   <td
-                    className={`px-3 py-4 whitespace-nowrap text-sm font-semibold ${
+                    className={`px-2 py-2.5 whitespace-nowrap text-xs font-semibold ${
                       (player.goalDifference || 0) > 0
                         ? 'text-green-400'
                         : (player.goalDifference || 0) < 0
@@ -202,18 +182,13 @@ export default function StandingsTable({ players, leagueId, currentUserId }: Sta
                     {(player.goalDifference || 0) > 0 ? '+' : ''}
                     {player.goalDifference || 0}
                   </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-lg font-bold text-cyber-400">{player.points || 0}</td>
-                  <td className="px-3 py-4 whitespace-nowrap">{getFormIndicator(player.form)}</td>
+                  <td className="px-2 py-2.5 whitespace-nowrap text-sm font-bold text-cyber-400">{player.points || 0}</td>
+                  <td className="px-2 py-2.5 whitespace-nowrap">{getFormIndicator(player.form)}</td>
                 </motion.tr>
               );
             })}
           </tbody>
         </table>
-      </div>
-
-      {/* Click hint for mobile */}
-      <div className="text-xs text-gray-500 text-center mt-4">
-        💡 Tap any player to view their detailed stats
       </div>
     </div>
   );

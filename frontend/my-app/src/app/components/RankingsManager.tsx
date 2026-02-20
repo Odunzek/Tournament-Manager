@@ -8,7 +8,8 @@ import {
   saveRankingOrder,
 } from "../../lib/rankingUtils";
 import { useAuth } from "../../lib/AuthContext";
-import { Trophy, Info, Settings, Swords, Gamepad2, Crown, ShieldCheck, Medal, Star } from "lucide-react";
+import { Trophy, Info, Settings, Swords, Gamepad2, Crown, ShieldCheck, Medal, Star, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import DraggableRankingCard from "./DraggableRankingCard";
 import RuleSectionCard from "./RuleSectionCard";
 
@@ -46,21 +47,55 @@ const RULE_SECTIONS = [
 ];
 
 function RulesSidebar() {
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+
   return (
     <div className="lg:sticky lg:top-6">
-      <div className="bg-light-200/30 dark:bg-dark-100/30 border border-black/10 dark:border-white/10 rounded-2xl p-4">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-cyber-500/20 flex items-center justify-center">
-            <Info className="w-5 h-5 text-cyber-400" />
+      <div className="bg-light-200/30 dark:bg-dark-100/30 border border-black/10 dark:border-white/10 rounded-2xl overflow-hidden">
+        {/* Header — tappable on mobile, static on desktop */}
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="w-full flex items-center justify-between p-4 lg:cursor-default"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-cyber-500/20 flex items-center justify-center">
+              <Info className="w-4 h-4 text-cyber-400" />
+            </div>
+            <h3 className="text-sm font-bold text-light-900 dark:text-white">Challenge Rules</h3>
           </div>
-          <h3 className="text-lg font-bold text-light-900 dark:text-white">Challenge Rules</h3>
-        </div>
-        <div className="space-y-2">
+          <motion.div
+            animate={{ rotate: mobileOpen ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+            className="lg:hidden"
+          >
+            <ChevronDown className="w-4 h-4 text-light-500 dark:text-gray-400" />
+          </motion.div>
+        </button>
+
+        {/* Content — always visible on desktop, collapsible on mobile */}
+        <AnimatePresence initial={false}>
+          {(mobileOpen) && (
+            <motion.div
+              key="rules-mobile"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="overflow-hidden lg:hidden"
+            >
+              <div className="px-4 pb-4 space-y-2">
+                {RULE_SECTIONS.map((section) => (
+                  <RuleSectionCard key={section.id} {...section} />
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Desktop: always shown */}
+        <div className="hidden lg:block px-4 pb-4 space-y-2">
           {RULE_SECTIONS.map((section) => (
-            <RuleSectionCard
-              key={section.id}
-              {...section}
-            />
+            <RuleSectionCard key={section.id} {...section} />
           ))}
         </div>
       </div>
@@ -154,27 +189,25 @@ export default function RankingManager() {
         {rankings.map((player, index) => (
           <div
             key={player.memberId}
-            className="bg-light-200/30 dark:bg-dark-100/30 border border-black/10 dark:border-white/10 rounded-2xl p-4 hover:border-cyber-500/30 transition-all"
+            className="bg-light-200/30 dark:bg-dark-100/30 border border-black/10 dark:border-white/10 rounded-xl p-3 hover:border-cyber-500/30 transition-all"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-cyber flex items-center justify-center font-bold text-white text-lg">
-                  {index === 0 ? <Crown className="w-6 h-6 text-amber-300" /> : index < 3 ? <Medal className="w-6 h-6 text-cyan-300" /> : index < 10 ? <Star className="w-6 h-6 text-yellow-300" /> : player.rank}
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-light-500 dark:text-gray-400 w-5 text-right shrink-0">{index + 1}</span>
+                <div className="w-9 h-9 rounded-xl bg-gradient-cyber flex items-center justify-center font-bold text-white text-sm">
+                  {index === 0 ? <Crown className="w-4 h-4 text-amber-300" /> : index < 3 ? <Medal className="w-4 h-4 text-cyan-300" /> : index < 10 ? <Star className="w-4 h-4 text-yellow-300" /> : player.rank}
                 </div>
-                <div>
-                  <p className="text-light-900 dark:text-white font-bold text-lg">{player.name}</p>
-                  <p className="text-light-600 dark:text-gray-400 text-sm">Rank #{player.rank}</p>
-                </div>
+                <p className="text-light-900 dark:text-white font-bold text-sm">{player.name}</p>
               </div>
               {(player.coolOff || player.wildCard) && (
-                <div className="text-right text-sm">
+                <div className="text-right">
                   {player.coolOff && (
-                    <p className="text-light-600 dark:text-gray-400">
+                    <p className="text-xs text-light-600 dark:text-gray-400">
                       <span className="text-light-500 dark:text-gray-500">Cool-off:</span> {player.coolOff}
                     </p>
                   )}
                   {player.wildCard && (
-                    <p className="text-light-600 dark:text-gray-400">
+                    <p className="text-xs text-light-600 dark:text-gray-400">
                       <span className="text-light-500 dark:text-gray-500">Wildcard:</span> {player.wildCard}
                     </p>
                   )}
@@ -188,28 +221,13 @@ export default function RankingManager() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Info Banner */}
-      <div className="bg-gradient-to-r from-cyber-500/20 to-electric-500/20 border border-cyber-500/30 rounded-2xl p-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-cyber-500/30 flex items-center justify-center">
-              <Trophy className="w-6 h-6 text-cyber-400" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-light-900 dark:text-white mb-1">Pound-for-Pound Rankings</h3>
-              <p className="text-light-600 dark:text-gray-400 text-sm">Current player standings based on challenge performance</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className="space-y-4">
       {/* Main Grid: Rankings + Rules Sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2 order-2 lg:order-1">
           {renderRankings()}
         </div>
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 order-1 lg:order-2">
           <RulesSidebar />
         </div>
       </div>

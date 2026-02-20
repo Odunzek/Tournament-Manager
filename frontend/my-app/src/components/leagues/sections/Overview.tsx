@@ -9,6 +9,7 @@ import Card from '../../ui/Card';
 import Button from '../../ui/Button';
 import MatchResultCard from '../MatchResultCard';
 import DeleteLeagueModal from '../DeleteLeagueModal';
+import EditLeagueModal from '../EditLeagueModal';
 
 interface OverviewProps {
   league: League;
@@ -36,6 +37,7 @@ export default function Overview({
   onMatchUpdated,
 }: OverviewProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [isEditingRules, setIsEditingRules] = useState(false);
   const [editedRules, setEditedRules] = useState(league.rules || '');
@@ -354,32 +356,36 @@ export default function Overview({
       {isAuthenticated && (
         <Card variant="glass">
           <h3 className="text-lg font-bold text-light-900 dark:text-white mb-4">Quick Actions</h3>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              variant="outline"
-              leftIcon={<UserPlus className="w-4 h-4" />}
-              className="flex-1"
-              onClick={onAddPlayers}
-            >
-              Add Players
-            </Button>
-            <Button variant="outline" leftIcon={<Edit className="w-4 h-4" />} className="flex-1">
-              Edit League
-            </Button>
-            {league.status === 'active' && (
-              <Button
-                variant="outline"
-                leftIcon={<CheckCircle className="w-4 h-4" />}
-                className="flex-1"
-                onClick={onEndLeague}
-              >
-                End League
+          {(onAddPlayers || onEndLeague) && (
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              {onAddPlayers && (
+                <Button
+                  variant="outline"
+                  leftIcon={<UserPlus className="w-4 h-4" />}
+                  className="flex-1"
+                  onClick={onAddPlayers}
+                >
+                  Add Players
+                </Button>
+              )}
+              <Button variant="outline" leftIcon={<Edit className="w-4 h-4" />} className="flex-1" onClick={() => setShowEditModal(true)}>
+                Edit League
               </Button>
-            )}
-          </div>
+              {onEndLeague && league.status === 'active' && (
+                <Button
+                  variant="outline"
+                  leftIcon={<CheckCircle className="w-4 h-4" />}
+                  className="flex-1"
+                  onClick={onEndLeague}
+                >
+                  End League
+                </Button>
+              )}
+            </div>
+          )}
 
           {/* Delete League Section */}
-          <div className="mt-4 pt-4 border-t border-light-300 dark:border-white/10">
+          <div className={(onAddPlayers || onEndLeague) ? 'mt-4 pt-4 border-t border-light-300 dark:border-white/10' : ''}>
             <p className="text-xs text-light-600 dark:text-gray-400 mb-2">Danger Zone</p>
             <Button
               variant="danger"
@@ -392,6 +398,13 @@ export default function Overview({
           </div>
         </Card>
       )}
+
+      {/* Edit League Modal */}
+      <EditLeagueModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        league={league}
+      />
 
       {/* Delete League Modal */}
       <DeleteLeagueModal

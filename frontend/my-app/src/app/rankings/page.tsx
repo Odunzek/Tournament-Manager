@@ -13,14 +13,14 @@ function RankingsPageContent() {
     <MainLayout showBackground={false}>
       <GlobalNavigation />
       <div className="min-h-screen bg-gradient-to-br from-light-100 via-light-200 to-light-300 dark:from-dark-50 dark:via-dark-100 dark:to-dark-200">
-        <Container maxWidth="4xl" className="py-8 sm:py-12">
+        <Container maxWidth="4xl" className="py-4 sm:py-10">
           <PageHeader
             title="P4P Rankings"
             description="Pound-for-Pound player rankings with challenge tracking"
             icon="🏆"
           />
 
-          <div className="mt-8">
+          <div className="mt-4 sm:mt-8">
             <RankingsManager />
           </div>
         </Container>

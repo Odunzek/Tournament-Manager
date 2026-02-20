@@ -232,9 +232,9 @@ export default function LeagueDetailPage() {
             recentMatches={matches.slice(0, 5)}
             totalGoals={totalGoals}
             playerCount={leaguePlayers.length}
-            isAuthenticated={isEditable}
-            onAddPlayers={() => setIsAddPlayersModalOpen(true)}
-            onEndLeague={handleEndLeague}
+            isAuthenticated={isAuthenticated}
+            onAddPlayers={isEditable ? () => setIsAddPlayersModalOpen(true) : undefined}
+            onEndLeague={isEditable ? handleEndLeague : undefined}
             onMatchUpdated={handleMatchUpdated}
             {...sectionProps}
           />
