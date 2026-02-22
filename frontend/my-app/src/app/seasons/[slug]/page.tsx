@@ -17,6 +17,7 @@ import {
   Trash2,
   AlertTriangle,
   Crown,
+  ChevronDown,
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import MainLayout from '@/components/layouts/MainLayout';
@@ -53,6 +54,8 @@ export default function SeasonDetailPage() {
   const [completeSeasonConfirmOpen, setCompleteSeasonConfirmOpen] = useState(false);
   const [activateConfirm, setActivateConfirm] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
   const [activeSection, setActiveSection] = useState('overview');
+  const [leaguesExpanded, setLeaguesExpanded] = useState(true);
+  const [tournamentsExpanded, setTournamentsExpanded] = useState(true);
 
   const { leagues, loading: leaguesLoading } = useSeasonLeagues(season?.id);
   const { tournaments, loading: tournamentsLoading } = useSeasonTournaments(season?.id);
@@ -192,91 +195,137 @@ export default function SeasonDetailPage() {
       className="space-y-6"
     >
       <Card variant="default">
-        <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => setLeaguesExpanded((v) => !v)}
+          className="w-full flex items-center justify-between mb-0 group"
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-cyber-500/20 border border-cyber-600/30 dark:border-transparent flex items-center justify-center">
               <Trophy className="w-5 h-5 text-cyber-600 dark:text-cyber-400" />
             </div>
-            <div>
+            <div className="text-left">
               <h2 className="text-xl font-bold text-light-900 dark:text-white">Leagues</h2>
               <p className="text-sm text-light-600 dark:text-gray-400">
                 {leagues.length} league{leagues.length !== 1 ? 's' : ''} in this season
               </p>
             </div>
           </div>
-          {leagues.length > 0 && (
-            <button
-              onClick={() => setActiveSection('leagues')}
-              className="text-sm font-semibold text-cyber-600 dark:text-cyber-400 hover:text-cyber-700 dark:hover:text-cyber-300 transition-colors"
+          <div className="flex items-center gap-3">
+            {leagues.length > 0 && leaguesExpanded && (
+              <span
+                onClick={(e) => { e.stopPropagation(); setActiveSection('leagues'); }}
+                className="text-sm font-semibold text-cyber-600 dark:text-cyber-400 hover:text-cyber-700 dark:hover:text-cyber-300 transition-colors"
+              >
+                View all
+              </span>
+            )}
+            <ChevronDown
+              className={`w-4 h-4 text-light-500 dark:text-gray-400 transition-transform duration-200 ${leaguesExpanded ? 'rotate-180' : ''}`}
+            />
+          </div>
+        </button>
+
+        <AnimatePresence initial={false}>
+          {leaguesExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
             >
-              View all
-            </button>
+              <div className="pt-4">
+                {leaguesLoading ? (
+                  <div className="text-center py-6">
+                    <Loader2 className="w-6 h-6 text-cyber-400 mx-auto animate-spin" />
+                  </div>
+                ) : leagues.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {leagues.slice(0, 4).map((league) => (
+                      <LeagueCard
+                        key={league.id}
+                        league={league}
+                        onClick={() => router.push(`/leagues/${league.id}`)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <Trophy className="w-10 h-10 text-light-400 dark:text-gray-600 mx-auto mb-2" />
+                    <p className="text-sm text-light-600 dark:text-gray-400">No leagues yet</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
           )}
-        </div>
-        {leaguesLoading ? (
-          <div className="text-center py-6">
-            <Loader2 className="w-6 h-6 text-cyber-400 mx-auto animate-spin" />
-          </div>
-        ) : leagues.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {leagues.slice(0, 4).map((league) => (
-              <LeagueCard
-                key={league.id}
-                league={league}
-                onClick={() => router.push(`/leagues/${league.id}`)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-6">
-            <Trophy className="w-10 h-10 text-light-400 dark:text-gray-600 mx-auto mb-2" />
-            <p className="text-sm text-light-600 dark:text-gray-400">No leagues yet</p>
-          </div>
-        )}
+        </AnimatePresence>
       </Card>
 
       <Card variant="default">
-        <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => setTournamentsExpanded((v) => !v)}
+          className="w-full flex items-center justify-between mb-0 group"
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-electric-500/20 border border-electric-600/30 dark:border-transparent flex items-center justify-center">
               <Target className="w-5 h-5 text-electric-600 dark:text-electric-400" />
             </div>
-            <div>
+            <div className="text-left">
               <h2 className="text-xl font-bold text-light-900 dark:text-white">Tournaments</h2>
               <p className="text-sm text-light-600 dark:text-gray-400">
                 {tournaments.length} tournament{tournaments.length !== 1 ? 's' : ''} in this season
               </p>
             </div>
           </div>
-          {tournaments.length > 0 && (
-            <button
-              onClick={() => setActiveSection('tournaments')}
-              className="text-sm font-semibold text-electric-600 dark:text-electric-400 hover:text-electric-700 dark:hover:text-electric-300 transition-colors"
+          <div className="flex items-center gap-3">
+            {tournaments.length > 0 && tournamentsExpanded && (
+              <span
+                onClick={(e) => { e.stopPropagation(); setActiveSection('tournaments'); }}
+                className="text-sm font-semibold text-electric-600 dark:text-electric-400 hover:text-electric-700 dark:hover:text-electric-300 transition-colors"
+              >
+                View all
+              </span>
+            )}
+            <ChevronDown
+              className={`w-4 h-4 text-light-500 dark:text-gray-400 transition-transform duration-200 ${tournamentsExpanded ? 'rotate-180' : ''}`}
+            />
+          </div>
+        </button>
+
+        <AnimatePresence initial={false}>
+          {tournamentsExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
             >
-              View all
-            </button>
+              <div className="pt-4">
+                {tournamentsLoading ? (
+                  <div className="text-center py-6">
+                    <Loader2 className="w-6 h-6 text-electric-400 mx-auto animate-spin" />
+                  </div>
+                ) : tournaments.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {tournaments.slice(0, 4).map((tournament) => (
+                      <TournamentCard
+                        key={tournament.id}
+                        tournament={tournament}
+                        onClick={() => router.push(`/tournaments/${tournament.id}`)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <Target className="w-10 h-10 text-light-400 dark:text-gray-600 mx-auto mb-2" />
+                    <p className="text-sm text-light-600 dark:text-gray-400">No tournaments yet</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
           )}
-        </div>
-        {tournamentsLoading ? (
-          <div className="text-center py-6">
-            <Loader2 className="w-6 h-6 text-electric-400 mx-auto animate-spin" />
-          </div>
-        ) : tournaments.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {tournaments.slice(0, 4).map((tournament) => (
-              <TournamentCard
-                key={tournament.id}
-                tournament={tournament}
-                onClick={() => router.push(`/tournaments/${tournament.id}`)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-6">
-            <Target className="w-10 h-10 text-light-400 dark:text-gray-600 mx-auto mb-2" />
-            <p className="text-sm text-light-600 dark:text-gray-400">No tournaments yet</p>
-          </div>
-        )}
+        </AnimatePresence>
       </Card>
     </motion.div>
   );
