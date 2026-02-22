@@ -80,7 +80,7 @@ export default function HallOfFamePage() {
   return (
     <MainLayout>
       <GlobalNavigation />
-      <Container maxWidth="2xl" className="py-8 sm:py-12">
+      <Container maxWidth="2xl" className="py-4 sm:py-8">
         {/* Hero Header */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}

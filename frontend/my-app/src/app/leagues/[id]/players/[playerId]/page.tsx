@@ -175,7 +175,7 @@ export default function PlayerLeagueStatsPage() {
     return (
       <MainLayout>
         <GlobalNavigation />
-        <Container maxWidth="2xl" className="py-8 sm:py-12">
+        <Container maxWidth="2xl" className="py-4 sm:py-8">
           <div className="text-center py-16">
             <Loader2 className="w-12 h-12 text-cyber-400 mx-auto mb-4 animate-spin" />
             <p className="text-gray-400">Loading player stats...</p>
@@ -189,7 +189,7 @@ export default function PlayerLeagueStatsPage() {
     return (
       <MainLayout>
         <GlobalNavigation />
-        <Container maxWidth="2xl" className="py-8 sm:py-12">
+        <Container maxWidth="2xl" className="py-4 sm:py-8">
           <div className="text-center py-16">
             <h3 className="text-xl font-bold text-gray-400 mb-2">Player Not Found</h3>
             <p className="text-gray-500 mb-6">This player is not in this league</p>
@@ -290,7 +290,7 @@ export default function PlayerLeagueStatsPage() {
   return (
     <MainLayout>
       <GlobalNavigation />
-      <Container maxWidth="2xl" className="py-8 sm:py-12">
+      <Container maxWidth="2xl" className="py-4 sm:py-8">
         {/* Back Button */}
         <button
           onClick={() => router.push(`/leagues/${leagueId}`)}

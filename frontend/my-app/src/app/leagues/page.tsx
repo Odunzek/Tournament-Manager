@@ -145,7 +145,7 @@ export default function LeaguesPage() {
   return (
     <MainLayout>
       <GlobalNavigation />
-      <Container maxWidth="2xl" className="py-8 sm:py-12">
+      <Container maxWidth="2xl" className="py-4 sm:py-8">
         {/* Header */}
         <PageHeader
           title="LEAGUES"

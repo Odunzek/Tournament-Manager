@@ -65,7 +65,7 @@ export default function PlayerDetailPage() {
     return (
       <MainLayout>
         <GlobalNavigation />
-        <Container maxWidth="2xl" className="py-8 sm:py-12">
+        <Container maxWidth="2xl" className="py-4 sm:py-8">
           <div className="text-center py-16">
             <Loader2 className="w-12 h-12 text-cyber-400 mx-auto mb-4 animate-spin" />
             <p className="text-gray-400">Loading player...</p>
@@ -79,7 +79,7 @@ export default function PlayerDetailPage() {
     return (
       <MainLayout>
         <GlobalNavigation />
-        <Container maxWidth="2xl" className="py-8 sm:py-12">
+        <Container maxWidth="2xl" className="py-4 sm:py-8">
           <div className="text-center py-16">
             <h2 className="text-2xl font-bold text-gray-400 mb-2">Player not found</h2>
             <button
@@ -97,7 +97,7 @@ export default function PlayerDetailPage() {
   return (
     <MainLayout>
       <GlobalNavigation />
-      <Container maxWidth="2xl" className="py-8 sm:py-12">
+      <Container maxWidth="2xl" className="py-4 sm:py-8">
         {/* Back Button */}
         <motion.button
           initial={{ opacity: 0, x: -20 }}

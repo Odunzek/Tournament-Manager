@@ -37,7 +37,7 @@ export default function MigratePlayersPage() {
   return (
     <MainLayout>
       <GlobalNavigation />
-      <Container maxWidth="2xl" className="py-8 sm:py-12">
+      <Container maxWidth="2xl" className="py-4 sm:py-8">
         <PageHeader
           title="MIGRATE PLAYERS"
           subtitle="Sync group members to new player system"
