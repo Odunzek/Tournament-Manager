@@ -240,27 +240,29 @@ export default function Results({ tournament, tournamentMembers }: ResultsProps)
             </Card>
           </div>
 
-          {/* Tournament Totals */}
-          <div className="grid grid-cols-4 gap-2 sm:gap-4">
-            <Card variant="glass">
-              <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">Matches</p>
-              <p className="text-lg sm:text-2xl font-bold text-cyber-400">{analytics.totalMatches}</p>
-            </Card>
-            <Card variant="glass">
-              <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">Goals</p>
-              <p className="text-lg sm:text-2xl font-bold text-electric-400">{Math.round(analytics.totalGoals)}</p>
-            </Card>
-            <Card variant="glass">
-              <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">Avg/Match</p>
-              <p className="text-lg sm:text-2xl font-bold text-green-400">
-                {analytics.totalMatches > 0 ? (analytics.totalGoals / analytics.totalMatches).toFixed(1) : '0.0'}
-              </p>
-            </Card>
-            <Card variant="glass">
-              <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">Teams</p>
-              <p className="text-lg sm:text-2xl font-bold text-pink-400">{tournamentMembers.length}</p>
-            </Card>
-          </div>
+          {/* Tournament Totals — single card with 4 inline stats */}
+          <Card variant="glass">
+            <div className="grid grid-cols-4 divide-x divide-white/10">
+              <div className="text-center px-2 py-1">
+                <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">Matches</p>
+                <p className="text-base sm:text-2xl font-bold text-cyber-400">{analytics.totalMatches}</p>
+              </div>
+              <div className="text-center px-2 py-1">
+                <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">Goals</p>
+                <p className="text-base sm:text-2xl font-bold text-electric-400">{Math.round(analytics.totalGoals)}</p>
+              </div>
+              <div className="text-center px-2 py-1">
+                <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">Avg/Match</p>
+                <p className="text-base sm:text-2xl font-bold text-green-400">
+                  {analytics.totalMatches > 0 ? (analytics.totalGoals / analytics.totalMatches).toFixed(1) : '0.0'}
+                </p>
+              </div>
+              <div className="text-center px-2 py-1">
+                <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">Teams</p>
+                <p className="text-base sm:text-2xl font-bold text-pink-400">{tournamentMembers.length}</p>
+              </div>
+            </div>
+          </Card>
 
           {/* Bar Charts — stacked on mobile but compact */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6">
