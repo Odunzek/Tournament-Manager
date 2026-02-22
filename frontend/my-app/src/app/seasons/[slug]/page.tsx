@@ -51,6 +51,7 @@ export default function SeasonDetailPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [completeSeasonConfirmOpen, setCompleteSeasonConfirmOpen] = useState(false);
+  const [activateConfirm, setActivateConfirm] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
   const [activeSection, setActiveSection] = useState('overview');
 
   const { leagues, loading: leaguesLoading } = useSeasonLeagues(season?.id);
@@ -91,12 +92,15 @@ export default function SeasonDetailPage() {
   const handleActivate = async () => {
     if (!season?.id) return;
     const currentActive = await getActiveSeason();
-    if (currentActive && currentActive.id !== season.id) {
-      const confirmed = confirm(
-        `"${currentActive.name}" is currently active and will be marked as completed. Continue?`
-      );
-      if (!confirmed) return;
-    }
+    const message = currentActive && currentActive.id !== season.id
+      ? `"${currentActive.name}" is currently active and will be marked as completed. This will also copy the global P4P rankings into this season.`
+      : `This will activate "${season.name}" and copy the global P4P rankings into it.`;
+    setActivateConfirm({ open: true, message });
+  };
+
+  const doActivate = async () => {
+    if (!season?.id) return;
+    setActivateConfirm({ open: false, message: '' });
     setActionLoading('activate');
     try {
       await activateSeason(season.id);
@@ -725,6 +729,17 @@ export default function SeasonDetailPage() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Activate Season Confirmation */}
+      <ConfirmModal
+        isOpen={activateConfirm.open}
+        title="Activate Season?"
+        message={activateConfirm.message}
+        confirmLabel="Activate"
+        isLoading={actionLoading === 'activate'}
+        onConfirm={doActivate}
+        onCancel={() => setActivateConfirm({ open: false, message: '' })}
+      />
 
       {/* Complete Season Confirmation */}
       <ConfirmModal
