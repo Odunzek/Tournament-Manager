@@ -4,13 +4,18 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Trophy, Award, Save, Link } from 'lucide-react';
 import { Player, PlayerFormData } from '@/types/player';
+import { Season } from '@/types/season';
+import { getAllSeasons } from '@/lib/seasonUtils';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
 interface PlayerFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: PlayerFormData & { achievements?: { leagueWins: number; tournamentWins: number } }) => void;
+  onSubmit: (data: PlayerFormData & {
+    achievements?: { leagueWins: number; tournamentWins: number };
+    selectedSeasonId?: string;
+  }) => void;
   player?: Player | null;
   mode: 'add' | 'edit';
 }
@@ -31,21 +36,54 @@ export default function PlayerFormModal({
   });
 
   const [errors, setErrors] = useState<{ name?: string; psnId?: string }>({});
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>('');
 
   useEffect(() => {
     if (player && mode === 'edit') {
-      setFormData({
+      // Only set profile fields here; win counts are set by the seasons effect below
+      setFormData(prev => ({
+        ...prev,
         name: player.name,
         psnId: player.psnId,
         avatar: player.avatar || '',
-        leagueWins: player.achievements.leagueWins,
-        tournamentWins: player.achievements.tournamentWins,
-      });
+      }));
     } else {
       setFormData({ name: '', psnId: '', avatar: '', leagueWins: 0, tournamentWins: 0 });
     }
     setErrors({});
   }, [player, mode, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || mode !== 'edit') return;
+    getAllSeasons()
+      .then((all) => {
+        setSeasons(all);
+        if (all.length > 0) {
+          const firstId = all[0].id!;
+          setSelectedSeasonId(firstId);
+          const ach = player?.seasonAchievements?.[firstId];
+          setFormData(prev => ({
+            ...prev,
+            leagueWins: ach?.leagueWins ?? 0,
+            tournamentWins: ach?.tournamentWins ?? 0,
+          }));
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load seasons for achievement editor:', err);
+      });
+  }, [isOpen, mode, player]);
+
+  const handleSeasonChange = (seasonId: string) => {
+    setSelectedSeasonId(seasonId);
+    const ach = player?.seasonAchievements?.[seasonId];
+    setFormData(prev => ({
+      ...prev,
+      leagueWins: ach?.leagueWins ?? 0,
+      tournamentWins: ach?.tournamentWins ?? 0,
+    }));
+  };
 
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
@@ -76,6 +114,7 @@ export default function PlayerFormModal({
         leagueWins: formData.leagueWins,
         tournamentWins: formData.tournamentWins,
       },
+      selectedSeasonId: selectedSeasonId || undefined,
     });
     onClose();
   };
@@ -166,6 +205,23 @@ export default function PlayerFormModal({
                     <Trophy className="w-3.5 h-3.5 text-yellow-400" />
                     Achievements
                   </p>
+
+                  {mode === 'edit' && seasons.length > 0 && (
+                    <div className="mb-2">
+                      <label className="text-xs text-light-600 dark:text-gray-400 mb-1 block">Season</label>
+                      <select
+                        value={selectedSeasonId}
+                        onChange={e => handleSeasonChange(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl text-sm bg-light-100 dark:bg-dark-100
+                                   border border-black/10 dark:border-white/10
+                                   text-light-900 dark:text-white focus:outline-none focus:border-cyber-500/50"
+                      >
+                        {seasons.map(s => (
+                          <option key={s.id} value={s.id!}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-3">
                     <Input

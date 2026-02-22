@@ -17,7 +17,7 @@ import {
   Trash2,
   AlertTriangle,
   Crown,
-  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import MainLayout from '@/components/layouts/MainLayout';
@@ -40,6 +40,7 @@ import PlayerAvatar from '@/components/players/PlayerAvatar';
 import { useAuth } from '@/lib/AuthContext';
 import { activateSeason, completeSeason, deleteSeason, getActiveSeason } from '@/lib/seasonUtils';
 import { copyGlobalRankingsToSeason, recomputeSeasonStats, unassignLeagueFromSeason, unassignTournamentFromSeason } from '@/lib/seasonIntegrationUtils';
+import { setSeasonAchievements } from '@/lib/playerUtils';
 
 export default function SeasonDetailPage() {
   const params = useParams();
@@ -54,8 +55,8 @@ export default function SeasonDetailPage() {
   const [completeSeasonConfirmOpen, setCompleteSeasonConfirmOpen] = useState(false);
   const [activateConfirm, setActivateConfirm] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
   const [activeSection, setActiveSection] = useState('overview');
-  const [leaguesExpanded, setLeaguesExpanded] = useState(true);
-  const [tournamentsExpanded, setTournamentsExpanded] = useState(true);
+  const [editingHofId, setEditingHofId] = useState<string | null>(null);
+  const [hofEditValues, setHofEditValues] = useState({ leagueWins: 0, tournamentWins: 0 });
 
   const { leagues, loading: leaguesLoading } = useSeasonLeagues(season?.id);
   const { tournaments, loading: tournamentsLoading } = useSeasonTournaments(season?.id);
@@ -188,147 +189,234 @@ export default function SeasonDetailPage() {
 
   // ---------- Section renderers ----------
 
-  const renderOverview = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
-    >
-      <Card variant="default">
-        <button
-          onClick={() => setLeaguesExpanded((v) => !v)}
-          className="w-full flex items-center justify-between mb-0 group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-cyber-500/20 border border-cyber-600/30 dark:border-transparent flex items-center justify-center">
-              <Trophy className="w-5 h-5 text-cyber-600 dark:text-cyber-400" />
-            </div>
-            <div className="text-left">
-              <h2 className="text-xl font-bold text-light-900 dark:text-white">Leagues</h2>
-              <p className="text-sm text-light-600 dark:text-gray-400">
-                {leagues.length} league{leagues.length !== 1 ? 's' : ''} in this season
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {leagues.length > 0 && leaguesExpanded && (
-              <span
-                onClick={(e) => { e.stopPropagation(); setActiveSection('leagues'); }}
-                className="text-sm font-semibold text-cyber-600 dark:text-cyber-400 hover:text-cyber-700 dark:hover:text-cyber-300 transition-colors"
-              >
-                View all
-              </span>
-            )}
-            <ChevronDown
-              className={`w-4 h-4 text-light-500 dark:text-gray-400 transition-transform duration-200 ${leaguesExpanded ? 'rotate-180' : ''}`}
-            />
-          </div>
-        </button>
+  const renderOverview = () => {
+    // Section 1 — active right now
+    const activeLeagues = leagues.filter(l => l.status === 'active');
+    const activeTournaments = tournaments.filter(
+      t => t.status === 'group_stage' || t.status === 'knockout'
+    );
+    const activeItems = [
+      ...activeLeagues.map(l => ({ kind: 'league' as const, data: l })),
+      ...activeTournaments.map(t => ({ kind: 'tournament' as const, data: t })),
+    ];
 
-        <AnimatePresence initial={false}>
-          {leaguesExpanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <div className="pt-4">
-                {leaguesLoading ? (
-                  <div className="text-center py-6">
-                    <Loader2 className="w-6 h-6 text-cyber-400 mx-auto animate-spin" />
-                  </div>
-                ) : leagues.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {leagues.slice(0, 4).map((league) => (
-                      <LeagueCard
-                        key={league.id}
-                        league={league}
-                        onClick={() => router.push(`/leagues/${league.id}`)}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <Trophy className="w-10 h-10 text-light-400 dark:text-gray-600 mx-auto mb-2" />
-                    <p className="text-sm text-light-600 dark:text-gray-400">No leagues yet</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </Card>
+    // Section 2 — recently completed (last 3 by endDate desc)
+    const getTournamentWinner = (t: any): string | null => {
+      if (t.type !== 'league') {
+        return t.knockoutBracket?.find((tie: any) => tie.round === 'final' && tie.completed)?.winner ?? null;
+      }
+      const standings = t.groups?.[0]?.standings;
+      if (!standings?.length) return null;
+      return [...standings].sort((a: any, b: any) => b.points - a.points)[0]?.teamName ?? null;
+    };
 
-      <Card variant="default">
-        <button
-          onClick={() => setTournamentsExpanded((v) => !v)}
-          className="w-full flex items-center justify-between mb-0 group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-electric-500/20 border border-electric-600/30 dark:border-transparent flex items-center justify-center">
-              <Target className="w-5 h-5 text-electric-600 dark:text-electric-400" />
-            </div>
-            <div className="text-left">
-              <h2 className="text-xl font-bold text-light-900 dark:text-white">Tournaments</h2>
-              <p className="text-sm text-light-600 dark:text-gray-400">
-                {tournaments.length} tournament{tournaments.length !== 1 ? 's' : ''} in this season
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {tournaments.length > 0 && tournamentsExpanded && (
-              <span
-                onClick={(e) => { e.stopPropagation(); setActiveSection('tournaments'); }}
-                className="text-sm font-semibold text-electric-600 dark:text-electric-400 hover:text-electric-700 dark:hover:text-electric-300 transition-colors"
-              >
-                View all
-              </span>
-            )}
-            <ChevronDown
-              className={`w-4 h-4 text-light-500 dark:text-gray-400 transition-transform duration-200 ${tournamentsExpanded ? 'rotate-180' : ''}`}
-            />
-          </div>
-        </button>
+    const tsToMs = (ts: any): number => {
+      if (!ts) return 0;
+      if (ts.toDate) return ts.toDate().getTime();
+      if (ts instanceof Date) return ts.getTime();
+      if (ts.seconds) return ts.seconds * 1000;
+      return new Date(ts).getTime();
+    };
 
-        <AnimatePresence initial={false}>
-          {tournamentsExpanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <div className="pt-4">
-                {tournamentsLoading ? (
-                  <div className="text-center py-6">
-                    <Loader2 className="w-6 h-6 text-electric-400 mx-auto animate-spin" />
-                  </div>
-                ) : tournaments.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {tournaments.slice(0, 4).map((tournament) => (
-                      <TournamentCard
-                        key={tournament.id}
-                        tournament={tournament}
-                        onClick={() => router.push(`/tournaments/${tournament.id}`)}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <Target className="w-10 h-10 text-light-400 dark:text-gray-600 mx-auto mb-2" />
-                    <p className="text-sm text-light-600 dark:text-gray-400">No tournaments yet</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </Card>
-    </motion.div>
-  );
+    const completedItems = [
+      ...leagues.filter(l => l.status === 'completed').map(l => ({
+        kind: 'league' as const, id: l.id!, name: l.name,
+        winner: null as string | null, type: undefined as string | undefined,
+        endDate: (l as any).endDate, createdAt: (l as any).createdAt,
+      })),
+      ...tournaments.filter(t => t.status === 'completed').map(t => ({
+        kind: 'tournament' as const, id: t.id!, name: t.name, type: (t as any).type as string | undefined,
+        winner: getTournamentWinner(t), endDate: (t as any).endDate, createdAt: (t as any).createdAt,
+      })),
+    ].sort((a, b) =>
+      (tsToMs(b.endDate) || tsToMs(b.createdAt)) - (tsToMs(a.endDate) || tsToMs(a.createdAt))
+    ).slice(0, 3);
+
+    // Section 3 — upcoming/not started
+    const upcomingItems = [
+      ...leagues.filter(l => l.status === 'upcoming').map(l => ({ kind: 'league' as const, data: l })),
+      ...tournaments.filter(t => t.status === 'setup').map(t => ({ kind: 'tournament' as const, data: t })),
+    ];
+
+    const hasAnything = activeItems.length > 0 || completedItems.length > 0 || upcomingItems.length > 0;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-5"
+      >
+        {/* Season concluded banner */}
+        {season.status === 'completed' && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-500/10 border border-gray-500/20">
+            <CheckCircle className="w-4 h-4 text-gray-500 shrink-0" />
+            <p className="text-sm text-light-600 dark:text-gray-400 font-medium">
+              Season concluded{season.endDate ? ` · ${formatDate(season.endDate)}` : ''}
+            </p>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!hasAnything && (
+          <div className="text-center py-14">
+            <Gamepad2 className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+            <p className="text-light-700 dark:text-gray-300 font-semibold">No activity yet</p>
+            <p className="text-sm text-light-500 dark:text-gray-500 mt-1">
+              Assign a league or tournament to get started
+            </p>
+          </div>
+        )}
+
+        {/* Section 1: RIGHT NOW */}
+        {activeItems.length > 0 && (
+          <Card variant="default">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-light-500 dark:text-gray-500 mb-3">
+              Right Now
+            </p>
+            <div className="space-y-1.5">
+              {activeItems.map((item) => {
+                const isLeague = item.kind === 'league';
+                const d = item.data as any;
+                const totalMatches = d.totalMatches ?? d.matches?.length ?? 0;
+                const playedMatches = d.matches?.filter((m: any) => m.played || m.status === 'completed').length ?? 0;
+                const statusLabel = isLeague
+                  ? 'Active'
+                  : d.status === 'group_stage' ? 'Group Stage' : 'Knockout';
+                const statusClass = isLeague
+                  ? 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/25'
+                  : d.status === 'group_stage'
+                    ? 'bg-cyber-500/15 text-cyber-700 dark:text-cyber-400 border-cyber-500/25'
+                    : 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/25';
+                return (
+                  <button
+                    key={d.id}
+                    onClick={() => router.push(isLeague ? `/leagues/${d.id}` : `/tournaments/${d.id}`)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left
+                               bg-light-100/80 dark:bg-dark-100/60
+                               border border-black/8 dark:border-white/8
+                               hover:border-cyan-500/30 hover:bg-light-200/50 dark:hover:bg-dark-100/80
+                               transition-all group"
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                      isLeague ? 'bg-cyan-500/15' : 'bg-purple-500/15'
+                    }`}>
+                      {isLeague
+                        ? <Trophy className="w-4 h-4 text-cyan-500" />
+                        : <Target className="w-4 h-4 text-purple-500" />
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-light-900 dark:text-white truncate">{d.name}</p>
+                      {isLeague && totalMatches > 0 && (
+                        <p className="text-xs text-light-500 dark:text-gray-500">
+                          {playedMatches}/{totalMatches} matches played
+                        </p>
+                      )}
+                    </div>
+                    <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border ${statusClass}`}>
+                      {statusLabel}
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-light-400 dark:text-gray-600 shrink-0 group-hover:text-light-700 dark:group-hover:text-gray-400 transition-colors" />
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
+        {/* Section 2: RECENT CHAMPIONS */}
+        {completedItems.length > 0 && (
+          <Card variant="default">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-light-500 dark:text-gray-500 mb-3">
+              Recent Champions
+            </p>
+            <div className="space-y-1.5">
+              {completedItems.map((item) => {
+                const isLeague = item.kind === 'league';
+                const typeLabel = isLeague ? 'League'
+                  : item.type === 'champions_league' ? 'Champions League'
+                  : item.type === 'knockout' ? 'Knockout'
+                  : 'Tournament';
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => router.push(isLeague ? `/leagues/${item.id}` : `/tournaments/${item.id}`)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left
+                               bg-light-100/80 dark:bg-dark-100/60
+                               border border-black/8 dark:border-white/8
+                               hover:border-yellow-500/30 hover:bg-light-200/50 dark:hover:bg-dark-100/80
+                               transition-all group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-yellow-500/15 flex items-center justify-center shrink-0">
+                      <Crown className="w-4 h-4 text-yellow-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-light-900 dark:text-white truncate">{item.name}</p>
+                      <p className="text-xs text-light-500 dark:text-gray-500">{typeLabel}</p>
+                    </div>
+                    {item.winner ? (
+                      <span className="shrink-0 text-xs font-semibold text-yellow-600 dark:text-yellow-400 truncate max-w-[120px]">
+                        {item.winner}
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-xs text-light-400 dark:text-gray-600">· Completed</span>
+                    )}
+                    <ChevronRight className="w-4 h-4 text-light-400 dark:text-gray-600 shrink-0 group-hover:text-light-700 dark:group-hover:text-gray-400 transition-colors" />
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
+        {/* Section 3: UP NEXT */}
+        {upcomingItems.length > 0 && (
+          <Card variant="default">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-light-500 dark:text-gray-500 mb-3">
+              Up Next
+            </p>
+            <div className="space-y-1.5">
+              {upcomingItems.map((item) => {
+                const isLeague = item.kind === 'league';
+                const d = item.data as any;
+                const participantCount = d.teams?.length ?? d.participants?.length ?? 0;
+                return (
+                  <button
+                    key={d.id}
+                    onClick={() => router.push(isLeague ? `/leagues/${d.id}` : `/tournaments/${d.id}`)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left
+                               bg-light-100/80 dark:bg-dark-100/60
+                               border border-black/8 dark:border-white/8
+                               hover:border-gray-500/30 hover:bg-light-200/50 dark:hover:bg-dark-100/80
+                               transition-all group"
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 opacity-60 ${
+                      isLeague ? 'bg-cyan-500/15' : 'bg-purple-500/15'
+                    }`}>
+                      {isLeague
+                        ? <Trophy className="w-4 h-4 text-cyan-500" />
+                        : <Target className="w-4 h-4 text-purple-500" />
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-light-900 dark:text-white truncate">{d.name}</p>
+                      <p className="text-xs text-light-500 dark:text-gray-500">
+                        Not started{participantCount > 0 ? ` · ${participantCount} teams` : ''}
+                      </p>
+                    </div>
+                    <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-500/10 border border-gray-500/20 text-gray-500 dark:text-gray-500">
+                      Soon
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-light-400 dark:text-gray-600 shrink-0 group-hover:text-light-700 dark:group-hover:text-gray-400 transition-colors" />
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+      </motion.div>
+    );
+  };
 
   const renderLeagues = () => (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -498,51 +586,142 @@ export default function SeasonDetailPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {sorted.map((player, index) => {
               const ach = getAch(player);
+              const isEditing = isAuthenticated && editingHofId === player.id;
               return (
-                <motion.button
+                <motion.div
                   key={player.id}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.05 * index }}
-                  onClick={() => router.push(`/players/${player.id}`)}
-                  className="flex flex-col items-center gap-2 p-4 rounded-xl text-center
+                  className="relative group rounded-xl
                              bg-light-100/80 dark:bg-dark-100/60
                              border border-black/8 dark:border-white/8
                              hover:border-yellow-500/30 hover:bg-light-200/60 dark:hover:bg-dark-100/80
-                             transition-all group"
+                             transition-all"
                 >
-                  <PlayerAvatar
-                    src={player.avatar}
-                    alt={player.name}
-                    size="md"
-                    showBorder
-                    borderColor="border-yellow-500/40"
-                  />
-                  <span className="text-sm font-bold text-light-900 dark:text-white truncate w-full">
-                    {player.name}
-                  </span>
-
-                  {/* Trophy breakdown */}
-                  <div className="flex items-center justify-center gap-3 text-xs">
-                    {ach.leagueWins > 0 && (
-                      <span className="flex items-center gap-1 text-cyber-600 dark:text-cyber-400">
-                        <Trophy className="w-3.5 h-3.5" />
-                        {ach.leagueWins}
+                  {isEditing ? (
+                    /* Inline edit form */
+                    <div className="flex flex-col gap-2 p-3 w-full">
+                      <p className="text-xs font-bold text-light-900 dark:text-white truncate">{player.name}</p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <div>
+                          <label className="text-[10px] text-light-500 dark:text-gray-500">League</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={hofEditValues.leagueWins}
+                            onChange={e => setHofEditValues(v => ({ ...v, leagueWins: parseInt(e.target.value) || 0 }))}
+                            className="w-full px-2 py-1 rounded-lg text-xs bg-light-200 dark:bg-dark-200
+                                       border border-black/10 dark:border-white/10 text-light-900 dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-light-500 dark:text-gray-500">Tournament</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={hofEditValues.tournamentWins}
+                            onChange={e => setHofEditValues(v => ({ ...v, tournamentWins: parseInt(e.target.value) || 0 }))}
+                            className="w-full px-2 py-1 rounded-lg text-xs bg-light-200 dark:bg-dark-200
+                                       border border-black/10 dark:border-white/10 text-light-900 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5 mt-1">
+                        <button
+                          onClick={async () => {
+                            setActionLoading(`hof-${player.id}`);
+                            try {
+                              await setSeasonAchievements(
+                                player.id!,
+                                season.id!,
+                                hofEditValues.leagueWins,
+                                hofEditValues.tournamentWins
+                              );
+                            } finally {
+                              setActionLoading(null);
+                              setEditingHofId(null);
+                            }
+                          }}
+                          disabled={actionLoading === `hof-${player.id}`}
+                          className="flex-1 py-1 rounded-lg text-[11px] font-semibold
+                                     bg-yellow-500/20 text-yellow-700 dark:text-yellow-400
+                                     border border-yellow-500/30 hover:bg-yellow-500/30
+                                     transition-all disabled:opacity-50"
+                        >
+                          {actionLoading === `hof-${player.id}`
+                            ? <Loader2 className="w-3 h-3 animate-spin mx-auto" />
+                            : 'Save'
+                          }
+                        </button>
+                        <button
+                          onClick={() => setEditingHofId(null)}
+                          className="flex-1 py-1 rounded-lg text-[11px] font-semibold
+                                     bg-light-200/60 dark:bg-dark-100/40
+                                     text-light-600 dark:text-gray-400
+                                     border border-black/10 dark:border-white/10 transition-all"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Normal card — click to navigate */
+                    <div
+                      onClick={() => router.push(`/players/${player.id}`)}
+                      className="flex flex-col items-center gap-2 p-4 text-center cursor-pointer w-full"
+                    >
+                      <PlayerAvatar
+                        src={player.avatar}
+                        alt={player.name}
+                        size="md"
+                        showBorder
+                        borderColor="border-yellow-500/40"
+                      />
+                      <span className="text-sm font-bold text-light-900 dark:text-white truncate w-full">
+                        {player.name}
                       </span>
-                    )}
-                    {ach.tournamentWins > 0 && (
-                      <span className="flex items-center gap-1 text-electric-600 dark:text-electric-400">
-                        <Target className="w-3.5 h-3.5" />
-                        {ach.tournamentWins}
-                      </span>
-                    )}
-                  </div>
 
-                  {/* Total */}
-                  <span className="text-[11px] font-semibold text-yellow-600 dark:text-yellow-400">
-                    {ach.totalTitles} title{ach.totalTitles !== 1 ? 's' : ''}
-                  </span>
-                </motion.button>
+                      {/* Trophy breakdown */}
+                      <div className="flex items-center justify-center gap-3 text-xs">
+                        {ach.leagueWins > 0 && (
+                          <span className="flex items-center gap-1 text-cyber-600 dark:text-cyber-400">
+                            <Trophy className="w-3.5 h-3.5" />
+                            {ach.leagueWins}
+                          </span>
+                        )}
+                        {ach.tournamentWins > 0 && (
+                          <span className="flex items-center gap-1 text-electric-600 dark:text-electric-400">
+                            <Target className="w-3.5 h-3.5" />
+                            {ach.tournamentWins}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Total */}
+                      <span className="text-[11px] font-semibold text-yellow-600 dark:text-yellow-400">
+                        {ach.totalTitles} title{ach.totalTitles !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Admin pencil — hover only, when not editing */}
+                  {isAuthenticated && editingHofId !== player.id && (
+                    <button
+                      onClick={() => {
+                        setEditingHofId(player.id!);
+                        setHofEditValues({ leagueWins: ach.leagueWins, tournamentWins: ach.tournamentWins });
+                      }}
+                      className="absolute top-2 right-2 p-1 rounded-lg
+                                 opacity-0 group-hover:opacity-100
+                                 bg-light-200/80 dark:bg-dark-200/80
+                                 text-light-500 dark:text-gray-400
+                                 hover:text-light-900 dark:hover:text-white transition-all"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                  )}
+                </motion.div>
               );
             })}
           </div>

@@ -14,7 +14,7 @@ import TrophyDisplay from '@/components/players/TrophyDisplay';
 import PlayerFormModal from '@/components/players/PlayerFormModal';
 import { usePlayer } from '@/hooks/usePlayers';
 import { useSeasons } from '@/hooks/useSeasons';
-import { updatePlayer, deletePlayer } from '@/lib/playerUtils';
+import { updatePlayer, deletePlayer, setSeasonAchievements } from '@/lib/playerUtils';
 import { useAuth } from '@/lib/AuthContext';
 
 export default function PlayerDetailPage() {
@@ -31,7 +31,16 @@ export default function PlayerDetailPage() {
 
   const handleSubmitEdit = async (data: any) => {
     try {
-      await updatePlayer(playerId, data);
+      const { selectedSeasonId, achievements, ...basicInfo } = data;
+      await updatePlayer(playerId, basicInfo);
+      if (selectedSeasonId && achievements) {
+        await setSeasonAchievements(
+          playerId,
+          selectedSeasonId,
+          achievements.leagueWins,
+          achievements.tournamentWins
+        );
+      }
       setIsEditModalOpen(false);
     } catch (error) {
       console.error('Error updating player:', error);

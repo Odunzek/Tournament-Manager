@@ -2,12 +2,12 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, UserPlus, Trophy, Users, Loader2, Target } from 'lucide-react';
+import { Search, UserPlus, Trophy, Users, Loader2, Target, ChevronRight } from 'lucide-react';
 import MainLayout from '@/components/layouts/MainLayout';
 import PageHeader from '@/components/layouts/PageHeader';
 import Container from '@/components/layouts/Container';
 import GlobalNavigation from '@/components/layouts/GlobalNavigation';
-import PlayerCard from '@/components/players/PlayerCard';
+import PlayerAvatar from '@/components/players/PlayerAvatar';
 import PlayerFormModal from '@/components/players/PlayerFormModal';
 import HeadToHeadModal from '@/components/players/HeadToHeadModal';
 import Input from '@/components/ui/Input';
@@ -153,7 +153,7 @@ export default function PlayersPage() {
           </div>
         </motion.div>
 
-        {/* Players Grid */}
+        {/* Players List */}
         {loading ? (
           <motion.div
             initial={{ opacity: 0 }}
@@ -168,23 +168,85 @@ export default function PlayersPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4"
+            className="rounded-xl overflow-hidden border border-black/8 dark:border-white/8
+                       grid grid-cols-1 sm:grid-cols-2 gap-px
+                       bg-black/8 dark:bg-white/8"
           >
-            {filteredPlayers.map((player, index) => (
-              <motion.div
-                key={player.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.05 * index, duration: 0.3 }}
-              >
-                <PlayerCard
-                  player={player}
+            {filteredPlayers.map((player, index) => {
+              const titles = player.achievements.totalTitles;
+              const leagueWins = player.achievements.leagueWins;
+              const tournamentWins = player.achievements.tournamentWins;
+              const tier = player.achievements.tier;
+
+              const accentBorder =
+                tier === 'legend'   ? 'border-l-yellow-500' :
+                tier === 'champion' ? 'border-l-electric-500' :
+                tier === 'veteran'  ? 'border-l-orange-400' :
+                                     'border-l-transparent';
+
+              const tierBadge =
+                tier === 'legend'   ? { label: 'Legend',  className: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/30' } :
+                tier === 'champion' ? { label: 'Champ',   className: 'bg-electric-500/10 text-electric-600 dark:text-electric-400 border-electric-500/30' } :
+                tier === 'veteran'  ? { label: 'Veteran', className: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30' } :
+                                     null;
+
+              return (
+                <motion.button
+                  key={player.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.02 * index }}
                   onClick={() => handlePlayerClick(player)}
-                  size="sm"
-                  showTier={true}
-                />
-              </motion.div>
-            ))}
+                  className={`flex items-center gap-3 px-3 py-2.5 text-left w-full group
+                             bg-light-50 dark:bg-dark-50
+                             hover:bg-light-100 dark:hover:bg-white/5
+                             transition-colors border-l-2 ${accentBorder}`}
+                >
+                  <PlayerAvatar
+                    src={player.avatar}
+                    alt={player.name}
+                    size="sm"
+                    className="!w-8 !h-8 shrink-0"
+                    showBorder={titles >= 1}
+                    borderColor="border-yellow-500/50"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-light-900 dark:text-white truncate leading-tight">
+                      {player.name}
+                    </p>
+                    {player.psnId && player.psnId !== 'player' && (
+                      <p className="text-xs text-light-500 dark:text-gray-500 truncate leading-tight">
+                        @{player.psnId}
+                      </p>
+                    )}
+                  </div>
+                  <div className="shrink-0 flex items-center gap-2">
+                    {tierBadge && (
+                      <span className={`text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-md border ${tierBadge.className}`}>
+                        {tierBadge.label}
+                      </span>
+                    )}
+                    {titles > 0 && (
+                      <div className="flex items-center gap-1.5 text-xs font-semibold">
+                        {leagueWins > 0 && (
+                          <span className="flex items-center gap-0.5 text-cyber-600 dark:text-cyber-400">
+                            <Trophy className="w-3 h-3" />
+                            {leagueWins}
+                          </span>
+                        )}
+                        {tournamentWins > 0 && (
+                          <span className="flex items-center gap-0.5 text-electric-600 dark:text-electric-400">
+                            <Target className="w-3 h-3" />
+                            {tournamentWins}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <ChevronRight className="w-3.5 h-3.5 text-light-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </motion.button>
+              );
+            })}
           </motion.div>
         ) : (
           <motion.div

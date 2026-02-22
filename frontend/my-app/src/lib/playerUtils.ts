@@ -245,43 +245,6 @@ export const updatePlayer = async (
       (cleanUpdates as any).achievements = (achievementUpdates as any).achievements;
     }
 
-    // If wins changed, apply the same delta to the active season's achievements.
-    // Wrapped in its own try/catch so a failure here never blocks the global update.
-    if (updates.achievements) {
-      try {
-        const leagueDelta = newLeagueWins - currentPlayer.achievements.leagueWins;
-        const tournamentDelta = newTournamentWins - currentPlayer.achievements.tournamentWins;
-
-        if (leagueDelta !== 0 || tournamentDelta !== 0) {
-          const activeSeason = await getActiveSeason();
-          if (activeSeason?.id) {
-            const seasonId = activeSeason.id;
-            const current = currentPlayer.seasonAchievements?.[seasonId];
-            const newSeasonLeague = Math.max(0, (current?.leagueWins ?? 0) + leagueDelta);
-            const newSeasonTournament = Math.max(0, (current?.tournamentWins ?? 0) + tournamentDelta);
-            const newSeasonTotal = newSeasonLeague + newSeasonTournament;
-
-            const seasonAchievement: SeasonAchievements = {
-              leagueWins: newSeasonLeague,
-              tournamentWins: newSeasonTournament,
-              totalTitles: newSeasonTotal,
-              tier: calculateTier(newSeasonTotal),
-            };
-
-            if (newSeasonTotal >= 1 && !current?.inductionDate) {
-              seasonAchievement.inductionDate = new Date().toISOString();
-            } else if (current?.inductionDate) {
-              seasonAchievement.inductionDate = current.inductionDate;
-            }
-
-            (cleanUpdates as any)[`seasonAchievements.${seasonId}`] = seasonAchievement;
-          }
-        }
-      } catch (seasonSyncError) {
-        console.warn('⚠️ Could not sync season achievements (non-fatal):', seasonSyncError);
-      }
-    }
-
     await updateDoc(playerRef, cleanUpdates);
     console.log('✅ Player updated:', playerId);
   } catch (error) {
@@ -698,6 +661,70 @@ export const migrateSeasonAchievements = async (targetSeasonId?: string): Promis
     result.errors.push(`Migration failed: ${error}`);
     return result;
   }
+};
+
+/**
+ * Set a player's achievements for a specific season and recompute the global total.
+ * This is the authoritative way to edit per-season wins — global is always derived from all seasons.
+ */
+export const setSeasonAchievements = async (
+  playerId: string,
+  seasonId: string,
+  leagueWins: number,
+  tournamentWins: number
+): Promise<void> => {
+  const player = await getPlayerById(playerId);
+  if (!player) throw new Error('Player not found');
+
+  const allSeasonAchs = { ...(player.seasonAchievements ?? {}) };
+  const current = allSeasonAchs[seasonId];
+  const totalTitles = leagueWins + tournamentWins;
+
+  allSeasonAchs[seasonId] = {
+    leagueWins,
+    tournamentWins,
+    totalTitles,
+    tier: calculateTier(totalTitles),
+    ...(current?.inductionDate
+      ? { inductionDate: current.inductionDate }
+      : totalTitles >= 1 ? { inductionDate: new Date().toISOString() } : {}),
+  };
+
+  // Recompute global as sum of all seasons
+  let globalLeague = 0, globalTournament = 0;
+  for (const ach of Object.values(allSeasonAchs)) {
+    globalLeague += ach.leagueWins;
+    globalTournament += ach.tournamentWins;
+  }
+  const globalTotal = globalLeague + globalTournament;
+
+  const playerRef = doc(db, 'players', playerId);
+
+  // Build global achievements; use dot-notation updates so inductionDate
+  // can be independently set or deleted without overwriting the whole map.
+  const globalFieldUpdates: Record<string, any> = {
+    'achievements.leagueWins': globalLeague,
+    'achievements.tournamentWins': globalTournament,
+    'achievements.totalTitles': globalTotal,
+    'achievements.tier': calculateTier(globalTotal),
+  };
+
+  if (globalTotal >= 1) {
+    // Preserve existing induction date; set a new one if there isn't one yet
+    globalFieldUpdates['achievements.inductionDate'] =
+      player.achievements.inductionDate ?? new Date().toISOString();
+  } else {
+    // All titles removed — clear induction date so the player leaves the HOF
+    globalFieldUpdates['achievements.inductionDate'] = deleteField();
+  }
+
+  await updateDoc(playerRef, {
+    [`seasonAchievements.${seasonId}`]: allSeasonAchs[seasonId],
+    ...globalFieldUpdates,
+    updatedAt: new Date(),
+  });
+
+  console.log(`✅ Set season achievements for player ${playerId} in season ${seasonId}`);
 };
 
 /**
