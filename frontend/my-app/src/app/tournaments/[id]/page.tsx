@@ -79,9 +79,10 @@ function TournamentDetailContent() {
   const hasSyncedRef = useRef(false);
   const [completeConfirmOpen, setCompleteConfirmOpen] = useState(false);
 
-  // Sync orphaned members into groups once when the tournament loads in group_stage
+  // Sync orphaned members into groups once when the tournament loads in group_stage (admin only)
   useEffect(() => {
     if (
+      isAuthenticated &&
       tournament &&
       tournament.id &&
       tournament.status === 'group_stage' &&
@@ -90,7 +91,7 @@ function TournamentDetailContent() {
       hasSyncedRef.current = true;
       syncOrphanedMembersToGroups(tournament.id).catch(console.error);
     }
-  }, [tournament]);
+  }, [isAuthenticated, tournament]);
 
   // Load tournament data
   useEffect(() => {

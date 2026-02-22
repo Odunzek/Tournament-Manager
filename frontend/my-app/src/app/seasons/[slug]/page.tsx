@@ -59,13 +59,13 @@ export default function SeasonDetailPage() {
 
   const prevCountRef = useRef<string>('');
   useEffect(() => {
-    if (!season?.id) return;
+    if (!season?.id || !isAuthenticated) return;
     const key = `${leagues.length}-${tournaments.length}`;
     if (prevCountRef.current && prevCountRef.current !== key) {
       recomputeSeasonStats(season.id).catch(console.error);
     }
     prevCountRef.current = key;
-  }, [season?.id, leagues.length, tournaments.length]);
+  }, [isAuthenticated, season?.id, leagues.length, tournaments.length]);
 
   const formatDate = (timestamp: any): string => {
     if (!timestamp) return 'Not set';
