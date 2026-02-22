@@ -15,7 +15,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -40,6 +40,7 @@ import {
   deleteTournament,
   updateTournament,
   repairKnockoutProgression,
+  syncOrphanedMembersToGroups,
 } from '@/lib/tournamentUtils';
 import { incrementTournamentWins } from '@/lib/playerUtils';
 import { usePlayers } from '@/hooks/usePlayers';
@@ -74,6 +75,20 @@ function TournamentDetailContent() {
   const [tournamentMembers, setTournamentMembers] = useState<TournamentParticipant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasSyncedRef = useRef(false);
+
+  // Sync orphaned members into groups once when the tournament loads in group_stage
+  useEffect(() => {
+    if (
+      tournament &&
+      tournament.id &&
+      tournament.status === 'group_stage' &&
+      !hasSyncedRef.current
+    ) {
+      hasSyncedRef.current = true;
+      syncOrphanedMembersToGroups(tournament.id).catch(console.error);
+    }
+  }, [tournament]);
 
   // Load tournament data
   useEffect(() => {
