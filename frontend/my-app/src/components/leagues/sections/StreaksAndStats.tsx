@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Flame, Trophy, TrendingUp, ShieldCheck } from 'lucide-react';
+import { Flame, Trophy, TrendingUp } from 'lucide-react';
 import { WinStreak, LeaguePlayer } from '@/types/league';
 import Card from '../../ui/Card';
 import WinStreakCard from '../WinStreakCard';
@@ -13,7 +13,7 @@ interface StreaksAndStatsProps {
 }
 
 export default function StreaksAndStats({ streaks, standings, isLoading }: StreaksAndStatsProps) {
-  const [currentTab, setCurrentTab] = useState<'win' | 'unbeaten'>('win');
+  const [currentTab, setCurrentTab] = useState<'win' | 'unbeaten' | 'alltime'>('win');
 
   if (isLoading) {
     return (
@@ -30,36 +30,50 @@ export default function StreaksAndStats({ streaks, standings, isLoading }: Strea
     .sort((a, b) => b.currentStreak - a.currentStreak)
     .slice(0, 3);
 
-  // Current unbeaten runs (top 3) — only show if > win streak alone
+  // Current unbeaten runs (top 3)
   const currentUnbeatenStreaks = streaks
     .filter((s) => s.currentUnbeaten > 0)
     .sort((a, b) => b.currentUnbeaten - a.currentUnbeaten)
     .slice(0, 3)
-    .map((s) => ({ ...s, currentStreak: s.currentUnbeaten })); // reuse card with unbeaten value
+    .map((s) => ({ ...s, currentStreak: s.currentUnbeaten }));
 
-  // All-time best win streaks (top 3)
-  const allTimeBestStreaks = [...streaks]
+  // All-time best win streaks (top 3, only those with at least 1)
+  const allTimeList = [...streaks]
     .sort((a, b) => b.longestStreak - a.longestStreak)
-    .slice(0, 3);
+    .slice(0, 3)
+    .filter((s) => s.longestStreak > 0);
 
-  // League leaders
+  const activeList =
+    currentTab === 'win'
+      ? currentWinStreaks
+      : currentTab === 'unbeaten'
+      ? currentUnbeatenStreaks
+      : allTimeList;
+
+  const showCurrentForTab = currentTab !== 'alltime';
+
+  const emptyLabel =
+    currentTab === 'win'
+      ? 'No active win streaks'
+      : currentTab === 'unbeaten'
+      ? 'No active unbeaten runs'
+      : 'No streaks recorded yet';
+
+  const emptyIcon =
+    currentTab === 'alltime' ? (
+      <Trophy className="w-10 h-10 text-gray-600 mx-auto mb-3" />
+    ) : (
+      <Flame className="w-10 h-10 text-gray-600 mx-auto mb-3" />
+    );
+
+  // League leaders — qualified (3+ games)
   const qualifiedPlayers = standings.filter((p) => p.played >= 3);
 
   const highestWinRate =
     qualifiedPlayers.length > 0
-      ? [...qualifiedPlayers].sort((a, b) => {
-          const winRateA = a.played > 0 ? a.won / a.played : 0;
-          const winRateB = b.played > 0 ? b.won / b.played : 0;
-          return winRateB - winRateA;
-        })[0]
-      : null;
-
-  const topScorer =
-    standings.length > 0 ? [...standings].sort((a, b) => b.goalsFor - a.goalsFor)[0] : null;
-
-  const bestDefense =
-    standings.length > 0
-      ? [...standings].sort((a, b) => a.goalsAgainst - b.goalsAgainst)[0]
+      ? [...qualifiedPlayers].sort(
+          (a, b) => b.won / b.played - a.won / a.played
+        )[0]
       : null;
 
   const bestGoalsPerGame =
@@ -69,20 +83,118 @@ export default function StreaksAndStats({ streaks, standings, isLoading }: Strea
         )[0]
       : null;
 
-  const activeList = currentTab === 'win' ? currentWinStreaks : currentUnbeatenStreaks;
-  const emptyWinLabel = 'No active win streaks';
-  const emptyUnbeatenLabel = 'No active unbeaten runs';
+  const bestDefense =
+    qualifiedPlayers.length > 0
+      ? [...qualifiedPlayers].sort(
+          (a, b) => a.goalsAgainst / a.played - b.goalsAgainst / b.played
+        )[0]
+      : null;
+
+  const worstDefense =
+    qualifiedPlayers.length > 0
+      ? [...qualifiedPlayers].sort(
+          (a, b) => b.goalsAgainst / b.played - a.goalsAgainst / a.played
+        )[0]
+      : null;
+
+  const topGD =
+    standings.length > 0
+      ? [...standings].sort((a, b) => b.goalDifference - a.goalDifference)[0]
+      : null;
+
+  const mostDraws =
+    standings.length > 0
+      ? [...standings].sort((a, b) => b.draw - a.draw)[0]
+      : null;
+
+  const formScore = (p: LeaguePlayer) =>
+    p.form.reduce((s, r) => s + (r === 'W' ? 3 : r === 'D' ? 1 : 0), 0);
+
+  const bestForm =
+    standings.length > 0
+      ? [...standings].sort((a, b) => formScore(b) - formScore(a))[0]
+      : null;
+
+  // Stat rows definition — skip row if player is null
+  const statRows: {
+    label: string;
+    player: LeaguePlayer | null;
+    value: string;
+    dotColor: string;
+    textColor: string;
+  }[] = [
+    {
+      label: 'Win Rate',
+      player: highestWinRate,
+      value: highestWinRate
+        ? `${((highestWinRate.won / highestWinRate.played) * 100).toFixed(1)}%`
+        : '',
+      dotColor: 'bg-green-400',
+      textColor: 'text-green-400',
+    },
+    {
+      label: 'Goals/Game',
+      player: bestGoalsPerGame,
+      value: bestGoalsPerGame
+        ? (bestGoalsPerGame.goalsFor / bestGoalsPerGame.played).toFixed(2)
+        : '',
+      dotColor: 'bg-orange-400',
+      textColor: 'text-orange-400',
+    },
+    {
+      label: 'Best Defense',
+      player: bestDefense,
+      value: bestDefense
+        ? (bestDefense.goalsAgainst / bestDefense.played).toFixed(2)
+        : '',
+      dotColor: 'bg-electric-400',
+      textColor: 'text-electric-400',
+    },
+    {
+      label: 'Top GD',
+      player: topGD,
+      value: topGD
+        ? topGD.goalDifference > 0
+          ? `+${topGD.goalDifference}`
+          : String(topGD.goalDifference)
+        : '',
+      dotColor: 'bg-cyber-400',
+      textColor: 'text-cyber-400',
+    },
+    {
+      label: 'Best Form',
+      player: bestForm,
+      value: bestForm ? `${formScore(bestForm)} / 15` : '',
+      dotColor: 'bg-yellow-400',
+      textColor: 'text-yellow-400',
+    },
+    {
+      label: 'Most Draws',
+      player: mostDraws,
+      value: mostDraws ? String(mostDraws.draw) : '',
+      dotColor: 'bg-slate-400',
+      textColor: 'text-slate-400',
+    },
+    {
+      label: 'Worst Defense',
+      player: worstDefense,
+      value: worstDefense
+        ? (worstDefense.goalsAgainst / worstDefense.played).toFixed(2)
+        : '',
+      dotColor: 'bg-rose-400',
+      textColor: 'text-rose-400',
+    },
+  ].filter((row) => row.player !== null);
 
   return (
     <div className="space-y-4">
-      {/* Current Streaks — tabbed */}
+      {/* Streaks — 3-tab: Win · Unbeaten · All-Time */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-light-900 dark:text-white flex items-center gap-2">
             <Flame className="w-5 h-5 text-orange-400" />
-            Current Streaks
+            Streaks
           </h2>
-          {/* Tabs */}
           <div className="flex items-center gap-1 bg-light-200/50 dark:bg-dark-100/50 border border-black/10 dark:border-white/10 rounded-lg p-0.5">
             <button
               onClick={() => setCurrentTab('win')}
@@ -104,113 +216,69 @@ export default function StreaksAndStats({ streaks, standings, isLoading }: Strea
             >
               Unbeaten
             </button>
+            <button
+              onClick={() => setCurrentTab('alltime')}
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+                currentTab === 'alltime'
+                  ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                  : 'text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white'
+              }`}
+            >
+              All-Time
+            </button>
           </div>
         </div>
 
         {activeList.length > 0 ? (
           <div className="space-y-2">
             {activeList.map((streak, index) => (
-              <WinStreakCard key={streak.playerId} streak={streak} rank={index + 1} showCurrent={true} />
+              <WinStreakCard
+                key={streak.playerId}
+                streak={streak}
+                rank={index + 1}
+                showCurrent={showCurrentForTab}
+              />
             ))}
           </div>
         ) : (
           <Card variant="glass">
             <div className="text-center py-8">
-              <Flame className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-              <p className="text-light-600 dark:text-gray-400 text-sm">
-                {currentTab === 'win' ? emptyWinLabel : emptyUnbeatenLabel}
-              </p>
+              {emptyIcon}
+              <p className="text-light-600 dark:text-gray-400 text-sm">{emptyLabel}</p>
             </div>
           </Card>
         )}
       </div>
 
-      {/* All-Time Best Win Streaks */}
-      <div>
-        <h2 className="text-lg font-bold text-light-900 dark:text-white mb-3 flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-yellow-400" />
-          All-Time Best Streaks
-        </h2>
-
-        {allTimeBestStreaks.length > 0 && allTimeBestStreaks[0].longestStreak > 0 ? (
-          <div className="space-y-2">
-            {allTimeBestStreaks.map((streak, index) => (
-              <WinStreakCard key={streak.playerId} streak={streak} rank={index + 1} showCurrent={false} />
-            ))}
-          </div>
-        ) : (
-          <Card variant="glass">
-            <div className="text-center py-8">
-              <Trophy className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-              <p className="text-light-600 dark:text-gray-400 text-sm">No streaks recorded yet</p>
-            </div>
-          </Card>
-        )}
-      </div>
-
-      {/* League Leaders */}
-      {standings.length > 0 && (
+      {/* League Leaders — compact row list */}
+      {statRows.length > 0 && (
         <div>
           <h2 className="text-lg font-bold text-light-900 dark:text-white mb-3 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-cyber-400" />
             League Leaders
           </h2>
 
-          <div className="grid grid-cols-2 gap-3">
-            {highestWinRate && (
-              <Card variant="glass" className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 border-green-500/30 !p-3">
-                <div className="text-center">
-                  <p className="text-[10px] text-light-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Win Rate</p>
-                  <p className="text-sm font-bold text-light-900 dark:text-white mb-1 truncate">{highestWinRate.name}</p>
-                  <p className="text-xl font-black text-green-400">
-                    {highestWinRate.played > 0 && highestWinRate.won !== undefined
-                      ? ((highestWinRate.won / highestWinRate.played) * 100).toFixed(1)
-                      : '0.0'}%
-                  </p>
-                  <p className="text-[10px] text-light-600 dark:text-gray-400 mt-1">
-                    {highestWinRate.won}W / {highestWinRate.played}P
-                  </p>
-                </div>
-              </Card>
-            )}
-
-            {bestGoalsPerGame && (
-              <Card variant="glass" className="bg-gradient-to-br from-orange-500/20 to-red-500/20 border-orange-500/30 !p-3">
-                <div className="text-center">
-                  <p className="text-[10px] text-light-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Goals / Game</p>
-                  <p className="text-sm font-bold text-light-900 dark:text-white mb-1 truncate">{bestGoalsPerGame.name}</p>
-                  <p className="text-xl font-black text-orange-400">
-                    {(bestGoalsPerGame.goalsFor / bestGoalsPerGame.played).toFixed(1)}
-                  </p>
-                  <p className="text-[10px] text-light-600 dark:text-gray-400 mt-1">
-                    {bestGoalsPerGame.goalsFor}G / {bestGoalsPerGame.played}P
-                  </p>
-                </div>
-              </Card>
-            )}
-
-            {topScorer && (
-              <Card variant="glass" className="bg-gradient-to-br from-cyber-500/20 to-cyber-600/20 border-cyber-500/30 !p-3">
-                <div className="text-center">
-                  <p className="text-[10px] text-light-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Most Goals</p>
-                  <p className="text-sm font-bold text-light-900 dark:text-white mb-1 truncate">{topScorer.name}</p>
-                  <p className="text-xl font-black text-cyber-400">{topScorer.goalsFor || 0}</p>
-                  <p className="text-[10px] text-light-600 dark:text-gray-400 mt-1">goals scored</p>
-                </div>
-              </Card>
-            )}
-
-            {bestDefense && (
-              <Card variant="glass" className="bg-gradient-to-br from-electric-500/20 to-electric-600/20 border-electric-500/30 !p-3">
-                <div className="text-center">
-                  <p className="text-[10px] text-light-600 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Best Defense</p>
-                  <p className="text-sm font-bold text-light-900 dark:text-white mb-1 truncate">{bestDefense.name}</p>
-                  <p className="text-xl font-black text-electric-400">{bestDefense.goalsAgainst || 0}</p>
-                  <p className="text-[10px] text-light-600 dark:text-gray-400 mt-1">goals conceded</p>
-                </div>
-              </Card>
-            )}
-          </div>
+          <Card variant="glass" className="!px-3 !py-1">
+            {statRows.map((row, i) => (
+              <div
+                key={row.label}
+                className={`flex items-center gap-2.5 py-2.5 ${
+                  i < statRows.length - 1 ? 'border-b border-white/5 dark:border-white/5' : ''
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full shrink-0 ${row.dotColor}`} />
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-light-500 dark:text-gray-500 w-[72px] shrink-0">
+                  {row.label}
+                </span>
+                <span className="flex-1 text-sm font-medium text-light-900 dark:text-white truncate min-w-0">
+                  {row.player!.name}
+                </span>
+                <span className={`text-sm font-bold shrink-0 ${row.textColor}`}>
+                  {row.value}
+                </span>
+              </div>
+            ))}
+          </Card>
         </div>
       )}
     </div>

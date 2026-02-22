@@ -24,6 +24,7 @@ import Container from '../../../components/layouts/Container';
 import GlobalNavigation from '../../../components/layouts/GlobalNavigation';
 import TournamentSidebar from '../../../components/tournaments/TournamentSidebar';
 import Button from '../../../components/ui/Button';
+import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { TournamentSection } from '@/types/tournament';
 import { AuthProvider, AuthModal, useAuth } from '@/lib/AuthContext';
 import {
@@ -76,6 +77,7 @@ function TournamentDetailContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const hasSyncedRef = useRef(false);
+  const [completeConfirmOpen, setCompleteConfirmOpen] = useState(false);
 
   // Sync orphaned members into groups once when the tournament loads in group_stage
   useEffect(() => {
@@ -230,29 +232,53 @@ function TournamentDetailContent() {
   };
 
   /**
-   * Handle complete tournament action (Admin only)
+   * Handle complete tournament action (Admin only) — opens confirm modal
    */
-  const handleCompleteTournament = async () => {
+  const handleCompleteTournament = () => {
     if (!isAuthenticated) {
       setShowAuthModal(true);
       return;
     }
-
     if (!tournament) return;
+    setCompleteConfirmOpen(true);
+  };
 
-    const confirmed = confirm('Are you sure you want to mark this tournament as completed?');
-    if (!confirmed) return;
+  /**
+   * Actual completion logic, called after confirmation
+   */
+  const doCompleteTournament = async () => {
+    if (!tournament) return;
+    setCompleteConfirmOpen(false);
 
     try {
       setLoading(true);
       await updateTournament(tournament.id!, { status: 'completed' });
 
       // Auto-award tournament title to the winner
-      const finalTie = tournament.knockoutBracket?.find(
-        (tie) => tie.round === 'final' && tie.completed && tie.winner
-      );
-      if (finalTie?.winner) {
-        const winnerPlayer = players.find((p) => p.name === finalTie.winner);
+      let winnerName: string | undefined;
+
+      if (tournament.type === 'league') {
+        // Round-robin: winner is the team at the top of the single group's standings
+        const standings = tournament.groups?.[0]?.standings;
+        if (standings && standings.length > 0) {
+          const sorted = [...standings].sort(
+            (a, b) =>
+              (b.points - a.points) ||
+              (b.goalDifference - a.goalDifference) ||
+              (b.goalsFor - a.goalsFor)
+          );
+          winnerName = sorted[0].teamName;
+        }
+      } else {
+        // Knockout / groups_knockout: winner from the completed final tie
+        const finalTie = tournament.knockoutBracket?.find(
+          (tie) => tie.round === 'final' && tie.completed && tie.winner
+        );
+        winnerName = finalTie?.winner;
+      }
+
+      if (winnerName) {
+        const winnerPlayer = players.find((p) => p.name === winnerName);
         if (winnerPlayer?.id) {
           await incrementTournamentWins(winnerPlayer.id, tournament.seasonId);
         }
@@ -388,12 +414,24 @@ function TournamentDetailContent() {
                   onDeleteTournament={handleDeleteTournament}
                   onCompleteTournament={handleCompleteTournament}
                   onRepairKnockout={handleRepairKnockout}
+                  onNavigate={(section) => setActiveSection(section as TournamentSection)}
                 />
               </motion.div>
             </Container>
           </main>
         </div>
       </div>
+
+      {/* Complete Tournament Confirmation */}
+      <ConfirmModal
+        isOpen={completeConfirmOpen}
+        title="Complete Tournament?"
+        message="This will mark the tournament as completed and award the title to the winner. This cannot be undone."
+        confirmLabel="Complete"
+        isDestructive
+        onConfirm={doCompleteTournament}
+        onCancel={() => setCompleteConfirmOpen(false)}
+      />
     </MainLayout>
   );
 }

@@ -24,6 +24,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Player, PlayerFormData, SeasonAchievements, calculateTier } from '@/types/player';
+import { getActiveSeason } from './seasonUtils';
 
 /**
  * Create a new player in Firestore
@@ -191,16 +192,19 @@ export const updatePlayer = async (
 
     // Calculate new achievements if provided
     let achievementUpdates = {};
+    let newLeagueWins = currentPlayer.achievements.leagueWins;
+    let newTournamentWins = currentPlayer.achievements.tournamentWins;
+
     if (updates.achievements) {
-      const leagueWins = updates.achievements.leagueWins ?? currentPlayer.achievements.leagueWins;
-      const tournamentWins = updates.achievements.tournamentWins ?? currentPlayer.achievements.tournamentWins;
-      const totalTitles = leagueWins + tournamentWins;
+      newLeagueWins = updates.achievements.leagueWins ?? currentPlayer.achievements.leagueWins;
+      newTournamentWins = updates.achievements.tournamentWins ?? currentPlayer.achievements.tournamentWins;
+      const totalTitles = newLeagueWins + newTournamentWins;
       const tier = calculateTier(totalTitles);
 
       // Build achievements object without undefined values
       const achievements: any = {
-        leagueWins,
-        tournamentWins,
+        leagueWins: newLeagueWins,
+        tournamentWins: newTournamentWins,
         totalTitles,
         tier
       };
@@ -216,9 +220,7 @@ export const updatePlayer = async (
         achievements.inductionDate = inductionDate;
       }
 
-      achievementUpdates = {
-        achievements
-      };
+      achievementUpdates = { achievements };
     }
 
     // Build update object
@@ -241,6 +243,43 @@ export const updatePlayer = async (
     delete cleanUpdates.achievements;
     if (achievementUpdates.hasOwnProperty('achievements')) {
       (cleanUpdates as any).achievements = (achievementUpdates as any).achievements;
+    }
+
+    // If wins changed, apply the same delta to the active season's achievements.
+    // Wrapped in its own try/catch so a failure here never blocks the global update.
+    if (updates.achievements) {
+      try {
+        const leagueDelta = newLeagueWins - currentPlayer.achievements.leagueWins;
+        const tournamentDelta = newTournamentWins - currentPlayer.achievements.tournamentWins;
+
+        if (leagueDelta !== 0 || tournamentDelta !== 0) {
+          const activeSeason = await getActiveSeason();
+          if (activeSeason?.id) {
+            const seasonId = activeSeason.id;
+            const current = currentPlayer.seasonAchievements?.[seasonId];
+            const newSeasonLeague = Math.max(0, (current?.leagueWins ?? 0) + leagueDelta);
+            const newSeasonTournament = Math.max(0, (current?.tournamentWins ?? 0) + tournamentDelta);
+            const newSeasonTotal = newSeasonLeague + newSeasonTournament;
+
+            const seasonAchievement: SeasonAchievements = {
+              leagueWins: newSeasonLeague,
+              tournamentWins: newSeasonTournament,
+              totalTitles: newSeasonTotal,
+              tier: calculateTier(newSeasonTotal),
+            };
+
+            if (newSeasonTotal >= 1 && !current?.inductionDate) {
+              seasonAchievement.inductionDate = new Date().toISOString();
+            } else if (current?.inductionDate) {
+              seasonAchievement.inductionDate = current.inductionDate;
+            }
+
+            (cleanUpdates as any)[`seasonAchievements.${seasonId}`] = seasonAchievement;
+          }
+        }
+      } catch (seasonSyncError) {
+        console.warn('⚠️ Could not sync season achievements (non-fatal):', seasonSyncError);
+      }
     }
 
     await updateDoc(playerRef, cleanUpdates);

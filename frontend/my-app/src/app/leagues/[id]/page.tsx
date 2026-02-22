@@ -13,6 +13,7 @@ import Results from '@/components/leagues/sections/Results';
 import StreaksAndStats from '@/components/leagues/sections/StreaksAndStats';
 import RecordMatch from '@/components/leagues/sections/RecordMatch';
 import AddPlayersModal from '@/components/leagues/AddPlayersModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useLeague, useLeagueMatches } from '@/hooks/useLeagues';
 import { usePlayers } from '@/hooks/usePlayers';
 import { useAuth } from '@/lib/AuthContext';
@@ -35,6 +36,7 @@ export default function LeagueDetailPage() {
   const [streaks, setStreaks] = useState<WinStreak[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isAddPlayersModalOpen, setIsAddPlayersModalOpen] = useState(false);
+  const [endLeagueConfirmOpen, setEndLeagueConfirmOpen] = useState(false);
 
   // Filter players to only those in this league
   const leaguePlayers = useMemo(() => {
@@ -136,17 +138,17 @@ export default function LeagueDetailPage() {
     }
   };
 
-  // Handle ending league
-  const handleEndLeague = async () => {
+  // Handle ending league — opens confirm modal
+  const handleEndLeague = () => {
     if (!league?.id) return;
+    setEndLeagueConfirmOpen(true);
+  };
 
-    const confirmed = confirm('Are you sure you want to end this league? This will mark it as completed.');
-    if (!confirmed) return;
-
+  // Actual end-league logic, called after confirmation
+  const doEndLeague = async () => {
+    if (!league?.id) return;
     try {
-      await updateLeague(league.id, {
-        status: 'completed',
-      });
+      await updateLeague(league.id, { status: 'completed' });
 
       // Auto-award league title to the winner
       if (leaguePlayers.length > 0) {
@@ -157,7 +159,8 @@ export default function LeagueDetailPage() {
       }
     } catch (error) {
       console.error('Error ending league:', error);
-      alert('Failed to end league. Please try again.');
+    } finally {
+      setEndLeagueConfirmOpen(false);
     }
   };
 
@@ -294,6 +297,17 @@ export default function LeagueDetailPage() {
         onSubmit={handleAddPlayers}
         players={players}
         currentPlayerIds={league?.playerIds || []}
+      />
+
+      {/* End League Confirmation */}
+      <ConfirmModal
+        isOpen={endLeagueConfirmOpen}
+        title="End League?"
+        message="This will mark the league as completed and award the title to the current leader. This cannot be undone."
+        confirmLabel="End League"
+        isDestructive
+        onConfirm={doEndLeague}
+        onCancel={() => setEndLeagueConfirmOpen(false)}
       />
     </MainLayout>
   );

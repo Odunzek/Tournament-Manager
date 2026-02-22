@@ -20,7 +20,7 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Calendar, Trophy, Target, ChevronDown, Pencil } from 'lucide-react';
+import { Search, Filter, Trophy, Target, ChevronDown, Pencil } from 'lucide-react';
 import { Tournament, GroupMatch, KnockoutTie, TournamentGroup, updateTournament, recordKnockoutMatch, getTournamentById } from '@/lib/tournamentUtils';
 import Card from '../../ui/Card';
 import Input from '../../ui/Input';
@@ -393,42 +393,20 @@ export default function Fixtures({
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card variant="glass">
-          <div className="text-center">
-            <Calendar className="w-6 h-6 text-cyber-400 mx-auto mb-2" />
-            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Total</p>
-            <p className="text-2xl font-bold text-light-900 dark:text-white">{stats.total}</p>
-          </div>
-        </Card>
-
-        <Card variant="glass">
-          <div className="text-center">
-            <div className="w-6 h-6 mx-auto mb-2 rounded-full bg-green-500/20 flex items-center justify-center">
-              <div className="w-3 h-3 rounded-full bg-green-400" />
-            </div>
-            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Played</p>
-            <p className="text-2xl font-bold text-light-900 dark:text-white">{stats.played}</p>
-          </div>
-        </Card>
-
-        <Card variant="glass">
-          <div className="text-center">
-            <Target className="w-6 h-6 text-electric-400 mx-auto mb-2" />
-            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Groups</p>
-            <p className="text-2xl font-bold text-light-900 dark:text-white">{stats.group}</p>
-          </div>
-        </Card>
-
-        <Card variant="glass">
-          <div className="text-center">
-            <Trophy className="w-6 h-6 text-pink-400 mx-auto mb-2" />
-            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Knockout</p>
-            <p className="text-2xl font-bold text-light-900 dark:text-white">{stats.knockout}</p>
-          </div>
-        </Card>
-      </div>
+      {/* Summary line */}
+      <p className="text-sm text-light-600 dark:text-gray-400">
+        <span className="font-medium text-light-900 dark:text-white">{stats.total}</span> matches
+        {' · '}
+        <span className="font-medium text-light-900 dark:text-white">{stats.played}</span> played
+        {' · '}
+        {stats.knockout > 0 ? (
+          <>
+            <span className="font-medium text-light-900 dark:text-white">{stats.knockout}</span> knockout
+          </>
+        ) : (
+          <span className="text-light-500 dark:text-gray-500">Knockout pending</span>
+        )}
+      </p>
 
       {/* Search and Filters */}
       <div className="flex flex-col lg:flex-row gap-4">

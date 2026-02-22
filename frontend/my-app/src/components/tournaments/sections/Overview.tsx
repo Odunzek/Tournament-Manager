@@ -34,6 +34,7 @@ import {
   X,
 } from 'lucide-react';
 import { Tournament, convertTimestamp, updateTournament } from '@/lib/tournamentUtils';
+import { TournamentSection } from '@/types/tournament';
 import Card from '../../ui/Card';
 import Button from '../../ui/Button';
 import StatusBadge from '../StatusBadge';
@@ -48,6 +49,7 @@ interface OverviewProps {
   onDeleteTournament?: () => Promise<void>;
   onCompleteTournament?: () => Promise<void>;
   onRepairKnockout?: () => Promise<void>;
+  onNavigate?: (section: TournamentSection) => void;
 }
 
 /**
@@ -87,6 +89,7 @@ export default function Overview({
   onDeleteTournament,
   onCompleteTournament,
   onRepairKnockout,
+  onNavigate,
 }: OverviewProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
@@ -228,7 +231,7 @@ export default function Overview({
 
       {/* Stats Grid — compact on mobile */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <Card variant="glass">
+        <Card variant="glass" onClick={() => onNavigate?.('teams')}>
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-tech bg-cyber-500/20 flex items-center justify-center shrink-0">
               <Users className="w-4 h-4 sm:w-6 sm:h-6 text-cyber-400" />
@@ -240,7 +243,7 @@ export default function Overview({
           </div>
         </Card>
 
-        <Card variant="glass">
+        <Card variant="glass" onClick={() => onNavigate?.('groups')}>
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-tech bg-electric-500/20 flex items-center justify-center shrink-0">
               <Target className="w-4 h-4 sm:w-6 sm:h-6 text-electric-400" />
@@ -252,7 +255,7 @@ export default function Overview({
           </div>
         </Card>
 
-        <Card variant="glass">
+        <Card variant="glass" onClick={() => onNavigate?.('knockout')}>
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-tech bg-pink-500/20 flex items-center justify-center shrink-0">
               <Trophy className="w-4 h-4 sm:w-6 sm:h-6 text-pink-400" />
@@ -264,7 +267,7 @@ export default function Overview({
           </div>
         </Card>
 
-        <Card variant="glass">
+        <Card variant="glass" onClick={() => onNavigate?.('fixtures')}>
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-tech bg-purple-500/20 flex items-center justify-center shrink-0">
               <BarChart3 className="w-4 h-4 sm:w-6 sm:h-6 text-purple-400" />

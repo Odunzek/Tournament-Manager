@@ -7,12 +7,10 @@ import PageHeader from '../components/layouts/PageHeader';
 import Container from '../components/layouts/Container';
 import GlobalNavigation from '../components/layouts/GlobalNavigation';
 import NavigationCard from '../components/landing/NavigationCard';
-import Card from '../components/ui/Card';
 import { AuthProvider, AuthModal } from '../lib/AuthContext';
 import { TutorialProvider, useTutorial } from '../components/tutorial/TutorialContext';
 import TutorialOverlay from '../components/tutorial/TutorialOverlay';
 import { useActiveSeason } from '../hooks/useActiveSeason';
-import { Calendar, ChevronRight, Trophy, Target } from 'lucide-react';
 
 function LandingPage() {
   const { startTutorial } = useTutorial();
@@ -88,62 +86,31 @@ function LandingPage() {
           gradient="tech"
         />
 
-        {/* Active Season Banner */}
+        {/* Active Season Pill */}
         {activeSeason && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="mt-8"
+            className="mt-6 flex items-center gap-2.5 px-3.5 py-2 rounded-xl
+                       bg-green-500/10 border border-green-500/20 w-fit"
           >
-            <Card variant="gradient" glow>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-cyber flex items-center justify-center shadow-glow shrink-0">
-                    <Calendar className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-lg font-bold text-light-900 dark:text-white">
-                        {activeSeason.name}
-                      </h3>
-                      <span className="px-2 py-0.5 text-xs font-bold bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30 rounded-full">
-                        Active
-                      </span>
-                    </div>
-                    <p className="text-sm text-light-600 dark:text-gray-400">
-                      {activeSeason.gameVersion}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 w-full sm:w-auto">
-                  <div className="flex items-center gap-4 text-sm flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                      <Trophy className="w-4 h-4 text-cyber-500 dark:text-cyber-400" />
-                      <span className="text-light-700 dark:text-gray-300 font-medium">
-                        {activeSeason.stats?.totalLeagues ?? 0} Leagues
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Target className="w-4 h-4 text-electric-500 dark:text-electric-400" />
-                      <span className="text-light-700 dark:text-gray-300 font-medium">
-                        {activeSeason.stats?.totalTournaments ?? 0} Tournaments
-                      </span>
-                    </div>
-                  </div>
-
-                  <motion.a
-                    href={`/seasons/${activeSeason.slug}`}
-                    whileHover={{ x: 3 }}
-                    className="flex items-center gap-1 text-sm font-semibold text-cyber-600 dark:text-cyber-400 hover:text-cyber-500 dark:hover:text-cyber-300 transition-colors"
-                  >
-                    View Season
-                    <ChevronRight className="w-4 h-4" />
-                  </motion.a>
-                </div>
-              </div>
-            </Card>
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shrink-0" />
+            <span className="text-sm font-semibold text-light-900 dark:text-white">
+              {activeSeason.name}
+            </span>
+            {activeSeason.gameVersion && (
+              <>
+                <span className="text-gray-500 text-xs">·</span>
+                <span className="text-xs text-light-500 dark:text-gray-400">
+                  {activeSeason.gameVersion}
+                </span>
+              </>
+            )}
+            <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-green-500/20
+                             text-green-700 dark:text-green-400 border border-green-500/30 rounded-full">
+              Active
+            </span>
           </motion.div>
         )}
 

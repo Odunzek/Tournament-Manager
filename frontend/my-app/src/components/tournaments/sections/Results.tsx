@@ -6,7 +6,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, TrendingUp, ChevronDown, Award, Target, Zap } from 'lucide-react';
+import { Trophy, TrendingUp, ChevronDown, Award, Target } from 'lucide-react';
 import { Tournament, TournamentParticipant } from '@/lib/tournamentUtils';
 import Card from '../../ui/Card';
 
@@ -200,31 +200,14 @@ export default function Results({ tournament, tournamentMembers }: ResultsProps)
       >
         <div className="space-y-3 sm:space-y-6">
 
-          {/* Top Stats — 2 cols on mobile */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
-            <StatCard
-              label="Top Scoring"
-              value={analytics.topScorer.name}
-              subValue={`${analytics.topScorer.goalsFor} goals`}
-              icon={<Target className="w-5 h-5 text-cyber-400" />}
-              color="cyber"
-            />
-            <StatCard
-              label="Best Defense"
-              value={analytics.bestDefense.name}
-              subValue={`${analytics.bestDefenseAvg} conceded/game`}
-              icon={<Trophy className="w-5 h-5 text-electric-400" />}
-              color="electric"
-            />
-            <StatCard
-              label="Most Wins"
-              value={analytics.mostWins.name}
-              subValue={`${analytics.mostWins.wins} wins`}
-              icon={<Zap className="w-5 h-5 text-green-400" />}
-              color="green"
-              className="col-span-2 lg:col-span-1"
-            />
-          </div>
+          {/* Best Defense — full width */}
+          <StatCard
+            label="Best Defense"
+            value={analytics.bestDefense.name}
+            subValue={`${analytics.bestDefenseAvg} conceded/game`}
+            icon={<Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-electric-400" />}
+            color="electric"
+          />
 
           {/* Match Records — side by side on mobile */}
           <div className="grid grid-cols-2 gap-2 sm:gap-4">
@@ -394,10 +377,9 @@ interface StatCardProps {
   subValue: string;
   icon: React.ReactNode;
   color: 'cyber' | 'electric' | 'green';
-  className?: string;
 }
 
-function StatCard({ label, value, subValue, icon, color, className = '' }: StatCardProps) {
+function StatCard({ label, value, subValue, icon, color }: StatCardProps) {
   const gradients = {
     cyber:    'from-cyber-500/20 to-cyber-600/20 border-cyber-500/30',
     electric: 'from-electric-500/20 to-electric-600/20 border-electric-500/30',
@@ -405,15 +387,13 @@ function StatCard({ label, value, subValue, icon, color, className = '' }: StatC
   };
 
   return (
-    <Card variant="glass" className={`bg-gradient-to-br ${gradients[color]} ${className}`}>
-      <div className="flex items-start gap-2">
-        <div className="flex-shrink-0 mt-0.5">{icon}</div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] sm:text-xs text-gray-400 mb-0.5">{label}</p>
-          <p className="text-sm sm:text-lg font-bold text-white truncate">{value}</p>
-          <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">{subValue}</p>
-        </div>
+    <Card variant="glass" className={`bg-gradient-to-br ${gradients[color]}`}>
+      <div className="flex items-center justify-between mb-1.5">
+        <p className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide">{label}</p>
+        <div className="flex-shrink-0">{icon}</div>
       </div>
+      <p className="text-xs sm:text-base font-bold text-white truncate">{value}</p>
+      <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">{subValue}</p>
     </Card>
   );
 }

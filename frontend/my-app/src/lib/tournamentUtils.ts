@@ -1259,7 +1259,7 @@ export const repairKnockoutProgression = async (
 
 // NEW: Get qualified teams for knockout with proper bracket sizing
 export const getQualifiedTeamsForKnockout = (groups: TournamentGroup[]): TournamentParticipant[] => {
-  const qualifiedTeams: TournamentParticipant[] = [];
+  let qualifiedTeams: TournamentParticipant[] = [];
   const thirdPlaceTeams: Array<{ team: TournamentParticipant; standing: GroupStanding; groupName: string }> = [];
   
   // Step 1: Get top 2 from each group (ALWAYS qualify)
@@ -1318,21 +1318,18 @@ export const getQualifiedTeamsForKnockout = (groups: TournamentGroup[]): Tournam
     }
   });
   
-  // Step 2: Determine target bracket size
+  // Step 2: Determine target bracket size based on max achievable teams
+  // (current qualified + available 3rd place) to avoid under-filled brackets
   const currentQualified = qualifiedTeams.length;
-  console.log(`Currently qualified: ${currentQualified} teams (top 2 from each group)`);
-  
+  const maxAchievable = currentQualified + thirdPlaceTeams.length;
+  console.log(`Currently qualified: ${currentQualified} teams (top 2 from each group), max achievable: ${maxAchievable}`);
+
   let targetBracketSize: number;
-  if (currentQualified <= 4) {
-    targetBracketSize = 4;
-  } else if (currentQualified <= 8) {
-    targetBracketSize = 8;
-  } else if (currentQualified <= 16) {
-    targetBracketSize = 16;
-  } else {
-    targetBracketSize = 32;
-  }
-  
+  if (maxAchievable >= 32) targetBracketSize = 32;
+  else if (maxAchievable >= 16) targetBracketSize = 16;
+  else if (maxAchievable >= 8) targetBracketSize = 8;
+  else targetBracketSize = 4;
+
   console.log(`Target bracket size: ${targetBracketSize}`);
   
   // Step 3: Fill remaining spots with best 3rd place teams
@@ -1340,11 +1337,20 @@ export const getQualifiedTeamsForKnockout = (groups: TournamentGroup[]): Tournam
   console.log(`Need to fill ${spotsToFill} spots with best 3rd place teams`);
   
   if (spotsToFill > 0 && thirdPlaceTeams.length > 0) {
-    // Sort 3rd place teams by points
+    // Sort 3rd place teams by PPG (points per game) to fairly compare teams from groups of different sizes
     const sortedThirdPlace = thirdPlaceTeams.sort((a, b) => {
-      if (b.standing.points !== a.standing.points) return b.standing.points - a.standing.points;
-      if (b.standing.goalDifference !== a.standing.goalDifference) return b.standing.goalDifference - a.standing.goalDifference;
-      return b.standing.goalsFor - a.standing.goalsFor;
+      const aPlayed = a.standing.played || 1;
+      const bPlayed = b.standing.played || 1;
+      const aPPG = a.standing.points / aPlayed;
+      const bPPG = b.standing.points / bPlayed;
+      if (bPPG !== aPPG) return bPPG - aPPG;
+      const aGDPG = a.standing.goalDifference / aPlayed;
+      const bGDPG = b.standing.goalDifference / bPlayed;
+      if (bGDPG !== aGDPG) return bGDPG - aGDPG;
+      const aGFPG = a.standing.goalsFor / aPlayed;
+      const bGFPG = b.standing.goalsFor / bPlayed;
+      if (bGFPG !== aGFPG) return bGFPG - aGFPG;
+      return (a.standing.goalsAgainst / aPlayed) - (b.standing.goalsAgainst / bPlayed);
     });
     
     // Take best 3rd place teams up to spots available
@@ -1366,6 +1372,22 @@ export const getQualifiedTeamsForKnockout = (groups: TournamentGroup[]): Tournam
     console.log(`Added ${bestThirdPlace.length} best 3rd place teams`);
   }
   
+  // Safety trim: if auto-qualifiers alone exceed the target bracket (e.g. 17-20 players),
+  // keep only the best-ranked teams to produce a clean power-of-2 bracket
+  if (qualifiedTeams.length > targetBracketSize) {
+    qualifiedTeams.sort((a, b) => {
+      if ((a.qualificationRank ?? 0) !== (b.qualificationRank ?? 0))
+        return (a.qualificationRank ?? 0) - (b.qualificationRank ?? 0);
+      if ((b.finalPoints ?? 0) !== (a.finalPoints ?? 0))
+        return (b.finalPoints ?? 0) - (a.finalPoints ?? 0);
+      if ((b.finalGoalDifference ?? 0) !== (a.finalGoalDifference ?? 0))
+        return (b.finalGoalDifference ?? 0) - (a.finalGoalDifference ?? 0);
+      return (b.finalGoalsFor ?? 0) - (a.finalGoalsFor ?? 0);
+    });
+    qualifiedTeams = qualifiedTeams.slice(0, targetBracketSize);
+    console.log(`Trimmed to ${targetBracketSize} teams for clean bracket`);
+  }
+
   console.log(`Final qualified teams: ${qualifiedTeams.length}`);
   return qualifiedTeams;
 };

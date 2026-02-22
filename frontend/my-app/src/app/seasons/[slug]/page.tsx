@@ -16,6 +16,7 @@ import {
   Pencil,
   Trash2,
   AlertTriangle,
+  Crown,
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import MainLayout from '@/components/layouts/MainLayout';
@@ -29,9 +30,12 @@ import SeasonRankingsSection from '@/components/seasons/SeasonRankingsSection';
 import SeasonSidebar from '@/components/seasons/SeasonSidebar';
 import AssignToSeasonModal from '@/components/seasons/AssignToSeasonModal';
 import EditSeasonModal from '@/components/seasons/EditSeasonModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useSeasonBySlug } from '@/hooks/useSeasons';
 import { useSeasonLeagues } from '@/hooks/useSeasonLeagues';
 import { useSeasonTournaments } from '@/hooks/useSeasonTournaments';
+import { useHallOfFame } from '@/hooks/usePlayers';
+import PlayerAvatar from '@/components/players/PlayerAvatar';
 import { useAuth } from '@/lib/AuthContext';
 import { activateSeason, completeSeason, deleteSeason, getActiveSeason } from '@/lib/seasonUtils';
 import { copyGlobalRankingsToSeason, recomputeSeasonStats, unassignLeagueFromSeason, unassignTournamentFromSeason } from '@/lib/seasonIntegrationUtils';
@@ -46,13 +50,13 @@ export default function SeasonDetailPage() {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [completeSeasonConfirmOpen, setCompleteSeasonConfirmOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
 
-  // Real data hooks
   const { leagues, loading: leaguesLoading } = useSeasonLeagues(season?.id);
   const { tournaments, loading: tournamentsLoading } = useSeasonTournaments(season?.id);
+  const { players: hofPlayers, loading: hofLoading } = useHallOfFame(season?.id ?? null);
 
-  // Recompute season stats when leagues/tournaments change
   const prevCountRef = useRef<string>('');
   useEffect(() => {
     if (!season?.id) return;
@@ -66,33 +70,19 @@ export default function SeasonDetailPage() {
   const formatDate = (timestamp: any): string => {
     if (!timestamp) return 'Not set';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const getStatusBadge = () => {
     if (!season) return null;
     const badges = {
-      active: {
-        label: 'Active',
-        className: 'bg-green-500/20 text-green-400 border-green-500/30',
-        icon: Play,
-      },
-      setup: {
-        label: 'Setup',
-        className: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-        icon: Calendar,
-      },
-      completed: {
-        label: 'Completed',
-        className: 'bg-gray-500/20 text-light-600 dark:text-gray-400 border-gray-500/30',
-        icon: CheckCircle,
-      },
+      active: { label: 'Active', className: 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/25' },
+      setup: { label: 'Setup', className: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/25' },
+      completed: { label: 'Completed', className: 'bg-gray-500/15 text-light-600 dark:text-gray-400 border-gray-500/25' },
     };
     const badge = badges[season.status];
-    const Icon = badge.icon;
     return (
-      <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border ${badge.className}`}>
-        <Icon className="w-4 h-4" />
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${badge.className}`}>
         {badge.label}
       </span>
     );
@@ -100,8 +90,6 @@ export default function SeasonDetailPage() {
 
   const handleActivate = async () => {
     if (!season?.id) return;
-
-    // Check if there's a currently active season and confirm before auto-completing it
     const currentActive = await getActiveSeason();
     if (currentActive && currentActive.id !== season.id) {
       const confirmed = confirm(
@@ -109,11 +97,9 @@ export default function SeasonDetailPage() {
       );
       if (!confirmed) return;
     }
-
     setActionLoading('activate');
     try {
       await activateSeason(season.id);
-      // Initialize per-season rankings from global P4P on activation
       await copyGlobalRankingsToSeason(season.id);
     } catch (error) {
       console.error('Error activating season:', error);
@@ -122,8 +108,14 @@ export default function SeasonDetailPage() {
     }
   };
 
-  const handleComplete = async () => {
+  const handleComplete = () => {
     if (!season?.id) return;
+    setCompleteSeasonConfirmOpen(true);
+  };
+
+  const doComplete = async () => {
+    if (!season?.id) return;
+    setCompleteSeasonConfirmOpen(false);
     setActionLoading('complete');
     try {
       await completeSeason(season.id);
@@ -154,8 +146,8 @@ export default function SeasonDetailPage() {
         <GlobalNavigation />
         <Container maxWidth="2xl" className="py-16">
           <div className="text-center">
-            <Loader2 className="w-12 h-12 text-cyber-400 mx-auto mb-4 animate-spin" />
-            <p className="text-light-600 dark:text-gray-400">Loading season...</p>
+            <Loader2 className="w-10 h-10 text-cyber-400 mx-auto mb-3 animate-spin" />
+            <p className="text-sm text-light-600 dark:text-gray-400">Loading season…</p>
           </div>
         </Container>
       </MainLayout>
@@ -168,14 +160,12 @@ export default function SeasonDetailPage() {
         <GlobalNavigation />
         <Container maxWidth="2xl" className="py-16">
           <div className="text-center">
-            <Gamepad2 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+            <Gamepad2 className="w-14 h-14 text-gray-600 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-light-900 dark:text-white mb-2">Season not found</h2>
             <p className="text-light-600 dark:text-gray-400 mb-6">
               The season you&apos;re looking for doesn&apos;t exist.
             </p>
-            <Button onClick={() => router.push('/seasons')}>
-              Back to Seasons
-            </Button>
+            <Button onClick={() => router.push('/seasons')}>Back to Seasons</Button>
           </div>
         </Container>
       </MainLayout>
@@ -197,7 +187,6 @@ export default function SeasonDetailPage() {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
-      {/* Leagues Summary Card */}
       <Card variant="default">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -220,7 +209,6 @@ export default function SeasonDetailPage() {
             </button>
           )}
         </div>
-
         {leaguesLoading ? (
           <div className="text-center py-6">
             <Loader2 className="w-6 h-6 text-cyber-400 mx-auto animate-spin" />
@@ -243,7 +231,6 @@ export default function SeasonDetailPage() {
         )}
       </Card>
 
-      {/* Tournaments Summary Card */}
       <Card variant="default">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -266,7 +253,6 @@ export default function SeasonDetailPage() {
             </button>
           )}
         </div>
-
         {tournamentsLoading ? (
           <div className="text-center py-6">
             <Loader2 className="w-6 h-6 text-electric-400 mx-auto animate-spin" />
@@ -292,10 +278,7 @@ export default function SeasonDetailPage() {
   );
 
   const renderLeagues = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <Card variant="default">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -322,7 +305,6 @@ export default function SeasonDetailPage() {
             </Button>
           )}
         </div>
-
         {leaguesLoading ? (
           <div className="text-center py-8">
             <Loader2 className="w-8 h-8 text-cyber-400 mx-auto animate-spin" />
@@ -331,10 +313,7 @@ export default function SeasonDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {leagues.map((league) => (
               <div key={league.id} className="relative group">
-                <LeagueCard
-                  league={league}
-                  onClick={() => router.push(`/leagues/${league.id}`)}
-                />
+                <LeagueCard league={league} onClick={() => router.push(`/leagues/${league.id}`)} />
                 {isAuthenticated && season.status !== 'completed' && (
                   <button
                     onClick={async (e) => {
@@ -363,10 +342,7 @@ export default function SeasonDetailPage() {
   );
 
   const renderTournaments = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <Card variant="default">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -393,7 +369,6 @@ export default function SeasonDetailPage() {
             </Button>
           )}
         </div>
-
         {tournamentsLoading ? (
           <div className="text-center py-8">
             <Loader2 className="w-8 h-8 text-electric-400 mx-auto animate-spin" />
@@ -434,29 +409,103 @@ export default function SeasonDetailPage() {
   );
 
   const renderRankings = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
-      <SeasonRankingsSection
-        seasonId={season.id!}
-        seasonStatus={season.status}
-      />
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <SeasonRankingsSection seasonId={season.id!} seasonStatus={season.status} />
     </motion.div>
   );
 
+  const renderHallOfFame = () => {
+    const getAch = (p: any) =>
+      p.seasonAchievements?.[season.id!] ?? {
+        leagueWins: 0,
+        tournamentWins: 0,
+        totalTitles: 0,
+        tier: null,
+      };
+
+    const sorted = [...hofPlayers].sort(
+      (a, b) => getAch(b).totalTitles - getAch(a).totalTitles
+    );
+
+    return (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        {hofLoading ? (
+          <div className="text-center py-10">
+            <Loader2 className="w-8 h-8 text-yellow-400 mx-auto animate-spin" />
+          </div>
+        ) : sorted.length === 0 ? (
+          <div className="text-center py-14">
+            <Crown className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+            <p className="text-light-600 dark:text-gray-400 font-semibold">No champions yet</p>
+            <p className="text-sm text-light-500 dark:text-gray-500 mt-1">
+              Complete a league or tournament to crown a winner.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {sorted.map((player, index) => {
+              const ach = getAch(player);
+              return (
+                <motion.button
+                  key={player.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 * index }}
+                  onClick={() => router.push(`/players/${player.id}`)}
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl text-center
+                             bg-light-100/80 dark:bg-dark-100/60
+                             border border-black/8 dark:border-white/8
+                             hover:border-yellow-500/30 hover:bg-light-200/60 dark:hover:bg-dark-100/80
+                             transition-all group"
+                >
+                  <PlayerAvatar
+                    src={player.avatar}
+                    alt={player.name}
+                    size="md"
+                    showBorder
+                    borderColor="border-yellow-500/40"
+                  />
+                  <span className="text-sm font-bold text-light-900 dark:text-white truncate w-full">
+                    {player.name}
+                  </span>
+
+                  {/* Trophy breakdown */}
+                  <div className="flex items-center justify-center gap-3 text-xs">
+                    {ach.leagueWins > 0 && (
+                      <span className="flex items-center gap-1 text-cyber-600 dark:text-cyber-400">
+                        <Trophy className="w-3.5 h-3.5" />
+                        {ach.leagueWins}
+                      </span>
+                    )}
+                    {ach.tournamentWins > 0 && (
+                      <span className="flex items-center gap-1 text-electric-600 dark:text-electric-400">
+                        <Target className="w-3.5 h-3.5" />
+                        {ach.tournamentWins}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Total */}
+                  <span className="text-[11px] font-semibold text-yellow-600 dark:text-yellow-400">
+                    {ach.totalTitles} title{ach.totalTitles !== 1 ? 's' : ''}
+                  </span>
+                </motion.button>
+              );
+            })}
+          </div>
+        )}
+      </motion.div>
+    );
+  };
+
   const renderSection = () => {
     switch (activeSection) {
-      case 'overview':
-        return renderOverview();
-      case 'leagues':
-        return renderLeagues();
-      case 'tournaments':
-        return renderTournaments();
-      case 'rankings':
-        return renderRankings();
-      default:
-        return null;
+      case 'overview': return renderOverview();
+      case 'leagues': return renderLeagues();
+      case 'tournaments': return renderTournaments();
+      case 'rankings': return renderRankings();
+      case 'hof': return renderHallOfFame();
+      default: return null;
     }
   };
 
@@ -464,146 +513,150 @@ export default function SeasonDetailPage() {
     <MainLayout>
       <GlobalNavigation />
       <Container maxWidth="2xl" className="py-8 sm:py-12">
-        {/* Back Button */}
+
+        {/* Back button */}
         <motion.button
-          initial={{ opacity: 0, x: -20 }}
+          initial={{ opacity: 0, x: -16 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => router.push('/seasons')}
-          className="flex items-center gap-2 text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white transition-colors mb-8"
+          className="flex items-center gap-2 text-sm text-light-600 dark:text-gray-400
+                     hover:text-light-900 dark:hover:text-white transition-colors mb-6"
         >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="font-medium">Back to Seasons</span>
+          <ArrowLeft className="w-4 h-4" />
+          <span className="font-medium">Seasons</span>
         </motion.button>
 
-        {/* Hero Header */}
+        {/* Hero strip */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-5"
         >
-          <Card variant="gradient" className="relative overflow-hidden">
-            {/* Decorative gradient overlay for active seasons */}
-            {season.status === 'active' && (
-              <div className="absolute inset-0 bg-gradient-to-r from-cyber-500/5 to-electric-500/5 pointer-events-none" />
-            )}
-
-            <div className="relative">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-                <div>
-                  <h1 className="text-3xl sm:text-4xl font-extrabold text-light-900 dark:text-white mb-2">
-                    {season.name}
-                  </h1>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="flex items-center gap-1.5 text-light-600 dark:text-gray-400">
-                      <Gamepad2 className="w-4 h-4" />
-                      {season.gameVersion}
-                    </span>
-                    <span className="text-light-400 dark:text-gray-600">|</span>
-                    <span className="flex items-center gap-1.5 text-light-600 dark:text-gray-400">
-                      <Calendar className="w-4 h-4" />
-                      {formatDate(season.startDate)}
-                      {season.endDate && ` - ${formatDate(season.endDate)}`}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {getStatusBadge()}
-                </div>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            {/* Title + meta */}
+            <div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-light-900 dark:text-white">
+                  {season.name}
+                </h1>
+                {getStatusBadge()}
               </div>
-
+              <div className="flex items-center gap-2 mt-1.5 text-sm text-light-600 dark:text-gray-400 flex-wrap">
+                <Gamepad2 className="w-3.5 h-3.5 shrink-0" />
+                <span>{season.gameVersion}</span>
+                <span className="text-gray-500">·</span>
+                <Calendar className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  {formatDate(season.startDate)}
+                  {season.endDate && ` – ${formatDate(season.endDate)}`}
+                </span>
+              </div>
               {season.description && (
-                <p className="text-light-700 dark:text-gray-300 mb-6">{season.description}</p>
-              )}
-
-              {/* Admin Actions */}
-              {isAuthenticated && (
-                <div className="flex flex-wrap gap-3">
-                  {season.status === 'setup' && (
-                    <Button
-                      onClick={handleActivate}
-                      isLoading={actionLoading === 'activate'}
-                      leftIcon={<Play className="w-4 h-4" />}
-                    >
-                      Activate Season
-                    </Button>
-                  )}
-                  {season.status === 'active' && (
-                    <Button
-                      variant="secondary"
-                      onClick={handleComplete}
-                      isLoading={actionLoading === 'complete'}
-                      leftIcon={<CheckCircle className="w-4 h-4" />}
-                    >
-                      Complete Season
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    onClick={() => setEditModalOpen(true)}
-                    leftIcon={<Pencil className="w-4 h-4" />}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setDeleteConfirmOpen(true)}
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                    leftIcon={<Trash2 className="w-4 h-4" />}
-                  >
-                    Delete
-                  </Button>
-                </div>
+                <p className="mt-2 text-sm text-light-600 dark:text-gray-400 max-w-xl">
+                  {season.description}
+                </p>
               )}
             </div>
-          </Card>
+
+            {/* Admin actions */}
+            {isAuthenticated && (
+              <div className="flex items-center gap-2 flex-wrap shrink-0">
+                {season.status === 'setup' && (
+                  <button
+                    onClick={handleActivate}
+                    disabled={actionLoading === 'activate'}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold
+                               bg-gradient-to-r from-cyber-500 to-cyber-600 text-white
+                               hover:from-cyber-600 hover:to-cyber-700 transition-all
+                               disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {actionLoading === 'activate'
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <Play className="w-4 h-4" />}
+                    Activate
+                  </button>
+                )}
+                {season.status === 'active' && (
+                  <button
+                    onClick={handleComplete}
+                    disabled={actionLoading === 'complete'}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold
+                               bg-light-200 dark:bg-dark-100/60 border border-black/10 dark:border-white/10
+                               text-light-900 dark:text-white hover:border-cyber-500/30 transition-all
+                               disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {actionLoading === 'complete'
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <CheckCircle className="w-4 h-4" />}
+                    Complete
+                  </button>
+                )}
+                <button
+                  onClick={() => setEditModalOpen(true)}
+                  className="p-2 rounded-xl text-light-600 dark:text-gray-400
+                             hover:text-light-900 dark:hover:text-white
+                             bg-light-200/60 dark:bg-dark-100/40
+                             hover:bg-light-200 dark:hover:bg-dark-100/70 transition-all"
+                  title="Edit season"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setDeleteConfirmOpen(true)}
+                  className="p-2 rounded-xl text-red-500 hover:text-red-400
+                             bg-red-500/10 hover:bg-red-500/20 transition-all"
+                  title="Delete season"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
         </motion.div>
 
-        {/* Stats Grid */}
+        {/* Stat pills */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+          className="flex flex-wrap gap-2 mb-7"
         >
           {[
-            { label: 'Leagues', value: stats.totalLeagues, icon: Trophy, color: 'cyber' },
-            { label: 'Tournaments', value: stats.totalTournaments, icon: Target, color: 'electric' },
-            { label: 'Matches', value: stats.totalMatches, icon: Gamepad2, color: 'pink' },
-            { label: 'Players', value: stats.activePlayers, icon: Users, color: 'amber' },
-          ].map((stat) => {
-            const Icon = stat.icon;
+            { icon: Trophy, value: stats.totalLeagues, label: 'Leagues', colorClass: 'text-cyber-600 dark:text-cyber-400' },
+            { icon: Target, value: stats.totalTournaments, label: 'Tournaments', colorClass: 'text-electric-600 dark:text-electric-400' },
+            { icon: Gamepad2, value: stats.totalMatches, label: 'Matches', colorClass: 'text-pink-600 dark:text-pink-400' },
+            { icon: Users, value: stats.activePlayers, label: 'Players', colorClass: 'text-amber-600 dark:text-amber-400' },
+          ].map((s) => {
+            const Icon = s.icon;
             return (
-              <Card key={stat.label} variant="default">
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-xl bg-${stat.color}-500/20 border border-${stat.color}-600/30 dark:border-transparent flex items-center justify-center`}>
-                    <Icon className={`w-6 h-6 text-${stat.color}-600 dark:text-${stat.color}-400`} />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-light-900 dark:text-white">{stat.value}</p>
-                    <p className="text-sm text-light-600 dark:text-gray-400">{stat.label}</p>
-                  </div>
-                </div>
-              </Card>
+              <div
+                key={s.label}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl
+                           bg-light-100/80 dark:bg-dark-100/60
+                           border border-black/8 dark:border-white/8 text-sm"
+              >
+                <Icon className={`w-3.5 h-3.5 ${s.colorClass}`} />
+                <span className="font-bold text-light-900 dark:text-white">{s.value}</span>
+                <span className="text-xs text-light-500 dark:text-gray-500">{s.label}</span>
+              </div>
             );
           })}
         </motion.div>
 
-        {/* Sidebar + Content Layout */}
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Sidebar Navigation */}
+        {/* Tab strip + content */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
           <SeasonSidebar
             activeSection={activeSection}
             onSectionChange={setActiveSection}
           />
-
-          {/* Main Content */}
-          <div className="flex-1 min-w-0">
-            {renderSection()}
-          </div>
-        </div>
+          {renderSection()}
+        </motion.div>
       </Container>
 
-      {/* Assign to Season Modal */}
       <AssignToSeasonModal
         isOpen={assignModalOpen}
         onClose={() => setAssignModalOpen(false)}
@@ -611,14 +664,12 @@ export default function SeasonDetailPage() {
         seasonName={season.name}
       />
 
-      {/* Edit Season Modal */}
       <EditSeasonModal
         isOpen={editModalOpen}
         onClose={() => setEditModalOpen(false)}
         season={season}
       />
 
-      {/* Delete Confirmation Dialog */}
       <AnimatePresence>
         {deleteConfirmOpen && (
           <>
@@ -644,7 +695,8 @@ export default function SeasonDetailPage() {
                     <h3 className="text-xl font-bold text-light-900 dark:text-white">Delete Season</h3>
                   </div>
                   <p className="text-light-600 dark:text-gray-400 mb-2">
-                    Are you sure you want to delete <strong className="text-light-900 dark:text-white">{season.name}</strong>?
+                    Are you sure you want to delete{' '}
+                    <strong className="text-light-900 dark:text-white">{season.name}</strong>?
                   </p>
                   <p className="text-sm text-light-500 dark:text-gray-500 mb-6">
                     Linked leagues and tournaments will be unassigned but not deleted. Season rankings will be permanently removed.
@@ -664,7 +716,7 @@ export default function SeasonDetailPage() {
                       className="flex-1 bg-red-500 hover:bg-red-600 border-red-500"
                       leftIcon={<Trash2 className="w-4 h-4" />}
                     >
-                      {actionLoading === 'delete' ? 'Deleting...' : 'Delete Season'}
+                      {actionLoading === 'delete' ? 'Deleting…' : 'Delete Season'}
                     </Button>
                   </div>
                 </Card>
@@ -673,6 +725,18 @@ export default function SeasonDetailPage() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Complete Season Confirmation */}
+      <ConfirmModal
+        isOpen={completeSeasonConfirmOpen}
+        title="Complete Season?"
+        message={`This will mark "${season.name}" as completed. All active leagues and tournaments should be finished first.`}
+        confirmLabel="Complete Season"
+        isDestructive
+        isLoading={actionLoading === 'complete'}
+        onConfirm={doComplete}
+        onCancel={() => setCompleteSeasonConfirmOpen(false)}
+      />
     </MainLayout>
   );
 }
