@@ -18,10 +18,10 @@
 
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Calendar, Trophy, Target, ChevronDown } from 'lucide-react';
-import { Tournament, GroupMatch, KnockoutTie, TournamentGroup, updateTournament, getTournamentById } from '@/lib/tournamentUtils';
+import { Search, Filter, Trophy, Target, ChevronDown, Pencil } from 'lucide-react';
+import { Tournament, GroupMatch, KnockoutTie, TournamentGroup, updateTournament, recordKnockoutMatch, getTournamentById } from '@/lib/tournamentUtils';
 import Card from '../../ui/Card';
 import Input from '../../ui/Input';
 import Button from '../../ui/Button';
@@ -130,6 +130,13 @@ interface UnifiedMatch {
   tieId?: string; // For knockout matches
 }
 
+interface MatchupGroup {
+  key: string;
+  team1: string;
+  team2: string;
+  matches: UnifiedMatch[];
+}
+
 export default function Fixtures({
   tournament,
   isAuthenticated,
@@ -141,27 +148,10 @@ export default function Fixtures({
   const [searchQuery, setSearchQuery] = useState('');
   const [recordingMatch, setRecordingMatch] = useState<UnifiedMatch | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [isMobile, setIsMobile] = useState(false);
+  const [expandedRounds, setExpandedRounds] = useState<Set<string>>(new Set());
+  const [expandedMatchups, setExpandedMatchups] = useState<Set<string>>(new Set());
 
-  // Detect mobile screen size
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Initialize all groups as expanded on desktop, collapsed on mobile
-  useEffect(() => {
-    if (!isMobile && tournament.groups) {
-      setExpandedGroups(new Set(tournament.groups.map(g => g.name)));
-    } else {
-      setExpandedGroups(new Set());
-    }
-  }, [isMobile, tournament.groups]);
+  // All groups and rounds start collapsed
 
   const toggleGroup = (groupName: string) => {
     setExpandedGroups(prev => {
@@ -170,6 +160,30 @@ export default function Fixtures({
         newSet.delete(groupName);
       } else {
         newSet.add(groupName);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleRound = (roundKey: string) => {
+    setExpandedRounds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(roundKey)) {
+        newSet.delete(roundKey);
+      } else {
+        newSet.add(roundKey);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleMatchup = (matchupKey: string) => {
+    setExpandedMatchups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(matchupKey)) {
+        newSet.delete(matchupKey);
+      } else {
+        newSet.add(matchupKey);
       }
       return newSet;
     });
@@ -267,41 +281,60 @@ export default function Fixtures({
     });
   }, [allMatches, phaseFilter, statusFilter, searchQuery]);
 
-  // Statistics
-  const totalMatches = allMatches.length;
-  const playedMatches = allMatches.filter((m) => m.played).length;
-  const upcomingMatches = totalMatches - playedMatches;
-  const groupMatches = allMatches.filter((m) => m.phase === 'group').length;
-  const knockoutMatchesCount = allMatches.filter((m) => m.phase === 'knockout').length;
+  // Statistics (single pass)
+  const stats = useMemo(() => {
+    let played = 0, group = 0, knockout = 0;
+    for (const m of allMatches) {
+      if (m.played) played++;
+      if (m.phase === 'group') group++;
+      else knockout++;
+    }
+    return { total: allMatches.length, played, group, knockout };
+  }, [allMatches]);
 
-  // Separate played and upcoming for display
-  const playedList = filteredMatches.filter((m) => m.played);
-  const upcomingList = filteredMatches.filter((m) => !m.played);
-
-  // Group matches by group (for group stage)
+  // Group matches by group, then by player pairing
   const groupedByGroup = useMemo(() => {
-    const grouped: Record<string, UnifiedMatch[]> = {};
+    const matchesByGroup: Record<string, UnifiedMatch[]> = {};
 
     filteredMatches.forEach((match) => {
       if (match.phase === 'group' && match.groupName) {
-        if (!grouped[match.groupName]) {
-          grouped[match.groupName] = [];
+        if (!matchesByGroup[match.groupName]) {
+          matchesByGroup[match.groupName] = [];
         }
-        grouped[match.groupName].push(match);
+        matchesByGroup[match.groupName].push(match);
       }
     });
+
+    const grouped: Record<string, MatchupGroup[]> = {};
+    for (const [groupName, matches] of Object.entries(matchesByGroup)) {
+      grouped[groupName] = groupMatchesByPairing(matches);
+    }
 
     return grouped;
   }, [filteredMatches]);
 
-  const knockoutMatches = filteredMatches.filter((m) => m.phase === 'knockout');
+  // Group knockout matches by round, then by tie (pairing)
+  const { knockoutMatches, groupedByRound } = useMemo(() => {
+    const ko: UnifiedMatch[] = [];
+    const roundMatches: Record<string, UnifiedMatch[]> = {};
+    for (const match of filteredMatches) {
+      if (match.phase !== 'knockout') continue;
+      ko.push(match);
+      if (!roundMatches[match.round]) roundMatches[match.round] = [];
+      roundMatches[match.round].push(match);
+    }
+    // Group each round's matches by tie pairing
+    const grouped: Record<string, MatchupGroup[]> = {};
+    for (const [round, matches] of Object.entries(roundMatches)) {
+      grouped[round] = groupMatchesByPairing(matches);
+    }
+    return { knockoutMatches: ko, groupedByRound: grouped };
+  }, [filteredMatches]);
+
   const hasGroupMatches = Object.keys(groupedByGroup).length > 0;
   const hasKnockoutMatches = knockoutMatches.length > 0;
 
-  /**
-   * Handle match result submission
-   */
-  const handleMatchResultSubmit = async (homeScore: number, awayScore: number) => {
+  const handleMatchResultSubmit = useCallback(async (homeScore: number, awayScore: number) => {
     if (!recordingMatch) return;
 
     try {
@@ -328,48 +361,16 @@ export default function Fixtures({
 
         await updateTournament(tournament.id!, { groups: updatedGroups });
       } else {
-        // Update knockout match
-        const updatedBracket = freshTournament.knockoutBracket?.map((tie) => {
-          if (tie.id !== recordingMatch.tieId) return tie;
-
-          if (recordingMatch.leg === 'first') {
-            return {
-              ...tie,
-              firstLeg: {
-                id: tie.firstLeg?.id || `${tie.id}_leg1`,
-                leg: 'first' as const,
-                homeTeam: recordingMatch.homeTeam,
-                awayTeam: recordingMatch.awayTeam,
-                homeScore,
-                awayScore,
-                played: true,
-              },
-            };
-          } else {
-            // Calculate aggregate for second leg
-            const firstLegHomeScore = tie.firstLeg?.homeScore || 0;
-            const firstLegAwayScore = tie.firstLeg?.awayScore || 0;
-            const aggregateHome = firstLegHomeScore + awayScore;
-            const aggregateAway = firstLegAwayScore + homeScore;
-
-            return {
-              ...tie,
-              secondLeg: {
-                id: tie.secondLeg?.id || `${tie.id}_leg2`,
-                leg: 'second' as const,
-                homeTeam: recordingMatch.homeTeam,
-                awayTeam: recordingMatch.awayTeam,
-                homeScore,
-                awayScore,
-                played: true,
-              },
-              winner: aggregateHome > aggregateAway ? tie.team1 : tie.team2,
-              completed: true,
-            };
-          }
-        });
-
-        await updateTournament(tournament.id!, { knockoutBracket: updatedBracket });
+        // Update knockout match using recordKnockoutMatch for proper round progression
+        await recordKnockoutMatch(
+          tournament.id!,
+          recordingMatch.tieId!,
+          recordingMatch.leg!,
+          recordingMatch.homeTeam,
+          recordingMatch.awayTeam,
+          homeScore,
+          awayScore
+        );
       }
 
       // Refresh tournament data
@@ -380,7 +381,7 @@ export default function Fixtures({
     } catch (error) {
       console.error('Error recording match:', error);
     }
-  };
+  }, [recordingMatch, tournament.id, setTournament]);
 
   return (
     <div className="space-y-6">
@@ -392,42 +393,20 @@ export default function Fixtures({
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card variant="glass">
-          <div className="text-center">
-            <Calendar className="w-6 h-6 text-cyber-400 mx-auto mb-2" />
-            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Total</p>
-            <p className="text-2xl font-bold text-light-900 dark:text-white">{totalMatches}</p>
-          </div>
-        </Card>
-
-        <Card variant="glass">
-          <div className="text-center">
-            <div className="w-6 h-6 mx-auto mb-2 rounded-full bg-green-500/20 flex items-center justify-center">
-              <div className="w-3 h-3 rounded-full bg-green-400" />
-            </div>
-            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Played</p>
-            <p className="text-2xl font-bold text-light-900 dark:text-white">{playedMatches}</p>
-          </div>
-        </Card>
-
-        <Card variant="glass">
-          <div className="text-center">
-            <Target className="w-6 h-6 text-electric-400 mx-auto mb-2" />
-            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Groups</p>
-            <p className="text-2xl font-bold text-light-900 dark:text-white">{groupMatches}</p>
-          </div>
-        </Card>
-
-        <Card variant="glass">
-          <div className="text-center">
-            <Trophy className="w-6 h-6 text-pink-400 mx-auto mb-2" />
-            <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Knockout</p>
-            <p className="text-2xl font-bold text-light-900 dark:text-white">{knockoutMatchesCount}</p>
-          </div>
-        </Card>
-      </div>
+      {/* Summary line */}
+      <p className="text-sm text-light-600 dark:text-gray-400">
+        <span className="font-medium text-light-900 dark:text-white">{stats.total}</span> matches
+        {' · '}
+        <span className="font-medium text-light-900 dark:text-white">{stats.played}</span> played
+        {' · '}
+        {stats.knockout > 0 ? (
+          <>
+            <span className="font-medium text-light-900 dark:text-white">{stats.knockout}</span> knockout
+          </>
+        ) : (
+          <span className="text-light-500 dark:text-gray-500">Knockout pending</span>
+        )}
+      </p>
 
       {/* Search and Filters */}
       <div className="flex flex-col lg:flex-row gap-4">
@@ -480,9 +459,10 @@ export default function Fixtures({
           </h2>
 
           {Object.keys(groupedByGroup).sort().map((groupName) => {
-            const groupMatches = groupedByGroup[groupName];
-            const playedCount = groupMatches.filter((m) => m.played).length;
-            const totalCount = groupMatches.length;
+            const matchupGroups = groupedByGroup[groupName];
+            const allMatchesInGroup = matchupGroups.flatMap(mg => mg.matches);
+            const playedCount = allMatchesInGroup.filter((m) => m.played).length;
+            const totalCount = allMatchesInGroup.length;
             const isExpanded = expandedGroups.has(groupName);
 
             return (
@@ -492,50 +472,50 @@ export default function Fixtures({
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-gradient-to-br from-cyber-500/10 to-electric-500/10 border-2 border-cyber-500/30 rounded-tech-lg overflow-hidden"
               >
-                {/* Group Header - Clickable on mobile */}
+                {/* Group Header - Always clickable */}
                 <button
-                  onClick={() => isMobile && toggleGroup(groupName)}
-                  className={`w-full flex items-center justify-between p-6 ${isMobile ? 'cursor-pointer hover:bg-cyber-500/5 active:bg-cyber-500/10' : 'cursor-default'} transition-colors ${!isExpanded ? 'pb-6' : 'pb-4 border-b-2 border-cyber-500/30'}`}
+                  onClick={() => toggleGroup(groupName)}
+                  className={`w-full flex items-center justify-between p-4 sm:p-6 cursor-pointer hover:bg-cyber-500/5 active:bg-cyber-500/10 transition-colors select-none ${!isExpanded ? 'pb-4 sm:pb-6' : 'pb-3 sm:pb-4 border-b-2 border-cyber-500/30'}`}
                 >
-                  <h3 className="text-xl font-bold text-light-900 dark:text-white flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-tech bg-gradient-cyber flex items-center justify-center">
-                      <Trophy className="w-5 h-5 text-light-900 dark:text-white" />
+                  <h3 className="text-sm sm:text-xl font-bold text-light-900 dark:text-white flex items-center gap-2">
+                    <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-tech bg-gradient-cyber flex items-center justify-center shrink-0">
+                      <Trophy className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-light-900 dark:text-white" />
                     </div>
                     Group {groupName}
                   </h3>
-                  <div className="flex items-center gap-3">
-                    <div className="text-sm text-light-600 dark:text-gray-400">
-                      {playedCount}/{totalCount} matches
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="text-[10px] sm:text-sm text-light-600 dark:text-gray-400">
+                      {playedCount}/{totalCount}
                     </div>
-                    {isMobile && (
-                      <ChevronDown
-                        className={`w-5 h-5 text-cyber-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                      />
-                    )}
+                    <ChevronDown
+                      className={`w-5 h-5 text-cyber-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                    />
                   </div>
                 </button>
 
-                {/* Group Matches Grid - Collapsible */}
+                {/* Group Matchups Grid - Collapsible */}
                 <AnimatePresence>
                   {isExpanded && (
                     <motion.div
-                      initial={isMobile ? { height: 0, opacity: 0 } : false}
+                      initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
-                      exit={isMobile ? { height: 0, opacity: 0 } : {}}
+                      exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.3 }}
                       className="overflow-hidden"
                     >
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-6 pt-4">
-                        {groupMatches.map((match, index) => (
-                          <MatchCard
-                            key={match.id}
-                            match={match}
-                      index={index}
-                      isAuthenticated={isAuthenticated}
-                      isLoading={isLoading}
-                      onRecordMatch={setRecordingMatch}
-                    />
-                  ))}
+                        {matchupGroups.map((matchup, index) => (
+                          <MatchupCard
+                            key={matchup.key}
+                            matchup={matchup}
+                            index={index}
+                            isAuthenticated={isAuthenticated}
+                            isLoading={isLoading}
+                            onRecordMatch={setRecordingMatch}
+                            isExpanded={expandedMatchups.has(`${groupName}::${matchup.key}`)}
+                            onToggle={() => toggleMatchup(`${groupName}::${matchup.key}`)}
+                          />
+                        ))}
                       </div>
                     </motion.div>
                   )}
@@ -546,25 +526,90 @@ export default function Fixtures({
         </div>
       )}
 
-      {/* Knockout Matches */}
+      {/* Knockout Matches - Grouped by Round */}
       {(phaseFilter === 'all' || phaseFilter === 'knockout') && hasKnockoutMatches && (
-        <div>
+        <div className="space-y-8">
           <h2 className="text-2xl font-bold text-light-900 dark:text-white mb-6 flex items-center gap-3">
             <Trophy className="w-7 h-7 text-pink-400" />
             Knockout Stage Fixtures
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {knockoutMatches.map((match, index) => (
-              <MatchCard
-                key={match.id}
-                match={match}
-                index={index}
-                isAuthenticated={isAuthenticated}
-                isLoading={isLoading}
-                onRecordMatch={setRecordingMatch}
-              />
-            ))}
-          </div>
+
+          {['Round of 16', 'Quarter Finals', 'Semi Finals', 'Final'].map((roundLabel) => {
+            const matchupGroups = groupedByRound[roundLabel];
+            if (!matchupGroups || matchupGroups.length === 0) return null;
+
+            const allRoundMatches = matchupGroups.flatMap(mg => mg.matches);
+            const playedCount = allRoundMatches.filter((m) => m.played).length;
+            const totalCount = allRoundMatches.length;
+            const isExpanded = expandedRounds.has(roundLabel);
+
+            const roundColors: Record<string, { gradient: string; border: string; text: string }> = {
+              'Round of 16': { gradient: 'from-cyan-500/10 to-blue-500/10', border: 'border-cyan-500/30', text: 'text-cyan-500 dark:text-cyan-400' },
+              'Quarter Finals': { gradient: 'from-pink-500/10 to-purple-500/10', border: 'border-pink-500/30', text: 'text-pink-500 dark:text-pink-400' },
+              'Semi Finals': { gradient: 'from-orange-500/10 to-red-500/10', border: 'border-orange-500/30', text: 'text-orange-500 dark:text-orange-400' },
+              'Final': { gradient: 'from-yellow-500/10 to-amber-500/10', border: 'border-yellow-500/30', text: 'text-yellow-600 dark:text-yellow-400' },
+            };
+
+            const colors = roundColors[roundLabel] || roundColors['Round of 16'];
+
+            return (
+              <motion.div
+                key={roundLabel}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`bg-gradient-to-br ${colors.gradient} border-2 ${colors.border} rounded-tech-lg overflow-hidden`}
+              >
+                {/* Round Header */}
+                <button
+                  onClick={() => toggleRound(roundLabel)}
+                  className={`w-full flex items-center justify-between p-6 cursor-pointer hover:opacity-80 transition-all select-none ${!isExpanded ? 'pb-6' : 'pb-4 border-b-2 ' + colors.border}`}
+                >
+                  <h3 className={`text-xl font-bold ${colors.text} flex items-center gap-2`}>
+                    <div className={`w-10 h-10 rounded-tech bg-gradient-to-br ${colors.gradient} border-2 ${colors.border} flex items-center justify-center`}>
+                      <Trophy className={`w-5 h-5 ${colors.text}`} />
+                    </div>
+                    {roundLabel}
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm text-light-600 dark:text-gray-400">
+                      {playedCount}/{totalCount} matches
+                    </div>
+                    <ChevronDown
+                      className={`w-5 h-5 ${colors.text} transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                    />
+                  </div>
+                </button>
+
+                {/* Round Matches - Collapsible */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-6 pt-4">
+                        {matchupGroups.map((matchup, index) => (
+                          <MatchupCard
+                            key={matchup.key}
+                            matchup={matchup}
+                            index={index}
+                            isAuthenticated={isAuthenticated}
+                            isLoading={isLoading}
+                            onRecordMatch={setRecordingMatch}
+                            isExpanded={expandedMatchups.has(`ko::${roundLabel}::${matchup.key}`)}
+                            onToggle={() => toggleMatchup(`ko::${roundLabel}::${matchup.key}`)}
+                          />
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
         </div>
       )}
 
@@ -603,126 +648,188 @@ export default function Fixtures({
 }
 
 /**
- * Match Card Component
+ * Matchup Card Component — groups all matches between two players
  */
-interface MatchCardProps {
-  match: UnifiedMatch;
+interface MatchupCardProps {
+  matchup: MatchupGroup;
   index: number;
   isAuthenticated: boolean;
   isLoading: boolean;
   onRecordMatch: (match: UnifiedMatch) => void;
+  isExpanded: boolean;
+  onToggle: () => void;
 }
 
-function MatchCard({ match, index, isAuthenticated, isLoading, onRecordMatch }: MatchCardProps) {
-  // Determine gradient based on phase
-  const gradient = match.phase === 'group'
-    ? 'from-cyber-500/20 to-electric-500/20'
-    : 'from-pink-500/20 to-purple-500/20';
+const MatchupCard = React.memo(function MatchupCard({
+  matchup,
+  index,
+  isAuthenticated,
+  isLoading,
+  onRecordMatch,
+  isExpanded,
+  onToggle,
+}: MatchupCardProps) {
+  const playedMatches = matchup.matches.filter(m => m.played);
+  const hasAnyPlayed = playedMatches.length > 0;
 
-  const border = match.played
-    ? 'border-green-500/30'
-    : 'border-yellow-500/30';
+  // Calculate aggregate goals for each team across all played matches
+  const team1Goals = playedMatches.reduce((sum, m) => {
+    return sum + (m.homeTeam === matchup.team1 ? (m.homeScore ?? 0) : (m.awayScore ?? 0));
+  }, 0);
+  const team2Goals = playedMatches.reduce((sum, m) => {
+    return sum + (m.homeTeam === matchup.team2 ? (m.homeScore ?? 0) : (m.awayScore ?? 0));
+  }, 0);
 
-  // Determine winner/loser for score styling
-  const homeWon = match.played && match.homeScore !== undefined && match.awayScore !== undefined && match.homeScore > match.awayScore;
-  const awayWon = match.played && match.homeScore !== undefined && match.awayScore !== undefined && match.awayScore > match.homeScore;
-  const isDraw = match.played && match.homeScore === match.awayScore;
+  const team1Won = hasAnyPlayed && team1Goals > team2Goals;
+  const team2Won = hasAnyPlayed && team2Goals > team1Goals;
+
+  // Determine card colors based on phase
+  const isKnockout = matchup.matches[0]?.phase === 'knockout';
+  const roundLabel = matchup.matches[0]?.round;
+  const knockoutCardColors: Record<string, { gradient: string; border: string }> = {
+    'Round of 16': { gradient: 'from-cyan-500/20 to-blue-500/20', border: 'border-cyan-500/30' },
+    'Quarter Finals': { gradient: 'from-pink-500/20 to-purple-500/20', border: 'border-pink-500/30' },
+    'Semi Finals': { gradient: 'from-orange-500/20 to-red-500/20', border: 'border-orange-500/30' },
+    'Final': { gradient: 'from-yellow-500/20 to-amber-500/20', border: 'border-yellow-500/30' },
+  };
+  const cardColors = isKnockout && roundLabel
+    ? knockoutCardColors[roundLabel] ?? { gradient: 'from-cyber-500/20 to-electric-500/20', border: 'border-cyber-500/30' }
+    : { gradient: 'from-cyber-500/20 to-electric-500/20', border: 'border-cyber-500/30' };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+      transition={{ delay: Math.min(index * 0.03, 0.15) }}
     >
-      <Card variant="glass" className={`bg-gradient-to-br ${gradient} border ${border}`}>
-        {/* Match Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            {match.phase === 'group' ? (
-              <Target className="w-4 h-4 text-cyber-400" />
+      <Card variant="glass" className={`bg-gradient-to-br ${cardColors.gradient} border ${cardColors.border} !p-2.5 sm:!p-3`}>
+        <button
+          onClick={onToggle}
+          className="w-full flex items-center gap-2 select-none"
+        >
+          {/* Team 1 */}
+          <div className={`flex-1 text-right ${team1Won ? 'opacity-100' : hasAnyPlayed ? 'opacity-60' : 'opacity-100'}`}>
+            <div className="flex items-center justify-end gap-1.5">
+              {team1Won && <Trophy className="w-3 h-3 text-green-400 shrink-0" />}
+              <span className="text-xs sm:text-sm font-bold text-light-900 dark:text-white truncate">{matchup.team1}</span>
+            </div>
+          </div>
+
+          {/* Aggregate Score */}
+          <div className="flex items-center gap-1.5 px-1.5 sm:px-3 shrink-0">
+            {hasAnyPlayed ? (
+              <>
+                <span className={`text-sm sm:text-lg font-black ${team1Won ? 'text-green-400' : team2Won ? 'text-light-600 dark:text-gray-400' : 'text-light-900 dark:text-white'}`}>
+                  {team1Goals}
+                </span>
+                <span className="text-light-600 dark:text-gray-500 text-xs">-</span>
+                <span className={`text-sm sm:text-lg font-black ${team2Won ? 'text-green-400' : team1Won ? 'text-light-600 dark:text-gray-400' : 'text-light-900 dark:text-white'}`}>
+                  {team2Goals}
+                </span>
+              </>
             ) : (
-              <Trophy className="w-4 h-4 text-pink-400" />
+              <span className="text-xs text-light-500 dark:text-gray-500 font-semibold">vs</span>
             )}
-            <span className="text-sm font-semibold text-gray-300">
-              {match.round}
-              {match.groupName && ` - ${match.groupName}`}
-              {match.leg && ` (${match.leg === 'first' ? '1st' : '2nd'} Leg)`}
-            </span>
           </div>
-          <div
-            className={`px-2 py-1 rounded-tech text-xs font-semibold ${
-              match.played
-                ? 'bg-green-500/20 text-green-400'
-                : 'bg-yellow-500/20 text-yellow-400'
-            }`}
+
+          {/* Team 2 */}
+          <div className={`flex-1 text-left ${team2Won ? 'opacity-100' : hasAnyPlayed ? 'opacity-60' : 'opacity-100'}`}>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs sm:text-sm font-bold text-light-900 dark:text-white truncate">{matchup.team2}</span>
+              {team2Won && <Trophy className="w-3 h-3 text-green-400 shrink-0" />}
+            </div>
+          </div>
+
+          {/* Chevron */}
+          <motion.div
+            animate={{ rotate: isExpanded ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+            className="shrink-0"
           >
-            {match.played ? 'Played' : 'Upcoming'}
-          </div>
-        </div>
+            <ChevronDown className="w-3.5 h-3.5 text-light-500 dark:text-gray-500" />
+          </motion.div>
+        </button>
 
-        {/* Teams with Winner/Loser Styling */}
-        <div className="space-y-3">
-          <div className={`flex items-center justify-between rounded-tech p-3 transition-all ${
-            homeWon ? 'bg-green-500/10 border-2 border-green-500/30' :
-            awayWon ? 'bg-dark-100/20' :
-            'bg-dark-100/30'
-          }`}>
-            <span className={`font-bold ${homeWon ? 'text-green-400' : 'text-light-900 dark:text-white'}`}>
-              {match.homeTeam}
-            </span>
-            {match.played && match.homeScore !== undefined && (
-              <span className={`text-2xl font-extrabold ${
-                homeWon ? 'text-green-400' :
-                awayWon ? 'text-gray-500' :
-                'text-light-900 dark:text-white'
-              }`}>
-                {match.homeScore}
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center justify-center">
-            <span className="text-gray-500 font-bold">vs</span>
-          </div>
-
-          <div className={`flex items-center justify-between rounded-tech p-3 transition-all ${
-            awayWon ? 'bg-green-500/10 border-2 border-green-500/30' :
-            homeWon ? 'bg-dark-100/20' :
-            'bg-dark-100/30'
-          }`}>
-            <span className={`font-bold ${awayWon ? 'text-green-400' : 'text-light-900 dark:text-white'}`}>
-              {match.awayTeam}
-            </span>
-            {match.played && match.awayScore !== undefined && (
-              <span className={`text-2xl font-extrabold ${
-                awayWon ? 'text-green-400' :
-                homeWon ? 'text-gray-500' :
-                'text-light-900 dark:text-white'
-              }`}>
-                {match.awayScore}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Admin Action Button */}
-        {isAuthenticated && (
-          <div className="mt-4 pt-4 border-t border-black/10 dark:border-white/10">
-            <Button
-              variant={match.played ? 'secondary' : 'primary'}
-              size="sm"
-              onClick={() => onRecordMatch(match)}
-              disabled={isLoading || (match.phase === 'knockout' && match.leg === 'second' && !match.tieId)}
-              className="w-full"
-              glow={!match.played}
+        {/* Expanded: individual game rows + admin actions */}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
             >
-              {match.played ? 'Edit Result' : 'Record Result'}
-            </Button>
-          </div>
-        )}
+              <div className="mt-2 pt-2 border-t border-black/10 dark:border-white/10 space-y-1.5">
+                {matchup.matches.map((match, i) => {
+                  const homeWon = match.played && (match.homeScore ?? 0) > (match.awayScore ?? 0);
+                  const awayWon = match.played && (match.awayScore ?? 0) > (match.homeScore ?? 0);
+
+                  return (
+                    <div key={match.id} className="flex items-center justify-between bg-light-100/50 dark:bg-dark-100/50 rounded-tech p-1.5 sm:p-2">
+                      <span className="text-[10px] sm:text-xs font-semibold text-light-700 dark:text-gray-300 w-8 sm:w-10">
+                        {match.leg ? (match.leg === 'first' ? 'L1' : 'L2') : matchup.matches.length > 1 ? `G${i + 1}` : 'Game'}
+                      </span>
+                      {match.played ? (
+                        <div className="flex items-center gap-1.5 flex-1 justify-center">
+                          <span className={`text-xs sm:text-sm ${homeWon ? 'text-green-400 font-bold' : 'text-light-900 dark:text-white'}`}>{match.homeTeam}</span>
+                          <span className="text-xs sm:text-sm font-bold text-light-900 dark:text-white">{match.homeScore}-{match.awayScore}</span>
+                          <span className={`text-xs sm:text-sm ${awayWon ? 'text-green-400 font-bold' : 'text-light-900 dark:text-white'}`}>{match.awayTeam}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 flex-1 justify-center">
+                          <span className="text-xs sm:text-sm text-light-900 dark:text-white">{match.homeTeam}</span>
+                          <span className="text-[10px] sm:text-xs text-yellow-400 font-semibold">vs</span>
+                          <span className="text-xs sm:text-sm text-light-900 dark:text-white">{match.awayTeam}</span>
+                        </div>
+                      )}
+                      {isAuthenticated && match.played && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onRecordMatch(match); }}
+                          disabled={isLoading}
+                          className="text-yellow-400 hover:text-yellow-300 transition-colors disabled:opacity-50 ml-1"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                      )}
+                      {isAuthenticated && !match.played && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onRecordMatch(match); }}
+                          disabled={isLoading}
+                          className="bg-cyber-500 hover:bg-cyber-600 text-white text-[10px] sm:text-xs px-2 py-0.5 rounded-tech font-semibold transition-colors disabled:opacity-50 ml-1"
+                        >
+                          Record
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Card>
     </motion.div>
   );
+});
+
+/**
+ * Group matches by player pairing (canonical alphabetical key)
+ */
+function groupMatchesByPairing(matches: UnifiedMatch[]): MatchupGroup[] {
+  const map = new Map<string, MatchupGroup>();
+
+  for (const match of matches) {
+    const [team1, team2] = [match.homeTeam, match.awayTeam].sort();
+    const key = `${team1}::${team2}`;
+
+    if (!map.has(key)) {
+      map.set(key, { key, team1, team2, matches: [] });
+    }
+    map.get(key)!.matches.push(match);
+  }
+
+  return Array.from(map.values());
 }
 
 /**

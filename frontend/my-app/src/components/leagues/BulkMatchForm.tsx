@@ -114,18 +114,18 @@ export default function BulkMatchForm({ players, onSubmit, isSubmitting = false 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Player A */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 mb-2">
+                  <label className="block text-xs font-semibold text-light-600 dark:text-gray-400 mb-2">
                     Player A
                   </label>
                   <select
                     value={match.playerA}
                     onChange={(e) => updateMatch(index, 'playerA', e.target.value)}
-                    className="w-full px-3 py-2.5 bg-dark-100/50 border-2 border-white/10 rounded-tech text-white focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
+                    className="w-full px-3 py-2.5 bg-light-200 dark:bg-dark-100/50 border-2 border-black/10 dark:border-white/10 rounded-tech text-light-900 dark:text-white focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
                     required
                   >
-                    <option value="" className="bg-dark-100 text-gray-400">Select Player</option>
+                    <option value="" className="bg-light-50 dark:bg-dark-100 text-light-500 dark:text-gray-400">Select Player</option>
                     {players.map((player) => (
-                      <option key={player.id} value={player.id} className="bg-dark-100 text-white">
+                      <option key={player.id} value={player.id} className="bg-light-50 dark:bg-dark-100 text-light-900 dark:text-white">
                         {player.name}
                       </option>
                     ))}
@@ -134,18 +134,18 @@ export default function BulkMatchForm({ players, onSubmit, isSubmitting = false 
 
                 {/* Player B */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 mb-2">
+                  <label className="block text-xs font-semibold text-light-600 dark:text-gray-400 mb-2">
                     Player B
                   </label>
                   <select
                     value={match.playerB}
                     onChange={(e) => updateMatch(index, 'playerB', e.target.value)}
-                    className="w-full px-3 py-2.5 bg-dark-100/50 border-2 border-white/10 rounded-tech text-white focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
+                    className="w-full px-3 py-2.5 bg-light-200 dark:bg-dark-100/50 border-2 border-black/10 dark:border-white/10 rounded-tech text-light-900 dark:text-white focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
                     required
                   >
-                    <option value="" className="bg-dark-100 text-gray-400">Select Player</option>
+                    <option value="" className="bg-light-50 dark:bg-dark-100 text-light-500 dark:text-gray-400">Select Player</option>
                     {players.map((player) => (
-                      <option key={player.id} value={player.id} className="bg-dark-100 text-white">
+                      <option key={player.id} value={player.id} className="bg-light-50 dark:bg-dark-100 text-light-900 dark:text-white">
                         {player.name}
                       </option>
                     ))}
@@ -154,7 +154,7 @@ export default function BulkMatchForm({ players, onSubmit, isSubmitting = false 
 
                 {/* Score A */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 mb-2">
+                  <label className="block text-xs font-semibold text-light-600 dark:text-gray-400 mb-2">
                     Score A
                   </label>
                   <input
@@ -162,14 +162,14 @@ export default function BulkMatchForm({ players, onSubmit, isSubmitting = false 
                     min="0"
                     value={match.scoreA}
                     onChange={(e) => updateMatch(index, 'scoreA', parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2.5 bg-dark-100/50 border-2 border-white/10 rounded-tech text-white focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
+                    className="w-full px-3 py-2.5 bg-light-200 dark:bg-dark-100/50 border-2 border-black/10 dark:border-white/10 rounded-tech text-light-900 dark:text-white focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
                     required
                   />
                 </div>
 
                 {/* Score B */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 mb-2">
+                  <label className="block text-xs font-semibold text-light-600 dark:text-gray-400 mb-2">
                     Score B
                   </label>
                   <input
@@ -177,21 +177,21 @@ export default function BulkMatchForm({ players, onSubmit, isSubmitting = false 
                     min="0"
                     value={match.scoreB}
                     onChange={(e) => updateMatch(index, 'scoreB', parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2.5 bg-dark-100/50 border-2 border-white/10 rounded-tech text-white focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
+                    className="w-full px-3 py-2.5 bg-light-200 dark:bg-dark-100/50 border-2 border-black/10 dark:border-white/10 rounded-tech text-light-900 dark:text-white focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
                     required
                   />
                 </div>
 
                 {/* Date */}
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-400 mb-2">
+                  <label className="block text-xs font-semibold text-light-600 dark:text-gray-400 mb-2">
                     Match Date
                   </label>
                   <input
                     type="date"
                     value={match.date}
                     onChange={(e) => updateMatch(index, 'date', e.target.value)}
-                    className="w-full px-3 py-2.5 bg-dark-100/50 border-2 border-white/10 rounded-tech text-white focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
+                    className="w-full px-3 py-2.5 bg-light-200 dark:bg-dark-100/50 border-2 border-black/10 dark:border-white/10 rounded-tech text-light-900 dark:text-white focus:outline-none focus:border-cyber-500 transition-all backdrop-blur-sm hover:border-cyber-500/50"
                     required
                   />
                 </div>

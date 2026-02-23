@@ -13,10 +13,12 @@ import Results from '@/components/leagues/sections/Results';
 import StreaksAndStats from '@/components/leagues/sections/StreaksAndStats';
 import RecordMatch from '@/components/leagues/sections/RecordMatch';
 import AddPlayersModal from '@/components/leagues/AddPlayersModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useLeague, useLeagueMatches } from '@/hooks/useLeagues';
 import { usePlayers } from '@/hooks/usePlayers';
 import { useAuth } from '@/lib/AuthContext';
 import { calculateStandings, calculateWinStreaks, addPlayersToLeague, updateLeague } from '@/lib/leagueUtils';
+import { incrementLeagueWins } from '@/lib/playerUtils';
 import { LeaguePlayer, WinStreak } from '@/types/league';
 
 export default function LeagueDetailPage() {
@@ -34,6 +36,7 @@ export default function LeagueDetailPage() {
   const [streaks, setStreaks] = useState<WinStreak[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isAddPlayersModalOpen, setIsAddPlayersModalOpen] = useState(false);
+  const [endLeagueConfirmOpen, setEndLeagueConfirmOpen] = useState(false);
 
   // Filter players to only those in this league
   const leaguePlayers = useMemo(() => {
@@ -135,20 +138,29 @@ export default function LeagueDetailPage() {
     }
   };
 
-  // Handle ending league
-  const handleEndLeague = async () => {
+  // Handle ending league — opens confirm modal
+  const handleEndLeague = () => {
     if (!league?.id) return;
+    setEndLeagueConfirmOpen(true);
+  };
 
-    const confirmed = confirm('Are you sure you want to end this league? This will mark it as completed.');
-    if (!confirmed) return;
-
+  // Actual end-league logic, called after confirmation
+  const doEndLeague = async () => {
+    if (!league?.id) return;
     try {
-      await updateLeague(league.id, {
-        status: 'completed',
-      });
+      await updateLeague(league.id, { status: 'completed' });
+
+      // Auto-award league title to the winner
+      if (leaguePlayers.length > 0) {
+        const finalStandings = await calculateStandings(league.id, leaguePlayers);
+        if (finalStandings.length > 0 && finalStandings[0].id) {
+          await incrementLeagueWins(finalStandings[0].id, league.seasonId);
+        }
+      }
     } catch (error) {
       console.error('Error ending league:', error);
-      alert('Failed to end league. Please try again.');
+    } finally {
+      setEndLeagueConfirmOpen(false);
     }
   };
 
@@ -171,13 +183,15 @@ export default function LeagueDetailPage() {
     }
   };
 
+  // Disable admin actions if league is already completed
+  const isEditable = isAuthenticated && league?.status !== 'completed';
   const loading = leagueLoading || matchesLoading;
 
   if (loading) {
     return (
       <MainLayout>
         <GlobalNavigation />
-        <Container maxWidth="2xl" className="py-8 sm:py-12">
+        <Container maxWidth="2xl" className="py-4 sm:py-8">
           <div className="text-center py-16">
             <Loader2 className="w-12 h-12 text-cyber-400 mx-auto mb-4 animate-spin" />
             <p className="text-gray-400">Loading league...</p>
@@ -191,7 +205,7 @@ export default function LeagueDetailPage() {
     return (
       <MainLayout>
         <GlobalNavigation />
-        <Container maxWidth="2xl" className="py-8 sm:py-12">
+        <Container maxWidth="2xl" className="py-4 sm:py-8">
           <div className="text-center py-16">
             <h3 className="text-xl font-bold text-gray-400 mb-2">League Not Found</h3>
             <p className="text-gray-500 mb-6">This league does not exist or has been deleted</p>
@@ -222,8 +236,8 @@ export default function LeagueDetailPage() {
             totalGoals={totalGoals}
             playerCount={leaguePlayers.length}
             isAuthenticated={isAuthenticated}
-            onAddPlayers={() => setIsAddPlayersModalOpen(true)}
-            onEndLeague={handleEndLeague}
+            onAddPlayers={isEditable ? () => setIsAddPlayersModalOpen(true) : undefined}
+            onEndLeague={isEditable ? handleEndLeague : undefined}
             onMatchUpdated={handleMatchUpdated}
             {...sectionProps}
           />
@@ -231,7 +245,7 @@ export default function LeagueDetailPage() {
       case 'standings':
         return <Standings standings={standings} leagueId={league.id!} {...sectionProps} />;
       case 'results':
-        return <Results matches={matches} players={leaguePlayers} onMatchUpdated={handleMatchUpdated} {...sectionProps} />;
+        return <Results matches={matches} players={leaguePlayers} onMatchUpdated={isEditable ? handleMatchUpdated : undefined} {...sectionProps} />;
       case 'streaks':
         return <StreaksAndStats streaks={streaks} standings={standings} {...sectionProps} />;
       case 'record':
@@ -239,7 +253,7 @@ export default function LeagueDetailPage() {
           <RecordMatch
             leagueId={league.id!}
             players={leaguePlayers}
-            isAuthenticated={isAuthenticated}
+            isAuthenticated={isEditable}
           />
         );
       default:
@@ -250,7 +264,7 @@ export default function LeagueDetailPage() {
   return (
     <MainLayout>
       <GlobalNavigation />
-      <Container maxWidth="2xl" className="py-8 sm:py-12">
+      <Container maxWidth="2xl" className="py-4 sm:py-8 pb-24 md:pb-12">
         {/* Back Button */}
         <button
           onClick={() => router.push('/leagues')}
@@ -283,6 +297,17 @@ export default function LeagueDetailPage() {
         onSubmit={handleAddPlayers}
         players={players}
         currentPlayerIds={league?.playerIds || []}
+      />
+
+      {/* End League Confirmation */}
+      <ConfirmModal
+        isOpen={endLeagueConfirmOpen}
+        title="End League?"
+        message="This will mark the league as completed and award the title to the current leader. This cannot be undone."
+        confirmLabel="End League"
+        isDestructive
+        onConfirm={doEndLeague}
+        onCancel={() => setEndLeagueConfirmOpen(false)}
       />
     </MainLayout>
   );

@@ -12,6 +12,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trophy, TrendingUp, Target, Calendar, Loader2 } from 'lucide-react';
 import { Player } from '@/types/player';
 import { getGlobalHeadToHead, HeadToHeadStats } from '@/lib/headToHeadUtils';
+import { useSeasons } from '@/hooks/useSeasons';
+import { useActiveSeason } from '@/hooks/useActiveSeason';
 import CustomDropdown from '../ui/CustomDropdown';
 import Button from '../ui/Button';
 
@@ -26,6 +28,9 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
   const [playerB, setPlayerB] = useState<Player | null>(null);
   const [stats, setStats] = useState<HeadToHeadStats | null>(null);
   const [loading, setLoading] = useState(false);
+  const [seasonFilter, setSeasonFilter] = useState<string>('all');
+  const { seasons } = useSeasons();
+  const { activeSeason } = useActiveSeason();
 
   // Player dropdown options
   const playerOptions = players.map((player) => ({
@@ -33,14 +38,21 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
     label: player.name,
   }));
 
-  // Fetch stats when both players are selected
+  // Default to active season when it loads
+  useEffect(() => {
+    if (activeSeason?.id && seasonFilter === 'all') {
+      setSeasonFilter(activeSeason.id);
+    }
+  }, [activeSeason]);
+
+  // Fetch stats when both players are selected or season filter changes
   useEffect(() => {
     if (playerA && playerB && playerA.id !== playerB.id) {
       fetchStats();
     } else {
       setStats(null);
     }
-  }, [playerA, playerB]);
+  }, [playerA, playerB, seasonFilter]);
 
   const fetchStats = async () => {
     if (!playerA || !playerB || !playerA.id || !playerB.id) return;
@@ -51,7 +63,8 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
         playerA.id,
         playerA.name,
         playerB.id,
-        playerB.name
+        playerB.name,
+        seasonFilter !== 'all' ? seasonFilter : undefined
       );
       setStats(result);
     } catch (error) {
@@ -91,7 +104,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-gradient-to-br from-dark-100 to-dark-200 rounded-2xl shadow-glow border-2 border-cyber-500/30 max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+          className="bg-gradient-to-br from-light-50 to-light-100 dark:from-dark-100 dark:to-dark-200 rounded-2xl shadow-card-light dark:shadow-glow border-2 border-cyber-500/20 dark:border-cyber-500/30 max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         >
           {/* Header */}
           <div className="p-6 border-b border-black/10 dark:border-white/10 flex items-center justify-between">
@@ -101,7 +114,11 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-light-900 dark:text-white">Head-to-Head Comparison</h2>
-                <p className="text-sm text-light-600 dark:text-gray-400">Compare players across all competitions</p>
+                <p className="text-sm text-light-600 dark:text-gray-400">
+                  {seasonFilter === 'all'
+                    ? 'Compare players across all competitions'
+                    : `Comparing in ${seasons.find((s) => s.id === seasonFilter)?.name || 'selected season'}`}
+                </p>
               </div>
             </div>
             <button
@@ -123,6 +140,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
                   onChange={handlePlayerAChange}
                   options={playerOptions.filter((p) => p.value !== playerB?.id)}
                   placeholder="Select player..."
+                  searchable
                 />
               </div>
               <div>
@@ -132,9 +150,30 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
                   onChange={handlePlayerBChange}
                   options={playerOptions.filter((p) => p.value !== playerA?.id)}
                   placeholder="Select player..."
+                  searchable
                 />
               </div>
             </div>
+
+            {/* Season Filter */}
+            {seasons.length > 0 && (
+              <div className="flex items-center gap-2 mb-6">
+                <Calendar className="w-4 h-4 text-gray-400" />
+                <span className="text-light-600 dark:text-gray-400 text-sm font-semibold">Season:</span>
+                <CustomDropdown
+                  value={seasonFilter}
+                  onChange={(val) => setSeasonFilter(val as string)}
+                  options={[
+                    ...(activeSeason ? [{ value: activeSeason.id!, label: `● ${activeSeason.name}` }] : []),
+                    { value: 'all', label: 'All Time' },
+                    ...seasons
+                      .filter((s) => s.id !== activeSeason?.id)
+                      .map((s) => ({ value: s.id!, label: s.name })),
+                  ]}
+                  className="w-48"
+                />
+              </div>
+            )}
 
             {/* Loading State */}
             {loading && (
@@ -196,7 +235,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
 
                 {/* Goals Statistics */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-dark-50/50 border border-black/10 dark:border-white/10 rounded-xl p-4">
+                  <div className="bg-light-200/50 dark:bg-dark-50/50 border border-black/10 dark:border-white/10 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Trophy className="w-5 h-5 text-cyber-400" />
                       <h4 className="font-bold text-light-900 dark:text-white">Goals</h4>
@@ -219,7 +258,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
                     </div>
                   </div>
 
-                  <div className="bg-dark-50/50 border border-black/10 dark:border-white/10 rounded-xl p-4">
+                  <div className="bg-light-200/50 dark:bg-dark-50/50 border border-black/10 dark:border-white/10 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <TrendingUp className="w-5 h-5 text-electric-400" />
                       <h4 className="font-bold text-light-900 dark:text-white">Competition Breakdown</h4>
@@ -285,7 +324,7 @@ export default function HeadToHeadModal({ isOpen, onClose, players }: HeadToHead
 
                 {/* Recent Matches */}
                 {stats.recentMatches.length > 0 && (
-                  <div className="bg-dark-50/50 border border-black/10 dark:border-white/10 rounded-xl p-4">
+                  <div className="bg-light-200/50 dark:bg-dark-50/50 border border-black/10 dark:border-white/10 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-4">
                       <Calendar className="w-5 h-5 text-light-600 dark:text-gray-400" />
                       <h4 className="font-bold text-light-900 dark:text-white">Recent Matches</h4>

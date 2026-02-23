@@ -8,7 +8,7 @@ import {
   Calendar,
   Trophy,
   Target,
-  BarChart3
+  BarChart3,
 } from 'lucide-react';
 import { TournamentSidebarProps, TournamentSection } from '@/types/tournament';
 
@@ -101,13 +101,6 @@ export default function TournamentSidebar({
                   {item.label}
                 </span>
 
-                {/* Active Indicator */}
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTabMobile"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyber-400 rounded-full"
-                  />
-                )}
               </button>
             );
           })}

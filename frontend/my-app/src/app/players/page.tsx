@@ -2,14 +2,16 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, UserPlus, Trophy, Users, Loader2, Target } from 'lucide-react';
+import { Search, UserPlus, Trophy, Users, Loader2, Target, ChevronRight } from 'lucide-react';
 import MainLayout from '@/components/layouts/MainLayout';
 import PageHeader from '@/components/layouts/PageHeader';
 import Container from '@/components/layouts/Container';
 import GlobalNavigation from '@/components/layouts/GlobalNavigation';
-import PlayerCard from '@/components/players/PlayerCard';
+import PlayerAvatar from '@/components/players/PlayerAvatar';
 import PlayerFormModal from '@/components/players/PlayerFormModal';
 import HeadToHeadModal from '@/components/players/HeadToHeadModal';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
 import { Player, PlayerFilters } from '@/types/player';
 import { useRouter } from 'next/navigation';
 import { usePlayers } from '@/hooks/usePlayers';
@@ -29,11 +31,9 @@ export default function PlayersPage() {
     sortBy: 'titles',
   });
 
-  // Filter and sort players
   const filteredPlayers = useMemo(() => {
     let result = [...players];
 
-    // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -43,12 +43,10 @@ export default function PlayersPage() {
       );
     }
 
-    // Hall of Fame filter
     if (filters.hallOfFameOnly) {
       result = result.filter((p) => p.achievements.totalTitles >= 1);
     }
 
-    // Sort
     switch (filters.sortBy) {
       case 'titles':
         result.sort((a, b) => b.achievements.totalTitles - a.achievements.totalTitles);
@@ -64,14 +62,8 @@ export default function PlayersPage() {
     return result;
   }, [searchQuery, filters, players]);
 
-  const hallOfFameCount = players.filter((p) => p.achievements?.totalTitles >= 1).length || 0;
-
   const handlePlayerClick = (player: Player) => {
     router.push(`/players/${player.id}`);
-  };
-
-  const handleAddPlayer = () => {
-    setIsModalOpen(true);
   };
 
   const handleSubmitPlayer = async (data: any) => {
@@ -86,173 +78,82 @@ export default function PlayersPage() {
   return (
     <MainLayout>
       <GlobalNavigation />
-      <Container maxWidth="2xl" className="py-8 sm:py-12">
+      <Container maxWidth="2xl" className="py-4 sm:py-8">
         {/* Header */}
         <PageHeader
           title="PLAYERS"
-          subtitle={`Manage your ${players.length || 0} registered players`}
+          subtitle={`${players.length || 0} registered players`}
           gradient="electric"
         />
 
-        {/* Stats Bar */}
+        {/* Actions Bar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8"
+          className="flex flex-col sm:flex-row gap-3 mb-6"
         >
-          <div className="bg-gradient-to-br from-cyber-500/20 to-cyber-600/20 border-2 border-cyber-500/30 rounded-tech-lg p-4 backdrop-blur-xl">
-            <div className="flex items-center gap-3">
-              <Users className="w-6 h-6 text-cyber-400" />
-              <div>
-                <div className="text-2xl font-bold text-white">{players.length || 0}</div>
-                <div className="text-sm text-gray-400">Total Players</div>
-              </div>
-            </div>
+          <div className="flex-1">
+            <Input
+              placeholder="Search by name or PSN ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              leftIcon={<Search className="w-4 h-4" />}
+            />
           </div>
 
-          <div className="bg-gradient-to-br from-yellow-500/20 to-amber-600/20 border-2 border-yellow-500/30 rounded-tech-lg p-4 backdrop-blur-xl">
-            <div className="flex items-center gap-3">
-              <Trophy className="w-6 h-6 text-yellow-400" />
-              <div>
-                <div className="text-2xl font-bold text-white">{hallOfFameCount || 0}</div>
-                <div className="text-sm text-gray-400">Hall of Fame</div>
-              </div>
-            </div>
-          </div>
+          <div className="flex gap-2 flex-wrap items-center">
+            {/* HOF filter */}
+            <Button
+              variant={filters.hallOfFameOnly ? 'primary' : 'ghost'}
+              size="sm"
+              leftIcon={<Trophy className="w-3.5 h-3.5" />}
+              onClick={() => setFilters({ ...filters, hallOfFameOnly: !filters.hallOfFameOnly })}
+            >
+              HOF
+            </Button>
 
-          <div className="bg-gradient-to-br from-electric-500/20 to-electric-600/20 border-2 border-electric-500/30 rounded-tech-lg p-4 backdrop-blur-xl">
-            <div className="flex items-center gap-3">
-              <Filter className="w-6 h-6 text-electric-400" />
-              <div>
-                <div className="text-2xl font-bold text-white">{filteredPlayers.length || 0}</div>
-                <div className="text-sm text-gray-400">Showing</div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+            {/* Sort pills */}
+            {(['titles', 'name', 'recent'] as const).map((sortOption) => (
+              <Button
+                key={sortOption}
+                variant={filters.sortBy === sortOption ? 'primary' : 'ghost'}
+                size="sm"
+                onClick={() => setFilters({ ...filters, sortBy: sortOption })}
+              >
+                {sortOption === 'titles' ? 'Titles' : sortOption === 'name' ? 'Name' : 'Recent'}
+              </Button>
+            ))}
 
-        {/* Search and Filters Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mb-8"
-        >
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search Input */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by name or PSN ID..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="
-                  w-full pl-12 pr-4 py-3
-                  bg-gray-900/50 border-2 border-white/10
-                  rounded-tech-lg
-                  text-white placeholder-gray-500
-                  focus:outline-none focus:border-cyber-500/50
-                  transition-colors
-                  backdrop-blur-xl
-                "
-              />
-            </div>
+            <div className="w-px bg-black/10 dark:bg-white/10 self-stretch" />
 
-            {/* Compare Players Button */}
-            <button
+            {/* Compare */}
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<Target className="w-3.5 h-3.5" />}
               onClick={() => setIsH2HModalOpen(true)}
               disabled={players.length < 2}
-              className="
-                px-6 py-3
-                bg-gradient-to-r from-electric-500 to-pink-600
-                hover:from-electric-600 hover:to-pink-700
-                text-white font-bold
-                rounded-tech-lg
-                transition-all duration-300
-                hover:shadow-glow-purple
-                flex items-center justify-center gap-2
-                whitespace-nowrap
-                disabled:opacity-50 disabled:cursor-not-allowed
-              "
             >
-              <Target className="w-5 h-5" />
-              <span className="hidden sm:inline">Compare Players</span>
-              <span className="sm:hidden">Compare</span>
-            </button>
+              Compare
+            </Button>
 
-            {/* Add Player Button - Admin Only */}
+            {/* Add Player - admin only */}
             {isAuthenticated && (
-              <button
-                onClick={handleAddPlayer}
-                className="
-                  px-6 py-3
-                  bg-gradient-to-r from-cyber-500 to-cyber-600
-                  hover:from-cyber-600 hover:to-cyber-700
-                  text-white font-bold
-                  rounded-tech-lg
-                  transition-all duration-300
-                  hover:shadow-glow
-                  flex items-center justify-center gap-2
-                  whitespace-nowrap
-                "
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<UserPlus className="w-3.5 h-3.5" />}
+                onClick={() => setIsModalOpen(true)}
+                glow
               >
-                <UserPlus className="w-5 h-5" />
-                <span className="hidden sm:inline">Add Player</span>
-                <span className="sm:hidden">Add</span>
-              </button>
+                Add
+              </Button>
             )}
-          </div>
-
-          {/* Filter Options */}
-          <div className="flex flex-wrap gap-3 mt-4">
-            {/* Hall of Fame Filter */}
-            <button
-              onClick={() => setFilters({ ...filters, hallOfFameOnly: !filters.hallOfFameOnly })}
-              className={`
-                px-4 py-2 rounded-full
-                font-semibold text-sm
-                transition-all duration-300
-                ${
-                  filters.hallOfFameOnly
-                    ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-white shadow-lg'
-                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                }
-              `}
-            >
-              <Trophy className="w-4 h-4 inline mr-2" />
-              Hall of Fame Only
-            </button>
-
-            {/* Sort Options */}
-            <div className="flex gap-2">
-              <span className="text-gray-400 text-sm self-center">Sort by:</span>
-              {(['titles', 'name', 'recent'] as const).map((sortOption) => (
-                <button
-                  key={sortOption}
-                  onClick={() => setFilters({ ...filters, sortBy: sortOption })}
-                  className={`
-                    px-4 py-2 rounded-full
-                    font-semibold text-sm
-                    transition-all duration-300
-                    ${
-                      filters.sortBy === sortOption
-                        ? 'bg-gradient-to-r from-cyber-500 to-electric-500 text-white'
-                        : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                    }
-                  `}
-                >
-                  {sortOption === 'titles' && 'Titles'}
-                  {sortOption === 'name' && 'Name'}
-                  {sortOption === 'recent' && 'Recent'}
-                </button>
-              ))}
-            </div>
           </div>
         </motion.div>
 
-        {/* Players Grid */}
+        {/* Players List */}
         {loading ? (
           <motion.div
             initial={{ opacity: 0 }}
@@ -266,36 +167,98 @@ export default function PlayersPage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            transition={{ delay: 0.3 }}
+            className="rounded-xl overflow-hidden border border-black/8 dark:border-white/8
+                       grid grid-cols-1 sm:grid-cols-2 gap-px
+                       bg-black/8 dark:bg-white/8"
           >
-            {filteredPlayers.map((player, index) => (
-              <motion.div
-                key={player.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.05 * index, duration: 0.3 }}
-              >
-                <PlayerCard
-                  player={player}
+            {filteredPlayers.map((player, index) => {
+              const titles = player.achievements.totalTitles;
+              const leagueWins = player.achievements.leagueWins;
+              const tournamentWins = player.achievements.tournamentWins;
+              const tier = player.achievements.tier;
+
+              const accentBorder =
+                tier === 'legend'   ? 'border-l-yellow-500' :
+                tier === 'champion' ? 'border-l-electric-500' :
+                tier === 'veteran'  ? 'border-l-orange-400' :
+                                     'border-l-transparent';
+
+              const tierBadge =
+                tier === 'legend'   ? { label: 'Legend',  className: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/30' } :
+                tier === 'champion' ? { label: 'Champ',   className: 'bg-electric-500/10 text-electric-600 dark:text-electric-400 border-electric-500/30' } :
+                tier === 'veteran'  ? { label: 'Veteran', className: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30' } :
+                                     null;
+
+              return (
+                <motion.button
+                  key={player.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.02 * index }}
                   onClick={() => handlePlayerClick(player)}
-                  size="md"
-                  showTier={true}
-                />
-              </motion.div>
-            ))}
+                  className={`flex items-center gap-3 px-3 py-2.5 text-left w-full group
+                             bg-light-50 dark:bg-dark-50
+                             hover:bg-light-100 dark:hover:bg-white/5
+                             transition-colors border-l-2 ${accentBorder}`}
+                >
+                  <PlayerAvatar
+                    src={player.avatar}
+                    alt={player.name}
+                    size="sm"
+                    className="!w-8 !h-8 shrink-0"
+                    showBorder={titles >= 1}
+                    borderColor="border-yellow-500/50"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-light-900 dark:text-white truncate leading-tight">
+                      {player.name}
+                    </p>
+                    {player.psnId && player.psnId !== 'player' && (
+                      <p className="text-xs text-light-500 dark:text-gray-500 truncate leading-tight">
+                        @{player.psnId}
+                      </p>
+                    )}
+                  </div>
+                  <div className="shrink-0 flex items-center gap-2">
+                    {tierBadge && (
+                      <span className={`text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-md border ${tierBadge.className}`}>
+                        {tierBadge.label}
+                      </span>
+                    )}
+                    {titles > 0 && (
+                      <div className="flex items-center gap-1.5 text-xs font-semibold">
+                        {leagueWins > 0 && (
+                          <span className="flex items-center gap-0.5 text-cyber-600 dark:text-cyber-400">
+                            <Trophy className="w-3 h-3" />
+                            {leagueWins}
+                          </span>
+                        )}
+                        {tournamentWins > 0 && (
+                          <span className="flex items-center gap-0.5 text-electric-600 dark:text-electric-400">
+                            <Target className="w-3 h-3" />
+                            {tournamentWins}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <ChevronRight className="w-3.5 h-3.5 text-light-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </motion.button>
+              );
+            })}
           </motion.div>
         ) : (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.3 }}
             className="text-center py-16"
           >
             <Users className="w-16 h-16 text-gray-600 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-400 mb-2">No players found</h3>
             <p className="text-gray-500">
-              {searchQuery
+              {searchQuery || filters.hallOfFameOnly
                 ? 'Try adjusting your search or filters'
                 : 'Get started by adding your first player'}
             </p>
@@ -303,7 +266,6 @@ export default function PlayersPage() {
         )}
       </Container>
 
-      {/* Add Player Modal */}
       <PlayerFormModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -311,7 +273,6 @@ export default function PlayersPage() {
         mode="add"
       />
 
-      {/* Head-to-Head Comparison Modal */}
       <HeadToHeadModal
         isOpen={isH2HModalOpen}
         onClose={() => setIsH2HModalOpen(false)}

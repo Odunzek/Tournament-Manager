@@ -177,6 +177,7 @@ export interface Tournament {
   name: string;
   type: 'league' | 'champions_league' | 'knockout' | 'custom';
   status: 'setup' | 'group_stage' | 'knockout' | 'completed';
+  seasonId?: string; // references seasons collection doc ID
   createdAt: Date;
   startDate?: Date;
   endDate?: Date;
@@ -185,7 +186,8 @@ export interface Tournament {
   groups?: TournamentGroup[];
   knockoutBracket?: KnockoutTie[];
   settings: TournamentSettings;
-  qualifiedTeams?: TournamentParticipant[];  
+  qualifiedTeams?: TournamentParticipant[];
+  rules?: string;
 }
 
 export interface TournamentGroup {
@@ -403,12 +405,12 @@ export const deleteTournament = async (tournamentId: string): Promise<void> => {
   }
 };
 
-//  Clean up member from all groups (standings + matches)
-//  Auto-generate new fixtures for a member who just joined or moved to a group
+//  Auto-generate new fixtures for a member who just joined or moved to a group.
+//  Preserves all existing matches (including played results) and only adds missing ones.
 export async function generateMissingGroupFixtures(
   tournamentId: string,
   groupId: string,
-  newTeamName?: string // optional — works for new or full regen
+  newTeamName?: string // optional — informational only
 ) {
   const tournament = await getTournamentById(tournamentId);
   if (!tournament || !tournament.groups) return;
@@ -417,59 +419,64 @@ export async function generateMissingGroupFixtures(
     if (group.id !== groupId) return group;
 
     const teamNames = group.standings.map((s) => s.teamName.trim());
-    const matches: any[] = [];
+    const existingMatches = group.matches || [];
+    const newMatches: any[] = [];
+    let nextMatchday = existingMatches.length + 1;
 
-    // 🧩 Create round-robin home-and-away fixtures
     for (let i = 0; i < teamNames.length; i++) {
       for (let j = i + 1; j < teamNames.length; j++) {
         const home = teamNames[i];
         const away = teamNames[j];
 
-        // skip if same name or already exists
         if (home.toLowerCase() === away.toLowerCase()) continue;
 
-        const match1 = {
-          id: uuidv4(),
-          groupId,
-          homeTeam: home,
-          awayTeam: away,
-          homeScore: 0,
-          awayScore: 0,
-          matchDate: new Date(), // you can offset later
-          played: false,
-          matchday: matches.length + 1,
-        };
+        // Only add leg 1 if it doesn't already exist
+        const leg1Exists = existingMatches.some(
+          (m) =>
+            m.homeTeam.toLowerCase() === home.toLowerCase() &&
+            m.awayTeam.toLowerCase() === away.toLowerCase()
+        );
+        if (!leg1Exists) {
+          newMatches.push({
+            id: uuidv4(),
+            groupId,
+            homeTeam: home,
+            awayTeam: away,
+            homeScore: 0,
+            awayScore: 0,
+            matchDate: new Date(),
+            played: false,
+            matchday: nextMatchday++,
+          });
+        }
 
-        const match2 = {
-          id: uuidv4(),
-          groupId,
-          homeTeam: away,
-          awayTeam: home,
-          homeScore: 0,
-          awayScore: 0,
-          matchDate: new Date(),
-          played: false,
-          matchday: matches.length + 2,
-        };
-
-        matches.push(match1, match2);
+        // Only add leg 2 if it doesn't already exist
+        const leg2Exists = existingMatches.some(
+          (m) =>
+            m.homeTeam.toLowerCase() === away.toLowerCase() &&
+            m.awayTeam.toLowerCase() === home.toLowerCase()
+        );
+        if (!leg2Exists) {
+          newMatches.push({
+            id: uuidv4(),
+            groupId,
+            homeTeam: away,
+            awayTeam: home,
+            homeScore: 0,
+            awayScore: 0,
+            matchDate: new Date(),
+            played: false,
+            matchday: nextMatchday++,
+          });
+        }
       }
     }
 
-    // 🧹 Remove duplicates by team pairs
-    const uniqueMatches = matches.filter(
-      (match, index, self) =>
-        index ===
-        self.findIndex(
-          (m) =>
-            m.homeTeam.toLowerCase() === match.homeTeam.toLowerCase() &&
-            m.awayTeam.toLowerCase() === match.awayTeam.toLowerCase()
-        )
-    );
+    if (newMatches.length === 0) return group; // nothing to add
 
     return {
       ...group,
-      matches: uniqueMatches,
+      matches: [...existingMatches, ...newMatches],
     };
   });
 
@@ -507,18 +514,67 @@ export const addMemberToTournament = async (
       memberData.createdAt = member.createdAt;
     }
 
-    // ✅ Add to Firestore without undefined values
+    // Add to Firestore without undefined values
     const docRef = await addDoc(collection(db, "tournament_members"), memberData);
+    const newMemberId = docRef.id;
 
-    // ✅ Update tournament currentTeams count
+    // Update tournament currentTeams count
     const tournament = await getTournamentById(tournamentId);
     if (tournament) {
       await updateTournament(tournamentId, {
         currentTeams: (tournament.currentTeams || 0) + 1,
       });
+
+      // If tournament is already in group_stage and a groupId was provided,
+      // add the player to the group's members + standings, then generate their fixtures.
+      if (
+        tournament.status === 'group_stage' &&
+        member.groupId &&
+        tournament.groups
+      ) {
+        const newParticipant: TournamentParticipant = {
+          id: newMemberId,
+          name: member.name,
+          tournamentId,
+          groupId: member.groupId,
+          eliminated: false,
+          ...(member.psnId ? { psnId: member.psnId } : {}),
+        };
+
+        const newStanding: GroupStanding = {
+          teamName: member.name,
+          played: 0,
+          won: 0,
+          drawn: 0,
+          lost: 0,
+          goalsFor: 0,
+          goalsAgainst: 0,
+          goalDifference: 0,
+          points: 0,
+          position: 0,
+        };
+
+        const updatedGroups = tournament.groups.map((group) => {
+          if (group.id !== member.groupId) return group;
+          // Guard against duplicates
+          const alreadyMember = group.members.some(
+            (m) => m.name.toLowerCase() === member.name.toLowerCase()
+          );
+          if (alreadyMember) return group;
+          return {
+            ...group,
+            members: [...group.members, newParticipant],
+            standings: [...group.standings, newStanding],
+          };
+        });
+
+        await updateTournament(tournamentId, { groups: updatedGroups });
+        // Generate fixtures for the new player against all existing group members
+        await generateMissingGroupFixtures(tournamentId, member.groupId, member.name);
+      }
     }
 
-    return docRef.id;
+    return newMemberId;
   } catch (error) {
     console.error("Error adding team to tournament:", error);
     throw error;
@@ -554,6 +610,79 @@ export const reassignMemberToGroup = async (memberId: string, newGroupId: string
     console.error('❌ Error reassigning member to group:', error);
     throw error;
   }
+};
+
+/**
+ * Move a player from their current group to a different group.
+ * Updates tournament_members, removes them from old group (members/standings/matches),
+ * adds them to the new group, and generates their fixtures.
+ */
+export const movePlayerToGroup = async (
+  tournamentId: string,
+  member: TournamentParticipant,
+  targetGroupId: string
+): Promise<void> => {
+  if (!member.id) throw new Error('Member ID required');
+  if (member.groupId === targetGroupId) return; // already there
+
+  // 1. Update the Firestore member document
+  const memberRef = doc(db, 'tournament_members', member.id);
+  await updateDoc(memberRef, { groupId: targetGroupId });
+
+  // 2. Update tournament.groups
+  const tournament = await getTournamentById(tournamentId);
+  if (!tournament || !tournament.groups) return;
+
+  const memberNameLower = member.name.trim().toLowerCase();
+
+  // Remove from every group first
+  let updatedGroups = tournament.groups.map((group) => ({
+    ...group,
+    members: group.members.filter(
+      (m) => m.name.trim().toLowerCase() !== memberNameLower
+    ),
+    standings: group.standings.filter(
+      (s) => s.teamName.trim().toLowerCase() !== memberNameLower
+    ),
+    matches: group.matches.filter(
+      (m) =>
+        m.homeTeam.trim().toLowerCase() !== memberNameLower &&
+        m.awayTeam.trim().toLowerCase() !== memberNameLower
+    ),
+  }));
+
+  // Add to target group (guard against duplicates)
+  updatedGroups = updatedGroups.map((group) => {
+    if (group.id !== targetGroupId) return group;
+    const alreadyIn = group.members.some(
+      (m) => m.name.trim().toLowerCase() === memberNameLower
+    );
+    if (alreadyIn) return group;
+    return {
+      ...group,
+      members: [...group.members, { ...member, groupId: targetGroupId }],
+      standings: [
+        ...group.standings,
+        {
+          teamName: member.name,
+          played: 0,
+          won: 0,
+          drawn: 0,
+          lost: 0,
+          goalsFor: 0,
+          goalsAgainst: 0,
+          goalDifference: 0,
+          points: 0,
+          position: 0,
+        },
+      ],
+    };
+  });
+
+  await updateTournament(tournamentId, { groups: updatedGroups });
+
+  // 3. Generate missing fixtures for the new group
+  await generateMissingGroupFixtures(tournamentId, targetGroupId, member.name);
 };
 
 // Add this function to your tournamentUtils.ts file
@@ -1130,7 +1259,7 @@ export const repairKnockoutProgression = async (
 
 // NEW: Get qualified teams for knockout with proper bracket sizing
 export const getQualifiedTeamsForKnockout = (groups: TournamentGroup[]): TournamentParticipant[] => {
-  const qualifiedTeams: TournamentParticipant[] = [];
+  let qualifiedTeams: TournamentParticipant[] = [];
   const thirdPlaceTeams: Array<{ team: TournamentParticipant; standing: GroupStanding; groupName: string }> = [];
   
   // Step 1: Get top 2 from each group (ALWAYS qualify)
@@ -1189,21 +1318,18 @@ export const getQualifiedTeamsForKnockout = (groups: TournamentGroup[]): Tournam
     }
   });
   
-  // Step 2: Determine target bracket size
+  // Step 2: Determine target bracket size based on max achievable teams
+  // (current qualified + available 3rd place) to avoid under-filled brackets
   const currentQualified = qualifiedTeams.length;
-  console.log(`Currently qualified: ${currentQualified} teams (top 2 from each group)`);
-  
+  const maxAchievable = currentQualified + thirdPlaceTeams.length;
+  console.log(`Currently qualified: ${currentQualified} teams (top 2 from each group), max achievable: ${maxAchievable}`);
+
   let targetBracketSize: number;
-  if (currentQualified <= 4) {
-    targetBracketSize = 4;
-  } else if (currentQualified <= 8) {
-    targetBracketSize = 8;
-  } else if (currentQualified <= 16) {
-    targetBracketSize = 16;
-  } else {
-    targetBracketSize = 32;
-  }
-  
+  if (maxAchievable >= 32) targetBracketSize = 32;
+  else if (maxAchievable >= 16) targetBracketSize = 16;
+  else if (maxAchievable >= 8) targetBracketSize = 8;
+  else targetBracketSize = 4;
+
   console.log(`Target bracket size: ${targetBracketSize}`);
   
   // Step 3: Fill remaining spots with best 3rd place teams
@@ -1211,11 +1337,20 @@ export const getQualifiedTeamsForKnockout = (groups: TournamentGroup[]): Tournam
   console.log(`Need to fill ${spotsToFill} spots with best 3rd place teams`);
   
   if (spotsToFill > 0 && thirdPlaceTeams.length > 0) {
-    // Sort 3rd place teams by points
+    // Sort 3rd place teams by PPG (points per game) to fairly compare teams from groups of different sizes
     const sortedThirdPlace = thirdPlaceTeams.sort((a, b) => {
-      if (b.standing.points !== a.standing.points) return b.standing.points - a.standing.points;
-      if (b.standing.goalDifference !== a.standing.goalDifference) return b.standing.goalDifference - a.standing.goalDifference;
-      return b.standing.goalsFor - a.standing.goalsFor;
+      const aPlayed = a.standing.played || 1;
+      const bPlayed = b.standing.played || 1;
+      const aPPG = a.standing.points / aPlayed;
+      const bPPG = b.standing.points / bPlayed;
+      if (bPPG !== aPPG) return bPPG - aPPG;
+      const aGDPG = a.standing.goalDifference / aPlayed;
+      const bGDPG = b.standing.goalDifference / bPlayed;
+      if (bGDPG !== aGDPG) return bGDPG - aGDPG;
+      const aGFPG = a.standing.goalsFor / aPlayed;
+      const bGFPG = b.standing.goalsFor / bPlayed;
+      if (bGFPG !== aGFPG) return bGFPG - aGFPG;
+      return (a.standing.goalsAgainst / aPlayed) - (b.standing.goalsAgainst / bPlayed);
     });
     
     // Take best 3rd place teams up to spots available
@@ -1237,6 +1372,22 @@ export const getQualifiedTeamsForKnockout = (groups: TournamentGroup[]): Tournam
     console.log(`Added ${bestThirdPlace.length} best 3rd place teams`);
   }
   
+  // Safety trim: if auto-qualifiers alone exceed the target bracket (e.g. 17-20 players),
+  // keep only the best-ranked teams to produce a clean power-of-2 bracket
+  if (qualifiedTeams.length > targetBracketSize) {
+    qualifiedTeams.sort((a, b) => {
+      if ((a.qualificationRank ?? 0) !== (b.qualificationRank ?? 0))
+        return (a.qualificationRank ?? 0) - (b.qualificationRank ?? 0);
+      if ((b.finalPoints ?? 0) !== (a.finalPoints ?? 0))
+        return (b.finalPoints ?? 0) - (a.finalPoints ?? 0);
+      if ((b.finalGoalDifference ?? 0) !== (a.finalGoalDifference ?? 0))
+        return (b.finalGoalDifference ?? 0) - (a.finalGoalDifference ?? 0);
+      return (b.finalGoalsFor ?? 0) - (a.finalGoalsFor ?? 0);
+    });
+    qualifiedTeams = qualifiedTeams.slice(0, targetBracketSize);
+    console.log(`Trimmed to ${targetBracketSize} teams for clean bracket`);
+  }
+
   console.log(`Final qualified teams: ${qualifiedTeams.length}`);
   return qualifiedTeams;
 };
@@ -1361,6 +1512,94 @@ export const removeMemberFromGroupsAndFixtures = async (
   }
 };
 
+
+// Remove a player completely from a tournament (group_stage only)
+export const removePlayerFromTournament = async (
+  tournamentId: string,
+  memberId: string,
+  memberName: string
+): Promise<void> => {
+  try {
+    // Delete from tournament_members collection
+    await deleteDoc(doc(db, 'tournament_members', memberId));
+
+    const tournament = await getTournamentById(tournamentId);
+    if (!tournament) return;
+
+    // Decrement currentTeams count
+    await updateTournament(tournamentId, {
+      currentTeams: Math.max(0, (tournament.currentTeams || 1) - 1),
+    });
+
+    // Remove from groups (members, standings, matches)
+    if (tournament.groups) {
+      await removeMemberFromGroupsAndFixtures(tournamentId, memberName);
+    }
+  } catch (error) {
+    console.error('Error removing player from tournament:', error);
+    throw error;
+  }
+};
+
+// Sync orphaned tournament_members (have groupId but aren't in tournament.groups) into their groups.
+// Call this once on page load when tournament is in group_stage.
+export const syncOrphanedMembersToGroups = async (tournamentId: string): Promise<void> => {
+  const [tournament, members] = await Promise.all([
+    getTournamentById(tournamentId),
+    getTournamentMembers(tournamentId),
+  ]);
+
+  if (!tournament || !tournament.groups || tournament.status !== 'group_stage') return;
+
+  const groups = tournament.groups.map((g) => ({
+    ...g,
+    members: [...g.members],
+    standings: [...g.standings],
+  }));
+  const groupsToFixture = new Set<string>();
+
+  for (const member of members) {
+    if (!member.groupId) continue;
+
+    const groupIndex = groups.findIndex((g) => g.id === member.groupId);
+    if (groupIndex === -1) continue;
+
+    const alreadyInGroup = groups[groupIndex].members.some(
+      (m) => m.name.toLowerCase() === member.name.toLowerCase()
+    );
+
+    if (!alreadyInGroup) {
+      groups[groupIndex].members.push({
+        id: member.id,
+        name: member.name,
+        tournamentId,
+        groupId: member.groupId,
+        eliminated: false,
+        ...(member.psnId ? { psnId: member.psnId } : {}),
+      });
+      groups[groupIndex].standings.push({
+        teamName: member.name,
+        played: 0,
+        won: 0,
+        drawn: 0,
+        lost: 0,
+        goalsFor: 0,
+        goalsAgainst: 0,
+        goalDifference: 0,
+        points: 0,
+        position: 0,
+      });
+      groupsToFixture.add(member.groupId);
+    }
+  }
+
+  if (groupsToFixture.size > 0) {
+    await updateTournament(tournamentId, { groups });
+    for (const groupId of groupsToFixture) {
+      await generateMissingGroupFixtures(tournamentId, groupId);
+    }
+  }
+};
 
 // UPDATED: Progression from group stage to knockout
 export const progressToKnockoutStage = async (tournamentId: string): Promise<void> => {

@@ -2,13 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Trophy, Award, Save, AlertCircle } from 'lucide-react';
+import { X, User, Trophy, Award, Save, Link } from 'lucide-react';
 import { Player, PlayerFormData } from '@/types/player';
+import { Season } from '@/types/season';
+import { getAllSeasons } from '@/lib/seasonUtils';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
 
 interface PlayerFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: PlayerFormData & { achievements?: { leagueWins: number; tournamentWins: number } }) => void;
+  onSubmit: (data: PlayerFormData & {
+    achievements?: { leagueWins: number; tournamentWins: number };
+    selectedSeasonId?: string;
+  }) => void;
   player?: Player | null;
   mode: 'add' | 'edit';
 }
@@ -20,13 +27,7 @@ export default function PlayerFormModal({
   player,
   mode,
 }: PlayerFormModalProps) {
-  const [formData, setFormData] = useState<{
-    name: string;
-    psnId: string;
-    avatar: string;
-    leagueWins: number;
-    tournamentWins: number;
-  }>({
+  const [formData, setFormData] = useState({
     name: '',
     psnId: '',
     avatar: '',
@@ -34,62 +35,77 @@ export default function PlayerFormModal({
     tournamentWins: 0,
   });
 
-  const [errors, setErrors] = useState<{
-    name?: string;
-    psnId?: string;
-  }>({});
+  const [errors, setErrors] = useState<{ name?: string; psnId?: string }>({});
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>('');
 
-  // Initialize form data when player changes or modal opens
   useEffect(() => {
     if (player && mode === 'edit') {
-      setFormData({
+      // Only set profile fields here; win counts are set by the seasons effect below
+      setFormData(prev => ({
+        ...prev,
         name: player.name,
         psnId: player.psnId,
         avatar: player.avatar || '',
-        leagueWins: player.achievements.leagueWins,
-        tournamentWins: player.achievements.tournamentWins,
-      });
+      }));
     } else {
-      setFormData({
-        name: '',
-        psnId: '',
-        avatar: '',
-        leagueWins: 0,
-        tournamentWins: 0,
-      });
+      setFormData({ name: '', psnId: '', avatar: '', leagueWins: 0, tournamentWins: 0 });
     }
     setErrors({});
   }, [player, mode, isOpen]);
 
+  useEffect(() => {
+    if (!isOpen || mode !== 'edit') return;
+    getAllSeasons()
+      .then((all) => {
+        setSeasons(all);
+        if (all.length > 0) {
+          const firstId = all[0].id!;
+          setSelectedSeasonId(firstId);
+          const ach = player?.seasonAchievements?.[firstId];
+          setFormData(prev => ({
+            ...prev,
+            leagueWins: ach?.leagueWins ?? 0,
+            tournamentWins: ach?.tournamentWins ?? 0,
+          }));
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load seasons for achievement editor:', err);
+      });
+  }, [isOpen, mode, player]);
+
+  const handleSeasonChange = (seasonId: string) => {
+    setSelectedSeasonId(seasonId);
+    const ach = player?.seasonAchievements?.[seasonId];
+    setFormData(prev => ({
+      ...prev,
+      leagueWins: ach?.leagueWins ?? 0,
+      tournamentWins: ach?.tournamentWins ?? 0,
+    }));
+  };
+
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
-
     if (!formData.name.trim()) {
       newErrors.name = 'Player name is required';
     } else if (formData.name.length < 2) {
       newErrors.name = 'Name must be at least 2 characters';
     }
-
-    // PSN ID is optional, but if provided, validate format
     if (formData.psnId.trim()) {
       if (formData.psnId.length < 3) {
         newErrors.psnId = 'PSN ID must be at least 3 characters';
       } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.psnId)) {
-        newErrors.psnId = 'PSN ID can only contain letters, numbers, hyphens, and underscores';
+        newErrors.psnId = 'Letters, numbers, hyphens and underscores only';
       }
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     onSubmit({
       name: formData.name.trim(),
       psnId: formData.psnId.trim().toLowerCase() || 'player',
@@ -98,14 +114,13 @@ export default function PlayerFormModal({
         leagueWins: formData.leagueWins,
         tournamentWins: formData.tournamentWins,
       },
+      selectedSeasonId: selectedSeasonId || undefined,
     });
-
     onClose();
   };
 
   const handleChange = (field: keyof typeof formData, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (errors[field as keyof typeof errors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
@@ -123,236 +138,141 @@ export default function PlayerFormModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
           />
 
-          {/* Modal */}
+          {/* Modal — slides up from bottom on mobile, centered on desktop */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: 'spring', duration: 0.5 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="fixed inset-x-0 bottom-0 sm:inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
           >
-            <div className="bg-gradient-to-br from-gray-900 to-gray-950 border-2 border-cyber-500/30 rounded-tech-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto backdrop-blur-xl shadow-2xl">
+            <div className="bg-light-50 dark:bg-dark-50 border border-black/10 dark:border-white/10 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
+
               {/* Header */}
-              <div className="sticky top-0 bg-gradient-to-r from-cyber-500/20 to-electric-500/20 border-b border-black/10 dark:border-white/10 p-6 backdrop-blur-xl z-10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <User className="w-6 h-6 text-cyber-400" />
-                    <h2 className="text-2xl font-bold text-light-900 dark:text-white">
-                      {mode === 'add' ? 'Add New Player' : 'Edit Player'}
-                    </h2>
-                  </div>
-                  <button
-                    onClick={onClose}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors text-light-600 dark:text-gray-400 hover:text-light-900 dark:text-white"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-black/10 dark:border-white/10">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-cyber-400" />
+                  <h2 className="text-base font-bold text-light-900 dark:text-white">
+                    {mode === 'add' ? 'Add New Player' : 'Edit Player'}
+                  </h2>
                 </div>
+                <button
+                  onClick={onClose}
+                  className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-light-600 dark:text-gray-400"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
               {/* Form */}
-              <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                {/* Player Info Section */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-bold text-light-900 dark:text-white flex items-center gap-2">
-                    <User className="w-5 h-5 text-cyber-400" />
-                    Player Information
-                  </h3>
+              <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
 
-                  {/* Name Input */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">
-                      Player Name <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => handleChange('name', e.target.value)}
-                      placeholder="Enter player name"
-                      className={`
-                        w-full px-4 py-3
-                        bg-gray-900/50 border-2
-                        ${errors.name ? 'border-red-500/50' : 'border-black/10 dark:border-white/10 focus:border-cyber-500/50'}
-                        rounded-lg
-                        text-light-900 dark:text-white placeholder-gray-500
-                        focus:outline-none
-                        transition-colors
-                      `}
-                    />
-                    {errors.name && (
-                      <motion.p
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-2 text-sm text-red-400 flex items-center gap-1"
-                      >
-                        <AlertCircle className="w-4 h-4" />
-                        {errors.name}
-                      </motion.p>
-                    )}
-                  </div>
+                {/* Player Info */}
+                <div className="space-y-3">
+                  <Input
+                    label="Player Name *"
+                    value={formData.name}
+                    onChange={(e) => handleChange('name', e.target.value)}
+                    placeholder="Enter player name"
+                    error={errors.name}
+                    leftIcon={<User className="w-4 h-4" />}
+                  />
 
-                  {/* PSN ID Input */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">
-                      PSN ID <span className="text-gray-500">(Optional)</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.psnId}
-                      onChange={(e) => handleChange('psnId', e.target.value)}
-                      placeholder="Enter PSN ID"
-                      className={`
-                        w-full px-4 py-3
-                        bg-gray-900/50 border-2
-                        ${errors.psnId ? 'border-red-500/50' : 'border-black/10 dark:border-white/10 focus:border-cyber-500/50'}
-                        rounded-lg
-                        text-light-900 dark:text-white placeholder-gray-500
-                        focus:outline-none
-                        transition-colors
-                      `}
-                    />
-                    {errors.psnId && (
-                      <motion.p
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-2 text-sm text-red-400 flex items-center gap-1"
-                      >
-                        <AlertCircle className="w-4 h-4" />
-                        {errors.psnId}
-                      </motion.p>
-                    )}
-                  </div>
+                  <Input
+                    label="PSN ID (optional)"
+                    value={formData.psnId}
+                    onChange={(e) => handleChange('psnId', e.target.value)}
+                    placeholder="e.g. player_123"
+                    error={errors.psnId}
+                  />
 
-                  {/* Avatar URL Input */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">
-                      Avatar URL <span className="text-gray-500">(Optional)</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.avatar}
-                      onChange={(e) => handleChange('avatar', e.target.value)}
-                      placeholder="https://example.com/avatar.jpg"
-                      className="
-                        w-full px-4 py-3
-                        bg-gray-900/50 border-2 border-black/10 dark:border-white/10
-                        focus:border-cyber-500/50
-                        rounded-lg
-                        text-light-900 dark:text-white placeholder-gray-500
-                        focus:outline-none
-                        transition-colors
-                      "
-                    />
-                  </div>
+                  <Input
+                    label="Avatar URL (optional)"
+                    type="url"
+                    value={formData.avatar}
+                    onChange={(e) => handleChange('avatar', e.target.value)}
+                    placeholder="https://example.com/avatar.jpg"
+                    leftIcon={<Link className="w-4 h-4" />}
+                  />
                 </div>
 
-                {/* Achievements Section */}
-                <div className="space-y-4 pt-4 border-t border-black/10 dark:border-white/10">
-                  <h3 className="text-lg font-bold text-light-900 dark:text-white flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-yellow-400" />
+                {/* Achievements */}
+                <div className="pt-3 border-t border-black/10 dark:border-white/10 space-y-3">
+                  <p className="text-xs font-bold text-light-700 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Trophy className="w-3.5 h-3.5 text-yellow-400" />
                     Achievements
-                  </h3>
+                  </p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* League Wins */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-300 mb-2">
-                        League Wins
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formData.leagueWins}
-                        onChange={(e) => handleChange('leagueWins', parseInt(e.target.value) || 0)}
-                        className="
-                          w-full px-4 py-3
-                          bg-gray-900/50 border-2 border-black/10 dark:border-white/10
-                          focus:border-cyber-500/50
-                          rounded-lg
-                          text-light-900 dark:text-white
-                          focus:outline-none
-                          transition-colors
-                        "
-                      />
+                  {mode === 'edit' && seasons.length > 0 && (
+                    <div className="mb-2">
+                      <label className="text-xs text-light-600 dark:text-gray-400 mb-1 block">Season</label>
+                      <select
+                        value={selectedSeasonId}
+                        onChange={e => handleSeasonChange(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl text-sm bg-light-100 dark:bg-dark-100
+                                   border border-black/10 dark:border-white/10
+                                   text-light-900 dark:text-white focus:outline-none focus:border-cyber-500/50"
+                      >
+                        {seasons.map(s => (
+                          <option key={s.id} value={s.id!}>{s.name}</option>
+                        ))}
+                      </select>
                     </div>
+                  )}
 
-                    {/* Tournament Wins */}
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-300 mb-2">
-                        Tournament Wins
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formData.tournamentWins}
-                        onChange={(e) => handleChange('tournamentWins', parseInt(e.target.value) || 0)}
-                        className="
-                          w-full px-4 py-3
-                          bg-gray-900/50 border-2 border-black/10 dark:border-white/10
-                          focus:border-electric-500/50
-                          rounded-lg
-                          text-light-900 dark:text-white
-                          focus:outline-none
-                          transition-colors
-                        "
-                      />
-                    </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      label="League Wins"
+                      type="number"
+                      min={0}
+                      value={formData.leagueWins}
+                      onChange={(e) => handleChange('leagueWins', parseInt(e.target.value) || 0)}
+                    />
+                    <Input
+                      label="Tournament Wins"
+                      type="number"
+                      min={0}
+                      value={formData.tournamentWins}
+                      onChange={(e) => handleChange('tournamentWins', parseInt(e.target.value) || 0)}
+                    />
                   </div>
 
-                  {/* Total Titles Display */}
-                  <div className="bg-gradient-to-r from-yellow-500/10 to-amber-600/10 border border-yellow-500/20 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-300 font-semibold">Total Titles:</span>
-                      <span className="text-2xl font-bold text-yellow-400">{totalTitles}</span>
+                  {/* Total titles preview */}
+                  <div className="flex items-center justify-between px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                    <span className="text-sm text-light-700 dark:text-gray-300 font-medium">Total Titles</span>
+                    <div className="flex items-center gap-2">
+                      {totalTitles >= 1 && (
+                        <motion.span
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="flex items-center gap-1 text-xs text-yellow-500 font-semibold"
+                        >
+                          <Award className="w-3.5 h-3.5" />
+                          HOF
+                        </motion.span>
+                      )}
+                      <span className="text-lg font-black text-yellow-400">{totalTitles}</span>
                     </div>
-                    {totalTitles >= 3 && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="mt-2 flex items-center gap-2 text-sm text-yellow-400"
-                      >
-                        <Award className="w-4 h-4" />
-                        <span>Hall of Fame Eligible!</span>
-                      </motion.div>
-                    )}
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="
-                      flex-1 px-6 py-3
-                      bg-gray-800 hover:bg-gray-700
-                      border-2 border-black/10 dark:border-white/10
-                      text-light-900 dark:text-white font-bold
-                      rounded-lg
-                      transition-all duration-300
-                    "
-                  >
+                {/* Actions */}
+                <div className="flex gap-3 pt-1 pb-1">
+                  <Button type="button" variant="ghost" className="flex-1" onClick={onClose}>
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
-                    className="
-                      flex-1 px-6 py-3
-                      bg-gradient-to-r from-cyber-500 to-electric-500
-                      hover:from-cyber-600 hover:to-electric-600
-                      text-light-900 dark:text-white font-bold
-                      rounded-lg
-                      transition-all duration-300
-                      hover:shadow-glow
-                      flex items-center justify-center gap-2
-                    "
+                    variant="primary"
+                    className="flex-1"
+                    leftIcon={<Save className="w-4 h-4" />}
+                    glow
                   >
-                    <Save className="w-5 h-5" />
-                    <span>{mode === 'add' ? 'Add Player' : 'Save Changes'}</span>
-                  </button>
+                    {mode === 'add' ? 'Add Player' : 'Save Changes'}
+                  </Button>
                 </div>
               </form>
             </div>

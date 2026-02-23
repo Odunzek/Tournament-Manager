@@ -37,7 +37,7 @@ export default function MigratePlayersPage() {
   return (
     <MainLayout>
       <GlobalNavigation />
-      <Container maxWidth="2xl" className="py-8 sm:py-12">
+      <Container maxWidth="2xl" className="py-4 sm:py-8">
         <PageHeader
           title="MIGRATE PLAYERS"
           subtitle="Sync group members to new player system"
@@ -50,7 +50,7 @@ export default function MigratePlayersPage() {
           className="max-w-3xl mx-auto"
         >
           {/* Info Card */}
-          <div className="bg-gradient-to-br from-blue-500/10 to-purple-600/10 border-2 border-blue-500/30 rounded-tech-lg p-6 mb-8">
+          <div className="bg-linear-to-br from-blue-500/10 to-purple-600/10 border-2 border-blue-500/30 rounded-tech-lg p-6 mb-8">
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Database className="w-6 h-6 text-blue-400" />
               About This Migration
@@ -81,7 +81,7 @@ export default function MigratePlayersPage() {
               disabled={isMigrating}
               className="
                 px-8 py-4
-                bg-gradient-to-r from-cyber-500 to-electric-500
+                bg-linear-to-r from-cyber-500 to-electric-500
                 hover:from-cyber-600 hover:to-electric-600
                 disabled:from-gray-600 disabled:to-gray-700
                 text-white font-bold text-lg
@@ -112,7 +112,7 @@ export default function MigratePlayersPage() {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-gradient-to-br from-green-500/10 to-emerald-600/10 border-2 border-green-500/30 rounded-tech-lg p-6"
+              className="bg-linear-to-br from-green-500/10 to-emerald-600/10 border-2 border-green-500/30 rounded-tech-lg p-6"
             >
               <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                 <CheckCircle className="w-6 h-6 text-green-400" />
@@ -146,7 +146,7 @@ export default function MigratePlayersPage() {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-gradient-to-br from-red-500/10 to-pink-600/10 border-2 border-red-500/30 rounded-tech-lg p-6"
+              className="bg-linear-to-br from-red-500/10 to-pink-600/10 border-2 border-red-500/30 rounded-tech-lg p-6"
             >
               <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                 <XCircle className="w-6 h-6 text-red-400" />
@@ -161,7 +161,7 @@ export default function MigratePlayersPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="mt-12 bg-gradient-to-br from-yellow-500/10 to-amber-600/10 border-2 border-yellow-500/30 rounded-tech-lg p-6"
+            className="mt-12 bg-linear-to-br from-yellow-500/10 to-amber-600/10 border-2 border-yellow-500/30 rounded-tech-lg p-6"
           >
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <span className="text-2xl">👑</span>

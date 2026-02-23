@@ -11,6 +11,7 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  deleteField,
   query,
   orderBy,
   onSnapshot,
@@ -22,7 +23,8 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Player, PlayerFormData, calculateTier } from '@/types/player';
+import { Player, PlayerFormData, SeasonAchievements, calculateTier } from '@/types/player';
+import { getActiveSeason } from './seasonUtils';
 
 /**
  * Create a new player in Firestore
@@ -119,6 +121,7 @@ export const getPlayers = async (): Promise<Player[]> => {
         psnId: data.psnId,
         avatar: data.avatar || undefined,
         achievements: data.achievements,
+        seasonAchievements: data.seasonAchievements || undefined,
         createdAt: data.createdAt instanceof Timestamp
           ? data.createdAt.toDate().toISOString()
           : new Date(data.createdAt).toISOString(),
@@ -149,6 +152,7 @@ export const getPlayerById = async (playerId: string): Promise<Player | null> =>
         psnId: data.psnId,
         avatar: data.avatar || undefined,
         achievements: data.achievements,
+        seasonAchievements: data.seasonAchievements || undefined,
         createdAt: data.createdAt instanceof Timestamp
           ? data.createdAt.toDate().toISOString()
           : new Date(data.createdAt).toISOString(),
@@ -188,16 +192,19 @@ export const updatePlayer = async (
 
     // Calculate new achievements if provided
     let achievementUpdates = {};
+    let newLeagueWins = currentPlayer.achievements.leagueWins;
+    let newTournamentWins = currentPlayer.achievements.tournamentWins;
+
     if (updates.achievements) {
-      const leagueWins = updates.achievements.leagueWins ?? currentPlayer.achievements.leagueWins;
-      const tournamentWins = updates.achievements.tournamentWins ?? currentPlayer.achievements.tournamentWins;
-      const totalTitles = leagueWins + tournamentWins;
+      newLeagueWins = updates.achievements.leagueWins ?? currentPlayer.achievements.leagueWins;
+      newTournamentWins = updates.achievements.tournamentWins ?? currentPlayer.achievements.tournamentWins;
+      const totalTitles = newLeagueWins + newTournamentWins;
       const tier = calculateTier(totalTitles);
 
       // Build achievements object without undefined values
       const achievements: any = {
-        leagueWins,
-        tournamentWins,
+        leagueWins: newLeagueWins,
+        tournamentWins: newTournamentWins,
         totalTitles,
         tier
       };
@@ -213,9 +220,7 @@ export const updatePlayer = async (
         achievements.inductionDate = inductionDate;
       }
 
-      achievementUpdates = {
-        achievements
-      };
+      achievementUpdates = { achievements };
     }
 
     // Build update object
@@ -444,21 +449,70 @@ export const getAllTimeRecords = async () => {
 };
 
 /**
- * Increment player's league wins
+ * Increment player's league wins (global + per-season if seasonId provided)
  */
-export const incrementLeagueWins = async (playerId: string): Promise<void> => {
+export const incrementLeagueWins = async (playerId: string, seasonId?: string): Promise<void> => {
   try {
     const player = await getPlayerById(playerId);
     if (!player) {
       throw new Error('Player not found');
     }
 
-    await updatePlayer(playerId, {
-      achievements: {
-        leagueWins: player.achievements.leagueWins + 1,
-        tournamentWins: player.achievements.tournamentWins
+    const playerRef = doc(db, 'players', playerId);
+    const batch = writeBatch(db);
+
+    // Global achievements
+    const newGlobalLeague = player.achievements.leagueWins + 1;
+    const newGlobalTournament = player.achievements.tournamentWins;
+    const newGlobalTotal = newGlobalLeague + newGlobalTournament;
+    const newGlobalTier = calculateTier(newGlobalTotal);
+
+    const globalAchievements: Record<string, unknown> = {
+      leagueWins: newGlobalLeague,
+      tournamentWins: newGlobalTournament,
+      totalTitles: newGlobalTotal,
+      tier: newGlobalTier,
+    };
+
+    let globalInduction = player.achievements.inductionDate;
+    if (newGlobalTotal >= 1 && !globalInduction) {
+      globalInduction = new Date().toISOString();
+    }
+    if (globalInduction) {
+      globalAchievements.inductionDate = globalInduction;
+    }
+
+    const updateData: Record<string, unknown> = {
+      achievements: globalAchievements,
+      updatedAt: new Date(),
+    };
+
+    // Per-season achievements (same batch)
+    if (seasonId) {
+      const current = player.seasonAchievements?.[seasonId];
+      const newLeagueWins = (current?.leagueWins ?? 0) + 1;
+      const newTournamentWins = current?.tournamentWins ?? 0;
+      const newTotalTitles = newLeagueWins + newTournamentWins;
+      const newTier = calculateTier(newTotalTitles);
+
+      const seasonAchievement: SeasonAchievements = {
+        leagueWins: newLeagueWins,
+        tournamentWins: newTournamentWins,
+        totalTitles: newTotalTitles,
+        tier: newTier,
+      };
+
+      if (newTotalTitles >= 1 && !current?.inductionDate) {
+        seasonAchievement.inductionDate = new Date().toISOString();
+      } else if (current?.inductionDate) {
+        seasonAchievement.inductionDate = current.inductionDate;
       }
-    });
+
+      updateData[`seasonAchievements.${seasonId}`] = seasonAchievement;
+    }
+
+    batch.update(playerRef, updateData);
+    await batch.commit();
 
     console.log('✅ Incremented league wins for player:', playerId);
   } catch (error) {
@@ -468,25 +522,225 @@ export const incrementLeagueWins = async (playerId: string): Promise<void> => {
 };
 
 /**
- * Increment player's tournament wins
+ * Increment player's tournament wins (global + per-season if seasonId provided)
+ * Uses a single batch write for atomicity — both global and season data update together or not at all.
  */
-export const incrementTournamentWins = async (playerId: string): Promise<void> => {
+export const incrementTournamentWins = async (playerId: string, seasonId?: string): Promise<void> => {
   try {
     const player = await getPlayerById(playerId);
     if (!player) {
       throw new Error('Player not found');
     }
 
-    await updatePlayer(playerId, {
-      achievements: {
-        leagueWins: player.achievements.leagueWins,
-        tournamentWins: player.achievements.tournamentWins + 1
+    const playerRef = doc(db, 'players', playerId);
+    const batch = writeBatch(db);
+
+    // Global achievements
+    const newGlobalLeague = player.achievements.leagueWins;
+    const newGlobalTournament = player.achievements.tournamentWins + 1;
+    const newGlobalTotal = newGlobalLeague + newGlobalTournament;
+    const newGlobalTier = calculateTier(newGlobalTotal);
+
+    const globalAchievements: Record<string, unknown> = {
+      leagueWins: newGlobalLeague,
+      tournamentWins: newGlobalTournament,
+      totalTitles: newGlobalTotal,
+      tier: newGlobalTier,
+    };
+
+    let globalInduction = player.achievements.inductionDate;
+    if (newGlobalTotal >= 1 && !globalInduction) {
+      globalInduction = new Date().toISOString();
+    }
+    if (globalInduction) {
+      globalAchievements.inductionDate = globalInduction;
+    }
+
+    const updateData: Record<string, unknown> = {
+      achievements: globalAchievements,
+      updatedAt: new Date(),
+    };
+
+    // Per-season achievements (same batch)
+    if (seasonId) {
+      const current = player.seasonAchievements?.[seasonId];
+      const newLeagueWins = current?.leagueWins ?? 0;
+      const newTournamentWins = (current?.tournamentWins ?? 0) + 1;
+      const newTotalTitles = newLeagueWins + newTournamentWins;
+      const newTier = calculateTier(newTotalTitles);
+
+      const seasonAchievement: SeasonAchievements = {
+        leagueWins: newLeagueWins,
+        tournamentWins: newTournamentWins,
+        totalTitles: newTotalTitles,
+        tier: newTier,
+      };
+
+      if (newTotalTitles >= 1 && !current?.inductionDate) {
+        seasonAchievement.inductionDate = new Date().toISOString();
+      } else if (current?.inductionDate) {
+        seasonAchievement.inductionDate = current.inductionDate;
       }
-    });
+
+      updateData[`seasonAchievements.${seasonId}`] = seasonAchievement;
+    }
+
+    batch.update(playerRef, updateData);
+    await batch.commit();
 
     console.log('✅ Incremented tournament wins for player:', playerId);
   } catch (error) {
     console.error('❌ Error incrementing tournament wins:', error);
+    throw error;
+  }
+};
+
+/**
+ * Migration: Copy each player's current global achievements into a target season.
+ *
+ * Since all existing achievements happened during the first season (e.g., FC 26),
+ * this simply mirrors global achievements → seasonAchievements[seasonId].
+ * Only copies players who have at least 1 title (Hall of Fame members).
+ *
+ * Safe to run multiple times — it overwrites the season entry each time.
+ */
+export const migrateSeasonAchievements = async (targetSeasonId?: string): Promise<{
+  playersSynced: number;
+  errors: string[];
+}> => {
+  const result = {
+    playersSynced: 0,
+    errors: [] as string[],
+  };
+
+  try {
+    // If no target season provided, find the active season
+    let seasonId = targetSeasonId;
+    if (!seasonId) {
+      const { getActiveSeason } = await import('./seasonUtils');
+      const activeSeason = await getActiveSeason();
+      if (!activeSeason?.id) {
+        result.errors.push('No active season found. Please provide a target season ID.');
+        return result;
+      }
+      seasonId = activeSeason.id;
+    }
+
+    // Get all players
+    const allPlayers = await getPlayers();
+
+    // For each player with at least 1 title, copy global achievements to the season
+    for (const player of allPlayers) {
+      if (!player.id || player.achievements.totalTitles < 1) continue;
+
+      try {
+        const playerRef = doc(db, 'players', player.id);
+        const seasonAchievement: SeasonAchievements = {
+          leagueWins: player.achievements.leagueWins,
+          tournamentWins: player.achievements.tournamentWins,
+          totalTitles: player.achievements.totalTitles,
+          tier: player.achievements.tier,
+          inductionDate: player.achievements.inductionDate || new Date().toISOString(),
+        };
+
+        await updateDoc(playerRef, {
+          [`seasonAchievements.${seasonId}`]: seasonAchievement,
+          updatedAt: new Date(),
+        });
+
+        result.playersSynced++;
+      } catch (err) {
+        result.errors.push(`Player "${player.name}": ${err}`);
+      }
+    }
+
+    console.log(`✅ Season achievements synced for ${result.playersSynced} players to season ${seasonId}`);
+    return result;
+  } catch (error) {
+    console.error('❌ Migration failed:', error);
+    result.errors.push(`Migration failed: ${error}`);
+    return result;
+  }
+};
+
+/**
+ * Set a player's achievements for a specific season and recompute the global total.
+ * This is the authoritative way to edit per-season wins — global is always derived from all seasons.
+ */
+export const setSeasonAchievements = async (
+  playerId: string,
+  seasonId: string,
+  leagueWins: number,
+  tournamentWins: number
+): Promise<void> => {
+  const player = await getPlayerById(playerId);
+  if (!player) throw new Error('Player not found');
+
+  const allSeasonAchs = { ...(player.seasonAchievements ?? {}) };
+  const current = allSeasonAchs[seasonId];
+  const totalTitles = leagueWins + tournamentWins;
+
+  allSeasonAchs[seasonId] = {
+    leagueWins,
+    tournamentWins,
+    totalTitles,
+    tier: calculateTier(totalTitles),
+    ...(current?.inductionDate
+      ? { inductionDate: current.inductionDate }
+      : totalTitles >= 1 ? { inductionDate: new Date().toISOString() } : {}),
+  };
+
+  // Recompute global as sum of all seasons
+  let globalLeague = 0, globalTournament = 0;
+  for (const ach of Object.values(allSeasonAchs)) {
+    globalLeague += ach.leagueWins;
+    globalTournament += ach.tournamentWins;
+  }
+  const globalTotal = globalLeague + globalTournament;
+
+  const playerRef = doc(db, 'players', playerId);
+
+  // Build global achievements; use dot-notation updates so inductionDate
+  // can be independently set or deleted without overwriting the whole map.
+  const globalFieldUpdates: Record<string, any> = {
+    'achievements.leagueWins': globalLeague,
+    'achievements.tournamentWins': globalTournament,
+    'achievements.totalTitles': globalTotal,
+    'achievements.tier': calculateTier(globalTotal),
+  };
+
+  if (globalTotal >= 1) {
+    // Preserve existing induction date; set a new one if there isn't one yet
+    globalFieldUpdates['achievements.inductionDate'] =
+      player.achievements.inductionDate ?? new Date().toISOString();
+  } else {
+    // All titles removed — clear induction date so the player leaves the HOF
+    globalFieldUpdates['achievements.inductionDate'] = deleteField();
+  }
+
+  await updateDoc(playerRef, {
+    [`seasonAchievements.${seasonId}`]: allSeasonAchs[seasonId],
+    ...globalFieldUpdates,
+    updatedAt: new Date(),
+  });
+
+  console.log(`✅ Set season achievements for player ${playerId} in season ${seasonId}`);
+};
+
+/**
+ * Remove a player's season achievements for a specific season.
+ * Deletes the seasonAchievements[seasonId] entry from the player document.
+ */
+export const removePlayerSeasonAchievements = async (playerId: string, seasonId: string): Promise<void> => {
+  try {
+    const playerRef = doc(db, 'players', playerId);
+    await updateDoc(playerRef, {
+      [`seasonAchievements.${seasonId}`]: deleteField(),
+      updatedAt: new Date(),
+    });
+    console.log(`✅ Removed season achievements for player ${playerId} in season ${seasonId}`);
+  } catch (error) {
+    console.error('❌ Error removing season achievements:', error);
     throw error;
   }
 };
@@ -508,6 +762,7 @@ export const subscribeToPlayers = (
         psnId: data.psnId,
         avatar: data.avatar || undefined,
         achievements: data.achievements,
+        seasonAchievements: data.seasonAchievements || undefined,
         createdAt: data.createdAt instanceof Timestamp
           ? data.createdAt.toDate().toISOString()
           : new Date(data.createdAt).toISOString(),
@@ -541,6 +796,7 @@ export const subscribeToPlayerById = (
         psnId: data.psnId,
         avatar: data.avatar || undefined,
         achievements: data.achievements,
+        seasonAchievements: data.seasonAchievements || undefined,
         createdAt: data.createdAt instanceof Timestamp
           ? data.createdAt.toDate().toISOString()
           : new Date(data.createdAt).toISOString(),
@@ -575,6 +831,7 @@ export const subscribeToHallOfFame = (
         psnId: data.psnId,
         avatar: data.avatar || undefined,
         achievements: data.achievements,
+        seasonAchievements: data.seasonAchievements || undefined,
         createdAt: data.createdAt instanceof Timestamp
           ? data.createdAt.toDate().toISOString()
           : new Date(data.createdAt).toISOString(),

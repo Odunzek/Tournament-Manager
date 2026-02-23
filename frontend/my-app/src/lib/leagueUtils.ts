@@ -241,12 +241,15 @@ export const recordMatch = async (matchData: Omit<LeagueMatch, 'id'>): Promise<s
       date: matchData.date || Timestamp.now(),
     });
 
-    // Update league match count
+    // Update league match count, and bump totalMatches if exceeded
     const league = await getLeagueById(matchData.leagueId);
     if (league) {
-      await updateLeague(matchData.leagueId, {
-        matchesPlayed: (league.matchesPlayed || 0) + 1,
-      });
+      const newMatchesPlayed = (league.matchesPlayed || 0) + 1;
+      const updates: Record<string, number> = { matchesPlayed: newMatchesPlayed };
+      if (newMatchesPlayed > (league.totalMatches || 0)) {
+        updates.totalMatches = newMatchesPlayed;
+      }
+      await updateLeague(matchData.leagueId, updates);
     }
 
     return matchRef.id;
@@ -480,11 +483,12 @@ export const calculateStandings = async (
       player.goalDifference = player.goalsFor - player.goalsAgainst;
     });
 
-    // Sort by points, then goal difference, then goals for
+    // Sort by points, then goal difference, then goals for, then alphabetically
     const standings = Object.values(playerStats).sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
       if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
-      return b.goalsFor - a.goalsFor;
+      if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+      return a.name.localeCompare(b.name);
     });
 
     // Assign positions
@@ -546,6 +550,8 @@ export const calculateWinStreaks = async (
         playerName: player.name,
         currentStreak: 0,
         longestStreak: 0,
+        currentUnbeaten: 0,
+        longestUnbeaten: 0,
       };
     });
 
@@ -558,8 +564,10 @@ export const calculateWinStreaks = async (
 
     // Track current streaks
     const currentStreaks: Record<string, number> = {};
+    const currentUnbeaten: Record<string, number> = {};
     playersList.forEach((player) => {
       currentStreaks[player.id!] = 0;
+      currentUnbeaten[player.id!] = 0;
     });
 
     sortedMatches.forEach((match) => {
@@ -571,25 +579,44 @@ export const calculateWinStreaks = async (
       if (match.scoreA > match.scoreB) {
         // Player A wins
         currentStreaks[playerA]++;
+        currentUnbeaten[playerA]++;
         currentStreaks[playerB] = 0;
+        currentUnbeaten[playerB] = 0;
 
         if (currentStreaks[playerA] > streaks[playerA].longestStreak) {
           streaks[playerA].longestStreak = currentStreaks[playerA];
           streaks[playerA].longestStreakDate = match.date;
         }
+        if (currentUnbeaten[playerA] > streaks[playerA].longestUnbeaten) {
+          streaks[playerA].longestUnbeaten = currentUnbeaten[playerA];
+        }
       } else if (match.scoreB > match.scoreA) {
         // Player B wins
         currentStreaks[playerB]++;
+        currentUnbeaten[playerB]++;
         currentStreaks[playerA] = 0;
+        currentUnbeaten[playerA] = 0;
 
         if (currentStreaks[playerB] > streaks[playerB].longestStreak) {
           streaks[playerB].longestStreak = currentStreaks[playerB];
           streaks[playerB].longestStreakDate = match.date;
         }
+        if (currentUnbeaten[playerB] > streaks[playerB].longestUnbeaten) {
+          streaks[playerB].longestUnbeaten = currentUnbeaten[playerB];
+        }
       } else {
-        // Draw - breaks streak
+        // Draw — win streak broken, unbeaten run continues
         currentStreaks[playerA] = 0;
         currentStreaks[playerB] = 0;
+        currentUnbeaten[playerA]++;
+        currentUnbeaten[playerB]++;
+
+        if (currentUnbeaten[playerA] > streaks[playerA].longestUnbeaten) {
+          streaks[playerA].longestUnbeaten = currentUnbeaten[playerA];
+        }
+        if (currentUnbeaten[playerB] > streaks[playerB].longestUnbeaten) {
+          streaks[playerB].longestUnbeaten = currentUnbeaten[playerB];
+        }
       }
     });
 
@@ -597,6 +624,7 @@ export const calculateWinStreaks = async (
     Object.keys(currentStreaks).forEach((playerId) => {
       if (streaks[playerId]) {
         streaks[playerId].currentStreak = currentStreaks[playerId];
+        streaks[playerId].currentUnbeaten = currentUnbeaten[playerId];
       }
     });
 

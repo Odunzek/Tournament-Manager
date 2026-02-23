@@ -39,18 +39,22 @@ export interface WinStreak {
   currentStreak: number;
   longestStreak: number;
   longestStreakDate?: any; // Firestore Timestamp
+  currentUnbeaten: number;  // current W+D run (resets only on loss)
+  longestUnbeaten: number;  // all-time longest W+D run
 }
 
 export interface League {
   id?: string;
   name: string;
   season: string;
+  seasonId?: string; // references seasons collection doc ID
   status: 'active' | 'upcoming' | 'completed';
   startDate: any; // Firestore Timestamp
   endDate?: any; // Firestore Timestamp
   playerIds: string[]; // Array of player IDs participating
   totalMatches: number;
   matchesPlayed: number;
+  rules?: string;
   createdAt: any; // Firestore Timestamp
   updatedAt: any; // Firestore Timestamp
 }

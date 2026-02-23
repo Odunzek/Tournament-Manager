@@ -28,13 +28,13 @@ export default function PageHeader({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className={`text-center py-8 sm:py-12 ${className}`}
+      className={`text-center py-3 sm:py-8 ${className}`}
     >
       <div className="relative inline-block">
         <h1
-          className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold
+          className={`text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold
                      bg-gradient-to-r ${gradientClasses[gradient]}
-                     bg-clip-text text-transparent mb-4`}
+                     bg-clip-text text-transparent mb-2 sm:mb-4`}
         >
           {title}
         </h1>
@@ -50,7 +50,7 @@ export default function PageHeader({
             ease: "easeInOut"
           }}
         >
-          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-neon-yellow to-neon-pink rounded-full shadow-glow-pink" />
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-neon-yellow to-neon-pink rounded-full shadow-light-pink dark:shadow-glow-pink" />
         </motion.div>
       </div>
 
@@ -69,7 +69,7 @@ export default function PageHeader({
         initial={{ scaleX: 0 }}
         animate={{ scaleX: 1 }}
         transition={{ delay: 0.3, duration: 0.6 }}
-        className="w-24 sm:w-32 h-1 bg-gradient-to-r from-cyber-400 via-electric-500 to-pink-500 mx-auto rounded-full mt-4"
+        className="w-16 sm:w-24 h-1 bg-gradient-to-r from-cyber-400 via-electric-500 to-pink-500 mx-auto rounded-full mt-2 sm:mt-4"
       />
     </motion.div>
   );

@@ -18,6 +18,7 @@ export interface HeadToHeadMatch {
   winner: 'playerA' | 'playerB' | 'draw';
   competition: string;
   competitionType: 'league' | 'tournament';
+  leagueId?: string;
 }
 
 export interface HeadToHeadStats {
@@ -56,7 +57,8 @@ export interface HeadToHeadStats {
  */
 async function getLeagueMatchesBetweenPlayers(
   playerAId: string,
-  playerBId: string
+  playerBId: string,
+  seasonLeagueIds?: Set<string>
 ): Promise<HeadToHeadMatch[]> {
   const matchesRef = collection(db, 'leagueMatches');
 
@@ -97,9 +99,14 @@ async function getLeagueMatchesBetweenPlayers(
         winner,
         competition: `League`, // We could fetch league name if needed
         competitionType: 'league',
+        leagueId: match.leagueId,
       });
     }
   });
+
+  if (seasonLeagueIds) {
+    return allMatches.filter((m) => m.leagueId && seasonLeagueIds.has(m.leagueId));
+  }
 
   return allMatches;
 }
@@ -108,29 +115,35 @@ async function getLeagueMatchesBetweenPlayers(
  * Get all tournament matches between two players globally (across all tournaments)
  */
 async function getTournamentMatchesBetweenPlayers(
-  playerAId: string,
-  playerBId: string
+  playerAName: string,
+  playerBName: string,
+  seasonId?: string
 ): Promise<HeadToHeadMatch[]> {
   const allMatches: HeadToHeadMatch[] = [];
 
   try {
     // Get all tournaments
-    const tournaments = await getTournaments();
+    let tournaments = await getTournaments();
+
+    if (seasonId) {
+      tournaments = tournaments.filter((t) => t.seasonId === seasonId);
+    }
 
     tournaments.forEach((tournament) => {
       // Check group stage matches
+      // Tournament matches store player NAMES (not IDs) in homeTeam/awayTeam
       tournament.groups?.forEach((group) => {
         group.matches?.forEach((match) => {
           if (match.played) {
-            const homeId = match.homeTeam;
-            const awayId = match.awayTeam;
+            const homeName = match.homeTeam;
+            const awayName = match.awayTeam;
 
             // Check if both players are in this match
             if (
-              (homeId === playerAId && awayId === playerBId) ||
-              (homeId === playerBId && awayId === playerAId)
+              (homeName === playerAName && awayName === playerBName) ||
+              (homeName === playerBName && awayName === playerAName)
             ) {
-              const isPlayerAHome = homeId === playerAId;
+              const isPlayerAHome = homeName === playerAName;
               const playerAScore = isPlayerAHome
                 ? (match.homeScore ?? 0)
                 : (match.awayScore ?? 0);
@@ -158,16 +171,17 @@ async function getTournamentMatchesBetweenPlayers(
       });
 
       // Check knockout stage matches
+      // Knockout ties store player NAMES in team1/team2
       tournament.knockoutBracket?.forEach((tie) => {
         const team1 = tie.team1;
         const team2 = tie.team2;
 
         // Check if both players are in this tie
         if (
-          (team1 === playerAId && team2 === playerBId) ||
-          (team1 === playerBId && team2 === playerAId)
+          (team1 === playerAName && team2 === playerBName) ||
+          (team1 === playerBName && team2 === playerAName)
         ) {
-          const isPlayerATeam1 = team1 === playerAId;
+          const isPlayerATeam1 = team1 === playerAName;
 
           // Process first leg
           if (tie.firstLeg.played) {
@@ -235,12 +249,23 @@ export async function getGlobalHeadToHead(
   playerAId: string,
   playerAName: string,
   playerBId: string,
-  playerBName: string
+  playerBName: string,
+  seasonId?: string
 ): Promise<HeadToHeadStats> {
+  // Build season league IDs set if filtering by season
+  let seasonLeagueIds: Set<string> | undefined;
+  if (seasonId) {
+    const leaguesSnap = await getDocs(
+      query(collection(db, 'leagues'), where('seasonId', '==', seasonId))
+    );
+    seasonLeagueIds = new Set(leaguesSnap.docs.map((doc) => doc.id));
+  }
+
   // Fetch all matches between the two players
+  // League matches use player IDs, tournament matches use player names
   const [leagueMatches, tournamentMatches] = await Promise.all([
-    getLeagueMatchesBetweenPlayers(playerAId, playerBId),
-    getTournamentMatchesBetweenPlayers(playerAId, playerBId),
+    getLeagueMatchesBetweenPlayers(playerAId, playerBId, seasonLeagueIds),
+    getTournamentMatchesBetweenPlayers(playerAName, playerBName, seasonId),
   ]);
 
   const allMatches = [...leagueMatches, ...tournamentMatches].sort(

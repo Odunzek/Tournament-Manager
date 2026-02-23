@@ -1,0 +1,43 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // All authenticated users (including anonymous) can read and write.
+    // Anonymous sign-in is enforced client-side in firebase.ts.
+
+    match /players/{playerId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /leagues/{leagueId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /leagueMatches/{matchId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /tournaments/{tournamentId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /tournament_members/{memberId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /rankings/{rankingId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Seasons AND all subcollections (e.g. seasons/{id}/rankings)
+    match /seasons/{seasonId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /seasons/{seasonId}/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+  }
+}

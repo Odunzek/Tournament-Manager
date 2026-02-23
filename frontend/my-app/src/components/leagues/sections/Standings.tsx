@@ -39,8 +39,8 @@ export default function Standings({ standings, leagueId, currentUserId, isLoadin
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-light-900 dark:text-white flex items-center gap-2">
-          <Trophy className="w-6 h-6 text-cyber-400" />
+        <h2 className="text-lg font-bold text-light-900 dark:text-white flex items-center gap-2">
+          <Trophy className="w-5 h-5 text-cyber-400" />
           League Standings
         </h2>
         <div className="text-sm text-light-600 dark:text-gray-400">
@@ -55,53 +55,21 @@ export default function Standings({ standings, leagueId, currentUserId, isLoadin
 
       {/* Legend */}
       <Card variant="glass">
-        <h4 className="text-sm font-bold text-light-900 dark:text-white mb-3">Table Legend</h4>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-xs">
-          <div>
-            <span className="font-semibold text-light-600 dark:text-gray-400">P</span>
-            <span className="text-gray-500"> - Played</span>
-          </div>
-          <div>
-            <span className="font-semibold text-light-600 dark:text-gray-400">W</span>
-            <span className="text-gray-500"> - Won</span>
-          </div>
-          <div>
-            <span className="font-semibold text-light-600 dark:text-gray-400">D</span>
-            <span className="text-gray-500"> - Draw</span>
-          </div>
-          <div>
-            <span className="font-semibold text-light-600 dark:text-gray-400">L</span>
-            <span className="text-gray-500"> - Lost</span>
-          </div>
-          <div>
-            <span className="font-semibold text-light-600 dark:text-gray-400">GF</span>
-            <span className="text-gray-500"> - Goals For</span>
-          </div>
-          <div>
-            <span className="font-semibold text-light-600 dark:text-gray-400">GA</span>
-            <span className="text-gray-500"> - Goals Against</span>
-          </div>
-          <div>
-            <span className="font-semibold text-light-600 dark:text-gray-400">GD</span>
-            <span className="text-gray-500"> - Goal Difference</span>
-          </div>
-          <div>
-            <span className="font-semibold text-light-600 dark:text-gray-400">Pts</span>
-            <span className="text-gray-500"> - Points</span>
-          </div>
-          <div className="col-span-2">
-            <span className="font-semibold text-light-600 dark:text-gray-400">Form</span>
-            <span className="text-gray-500"> - Last 5 matches</span>
-          </div>
+        <h4 className="text-sm font-bold text-light-900 dark:text-white mb-2">Table Legend</h4>
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4 text-xs">
+          <div><span className="font-semibold text-light-600 dark:text-gray-400">P</span><span className="text-gray-500"> - Played</span></div>
+          <div><span className="font-semibold text-light-600 dark:text-gray-400">W</span><span className="text-gray-500"> - Won</span></div>
+          <div><span className="font-semibold text-light-600 dark:text-gray-400">D</span><span className="text-gray-500"> - Draw</span></div>
+          <div><span className="font-semibold text-light-600 dark:text-gray-400">L</span><span className="text-gray-500"> - Lost</span></div>
+          <div><span className="font-semibold text-light-600 dark:text-gray-400">GD</span><span className="text-gray-500"> - Goal Diff</span></div>
+          <div><span className="font-semibold text-light-600 dark:text-gray-400">Pts</span><span className="text-gray-500"> - Points</span></div>
+          <div className="col-span-2"><span className="font-semibold text-light-600 dark:text-gray-400">Form</span><span className="text-gray-500"> - Last 5</span></div>
         </div>
-
-        <div className="mt-4 pt-4 border-t border-white/10">
-          <p className="text-xs text-gray-500">
-            <span className="text-green-400 font-semibold">Win = 3 points</span>,{' '}
-            <span className="text-yellow-400 font-semibold">Draw = 1 point</span>,{' '}
-            <span className="text-red-400 font-semibold">Loss = 0 points</span>
-          </p>
-        </div>
+        <p className="text-xs text-gray-500 mt-3 pt-3 border-t border-black/10 dark:border-white/10">
+          <span className="text-green-400 font-semibold">Win = 3pts</span>{' '}·{' '}
+          <span className="text-yellow-400 font-semibold">Draw = 1pt</span>{' '}·{' '}
+          <span className="text-red-400 font-semibold">Loss = 0pts</span>
+        </p>
       </Card>
     </div>
   );

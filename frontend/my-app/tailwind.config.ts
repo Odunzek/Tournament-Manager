@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: 'media',
+  darkMode: 'class',
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -96,6 +96,7 @@ const config: Config = {
         'light-cyber-lg': '0 8px 24px rgba(2, 132, 199, 0.3)',
         'light-electric': '0 4px 14px rgba(147, 51, 234, 0.25)',
         'light-electric-lg': '0 8px 24px rgba(147, 51, 234, 0.3)',
+        'light-pink': '0 4px 14px rgba(236, 72, 153, 0.25)',
         'card-light': '0 4px 20px rgba(15, 23, 42, 0.08), 0 0 1px rgba(15, 23, 42, 0.1)',
         'card-light-hover': '0 8px 30px rgba(2, 132, 199, 0.15), 0 0 1px rgba(2, 132, 199, 0.2)',
       },

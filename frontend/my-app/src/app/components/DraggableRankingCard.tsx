@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { GripVertical } from "lucide-react";
+import { GripVertical, Crown, Medal, Star } from "lucide-react";
 import {
   updateRankingFields,
 } from "../../lib/rankingUtils";
@@ -17,11 +17,11 @@ function getRankGradient(rank: number) {
   return "from-gray-500/20 to-gray-600/20 border-gray-500/30";
 }
 
-function getRankIcon(rank: number) {
-  if (rank === 1) return "👑";
-  if (rank <= 3) return "🥇";
-  if (rank <= 10) return "⭐";
-  return "";
+function getRankIcon(rank: number): React.ReactNode | null {
+  if (rank === 1) return <Crown className="w-4 h-4 text-amber-400" />;
+  if (rank <= 3) return <Medal className="w-4 h-4 text-cyan-400" />;
+  if (rank <= 10) return <Star className="w-4 h-4 text-yellow-400" />;
+  return null;
 }
 
 type DraggableRankingCardProps = {
@@ -95,26 +95,27 @@ export default function DraggableRankingCard({
       className={`cursor-${isAuthenticated && !isDropdownOpen && !isMobile ? 'grab' : 'default'} ${isDragging ? 'cursor-grabbing' : ''} ${isDropdownOpen ? 'relative z-[200]' : 'relative z-0'}`}
     >
       <div
-        className={`flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 sm:p-5 rounded-2xl bg-gradient-to-r ${gradient} border backdrop-blur-sm transition-all duration-200 ${
-          isDragging ? 'shadow-glow scale-105 opacity-80' : 'hover:shadow-glow'
+        className={`flex flex-row items-center justify-between p-3 rounded-xl bg-gradient-to-r ${gradient} border backdrop-blur-sm transition-all duration-200 ${
+          isDragging ? 'shadow-light-cyber dark:shadow-glow scale-105 opacity-80' : 'hover:shadow-light-cyber dark:hover:shadow-glow'
         }`}
       >
         {/* Left side - drag handle, rank + name */}
-        <div className="flex items-center gap-3 mb-3 sm:mb-0">
+        <div className="flex items-center gap-3">
           {isAuthenticated && !isMobile && (
-            <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-white transition-colors">
+            <div className="cursor-grab active:cursor-grabbing text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white transition-colors">
               <GripVertical className="w-5 h-5" />
             </div>
           )}
 
-          <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl bg-dark-100/50 border border-white/10 font-bold text-white">
-            {icon ? <span className="text-xl">{icon}</span> : player.rank}
+          <span className="text-xs font-bold text-light-500 dark:text-gray-400 w-5 text-right shrink-0">{player.rank}</span>
+          <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-light-200/50 dark:bg-dark-100/50 border border-black/10 dark:border-white/10 font-bold text-light-900 dark:text-white text-sm">
+            {icon ? icon : player.rank}
           </div>
-          <p className="font-semibold text-base sm:text-lg text-white">{player.name}</p>
+          <p className="font-semibold text-sm text-light-900 dark:text-white">{player.name}</p>
         </div>
 
         {/* Right side - cool off & wild card */}
-        <div className="flex items-center gap-3 text-sm sm:text-base">
+        <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <>
               <input
@@ -126,7 +127,7 @@ export default function DraggableRankingCard({
                   })
                 }
                 placeholder="Cool Off"
-                className="px-3 py-1.5 rounded-xl border border-white/10 bg-dark-100/50 text-white placeholder-gray-500 w-24 sm:w-32 focus:outline-none focus:border-cyber-500/50"
+                className="px-2 py-1 rounded-xl border border-black/10 dark:border-white/10 bg-light-200/50 dark:bg-dark-100/50 text-light-900 dark:text-white placeholder-light-500 dark:placeholder-gray-500 w-14 sm:w-24 text-xs sm:text-sm focus:outline-none focus:border-cyber-500/50"
               />
               <input
                 type="text"
@@ -137,9 +138,9 @@ export default function DraggableRankingCard({
                   })
                 }
                 placeholder="Wild Card"
-                className="px-3 py-1.5 rounded-xl border border-white/10 bg-dark-100/50 text-white placeholder-gray-500 w-24 sm:w-32 focus:outline-none focus:border-cyber-500/50"
+                className="px-2 py-1 rounded-xl border border-black/10 dark:border-white/10 bg-light-200/50 dark:bg-dark-100/50 text-light-900 dark:text-white placeholder-light-500 dark:placeholder-gray-500 w-14 sm:w-24 text-xs sm:text-sm focus:outline-none focus:border-cyber-500/50"
               />
-              <div className="flex items-center gap-2">
+              <div className="flex items-center">
                 {/* Jump to rank dropdown */}
                 <CustomDropdown
                   value={player.rank}
@@ -148,17 +149,17 @@ export default function DraggableRankingCard({
                     value: i + 1,
                     label: `Rank #${i + 1}`,
                   }))}
-                  className="w-28"
+                  className="w-20 sm:w-24"
                   onOpenChange={setIsDropdownOpen}
                 />
               </div>
             </>
           ) : (
             <>
-              <span className="text-gray-300 font-medium px-3">
+              <span className="text-xs text-light-700 dark:text-gray-300 font-medium">
                 {player.coolOff || "—"}
               </span>
-              <span className="text-gray-300 font-medium px-3">
+              <span className="text-xs text-light-700 dark:text-gray-300 font-medium">
                 {player.wildCard || "—"}
               </span>
             </>

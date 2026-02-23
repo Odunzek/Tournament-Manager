@@ -10,9 +10,11 @@ import NavigationCard from '../components/landing/NavigationCard';
 import { AuthProvider, AuthModal } from '../lib/AuthContext';
 import { TutorialProvider, useTutorial } from '../components/tutorial/TutorialContext';
 import TutorialOverlay from '../components/tutorial/TutorialOverlay';
+import { useActiveSeason } from '../hooks/useActiveSeason';
 
 function LandingPage() {
   const { startTutorial } = useTutorial();
+  const { activeSeason } = useActiveSeason();
 
   // Start viewer tutorial on first visit
   useEffect(() => {
@@ -44,18 +46,18 @@ function LandingPage() {
       gradient: 'cyber' as const,
     },
     {
-      title: 'Players',
-      description: 'Manage player profiles, track statistics, and organize your team roster.',
-      icon: '/icons/Players.svg',
-      route: '/players',
-      gradient: 'electric' as const,
-    },
-    {
       title: 'Tournaments',
       description: 'Champions League-style tournaments with group stages and knockout rounds.',
       icon: '/icons/tournaments.svg',
       route: '/tournaments',
       gradient: 'neon' as const,
+    },
+    {
+      title: 'Players',
+      description: 'Manage player profiles, track statistics, and organize your team roster.',
+      icon: '/icons/Players.svg',
+      route: '/players',
+      gradient: 'electric' as const,
     },
     {
       title: 'P4P Rankings',
@@ -66,7 +68,7 @@ function LandingPage() {
     },
     {
       title: 'Hall of Fame',
-      description: 'Legendary players with 3+ titles. View achievements, records, and champion tiers.',
+      description: 'Legendary players honoured for their achievements. View records and champion tiers.',
       icon: '/icons/halloffame.svg',
       route: '/hall-of-fame',
       gradient: 'gold' as const,
@@ -76,7 +78,7 @@ function LandingPage() {
   return (
     <MainLayout>
       <GlobalNavigation />
-      <Container maxWidth="2xl" className="py-8 sm:py-12">
+      <Container maxWidth="2xl" className="py-4 sm:py-8">
         {/* Hero Section */}
         <PageHeader
           title="EA TOURNAMENT MANAGER"
@@ -84,26 +86,50 @@ function LandingPage() {
           gradient="tech"
         />
 
+        {/* Active Season Pill */}
+        {activeSeason && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-6 flex items-center gap-2.5 px-3.5 py-2 rounded-xl
+                       bg-green-500/10 border border-green-500/20 w-fit"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shrink-0" />
+            <span className="text-sm font-semibold text-light-900 dark:text-white">
+              {activeSeason.name}
+            </span>
+            {activeSeason.gameVersion && (
+              <>
+                <span className="text-gray-500 text-xs">·</span>
+                <span className="text-xs text-light-500 dark:text-gray-400">
+                  {activeSeason.gameVersion}
+                </span>
+              </>
+            )}
+            <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-green-500/20
+                             text-green-700 dark:text-green-400 border border-green-500/30 rounded-full">
+              Active
+            </span>
+          </motion.div>
+        )}
+
         {/* Navigation Cards */}
-        <div className="mb-12 mt-12">
-          {/* First 4 cards in 2x2 grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-            {navigationCards.slice(0, 4).map((card, index) => (
-              <NavigationCard
-                key={card.route}
-                {...card}
-                delay={0.1 * index + 0.5}
-              />
-            ))}
+        <div className="mb-8 mt-8 sm:mt-12 space-y-3 md:space-y-5">
+          {/* Top 3: 2-col mobile → 3-col desktop */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
+            <NavigationCard {...navigationCards[0]} delay={0.5} />
+            <NavigationCard {...navigationCards[1]} delay={0.6} />
+            {/* Players: full-width on mobile, 1-col on desktop */}
+            <div className="col-span-2 md:col-span-1">
+              <NavigationCard {...navigationCards[2]} delay={0.7} />
+            </div>
           </div>
 
-          {/* Hall of Fame card centered */}
-          <div className="max-w-2xl mx-auto">
-            <NavigationCard
-              key={navigationCards[4].route}
-              {...navigationCards[4]}
-              delay={0.9}
-            />
+          {/* Bottom 2: 2-col, centered at 2/3 width on desktop */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 md:w-2/3 md:mx-auto">
+            <NavigationCard {...navigationCards[3]} delay={0.8} />
+            <NavigationCard {...navigationCards[4]} delay={0.9} />
           </div>
         </div>
 
@@ -112,9 +138,9 @@ function LandingPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
-          className="text-center py-8 border-t border-white/10"
+          className="text-center py-8 border-t border-black/10 dark:border-white/10"
         >
-          <p className="text-gray-400 font-medium">
+          <p className="text-light-600 dark:text-gray-400 font-medium">
             Created by Kempyre Group
           </p>
         </motion.footer>

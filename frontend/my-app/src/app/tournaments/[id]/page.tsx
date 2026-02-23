@@ -15,7 +15,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -24,6 +24,7 @@ import Container from '../../../components/layouts/Container';
 import GlobalNavigation from '../../../components/layouts/GlobalNavigation';
 import TournamentSidebar from '../../../components/tournaments/TournamentSidebar';
 import Button from '../../../components/ui/Button';
+import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { TournamentSection } from '@/types/tournament';
 import { AuthProvider, AuthModal, useAuth } from '@/lib/AuthContext';
 import {
@@ -40,7 +41,10 @@ import {
   deleteTournament,
   updateTournament,
   repairKnockoutProgression,
+  syncOrphanedMembersToGroups,
 } from '@/lib/tournamentUtils';
+import { incrementTournamentWins } from '@/lib/playerUtils';
+import { usePlayers } from '@/hooks/usePlayers';
 
 // Section components
 import Overview from '../../../components/tournaments/sections/Overview';
@@ -49,7 +53,6 @@ import Fixtures from '../../../components/tournaments/sections/Fixtures';
 import Teams from '../../../components/tournaments/sections/Teams';
 import Knockout from '../../../components/tournaments/sections/Knockout';
 import Results from '../../../components/tournaments/sections/Results';
-
 const sectionComponents: Record<TournamentSection, React.ComponentType<any>> = {
   overview: Overview,
   groups: Groups,
@@ -63,6 +66,7 @@ function TournamentDetailContent() {
   const params = useParams();
   const router = useRouter();
   const { isAuthenticated, setShowAuthModal } = useAuth();
+  const { players } = usePlayers();
   const tournamentId = params?.id as string;
 
   // State management
@@ -72,6 +76,22 @@ function TournamentDetailContent() {
   const [tournamentMembers, setTournamentMembers] = useState<TournamentParticipant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasSyncedRef = useRef(false);
+  const [completeConfirmOpen, setCompleteConfirmOpen] = useState(false);
+
+  // Sync orphaned members into groups once when the tournament loads in group_stage (admin only)
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      tournament &&
+      tournament.id &&
+      tournament.status === 'group_stage' &&
+      !hasSyncedRef.current
+    ) {
+      hasSyncedRef.current = true;
+      syncOrphanedMembersToGroups(tournament.id).catch(console.error);
+    }
+  }, [isAuthenticated, tournament]);
 
   // Load tournament data
   useEffect(() => {
@@ -213,22 +233,58 @@ function TournamentDetailContent() {
   };
 
   /**
-   * Handle complete tournament action (Admin only)
+   * Handle complete tournament action (Admin only) — opens confirm modal
    */
-  const handleCompleteTournament = async () => {
+  const handleCompleteTournament = () => {
     if (!isAuthenticated) {
       setShowAuthModal(true);
       return;
     }
-
     if (!tournament) return;
+    setCompleteConfirmOpen(true);
+  };
 
-    const confirmed = confirm('Are you sure you want to mark this tournament as completed?');
-    if (!confirmed) return;
+  /**
+   * Actual completion logic, called after confirmation
+   */
+  const doCompleteTournament = async () => {
+    if (!tournament) return;
+    setCompleteConfirmOpen(false);
 
     try {
       setLoading(true);
       await updateTournament(tournament.id!, { status: 'completed' });
+
+      // Auto-award tournament title to the winner
+      let winnerName: string | undefined;
+
+      if (tournament.type === 'league') {
+        // Round-robin: winner is the team at the top of the single group's standings
+        const standings = tournament.groups?.[0]?.standings;
+        if (standings && standings.length > 0) {
+          const sorted = [...standings].sort(
+            (a, b) =>
+              (b.points - a.points) ||
+              (b.goalDifference - a.goalDifference) ||
+              (b.goalsFor - a.goalsFor)
+          );
+          winnerName = sorted[0].teamName;
+        }
+      } else {
+        // Knockout / groups_knockout: winner from the completed final tie
+        const finalTie = tournament.knockoutBracket?.find(
+          (tie) => tie.round === 'final' && tie.completed && tie.winner
+        );
+        winnerName = finalTie?.winner;
+      }
+
+      if (winnerName) {
+        const winnerPlayer = players.find((p) => p.name === winnerName);
+        if (winnerPlayer?.id) {
+          await incrementTournamentWins(winnerPlayer.id, tournament.seasonId);
+        }
+      }
+
       setLoading(false);
     } catch (err) {
       console.error('Error completing tournament:', err);
@@ -265,7 +321,7 @@ function TournamentDetailContent() {
     return (
       <MainLayout showBackground={false}>
         <GlobalNavigation />
-        <div className="min-h-screen bg-gradient-to-br from-dark-50 via-dark-100 to-dark-200 flex items-center justify-center">
+        <div className="min-h-screen bg-gradient-to-br from-light-100 via-light-200 to-light-300 dark:from-dark-50 dark:via-dark-100 dark:to-dark-200 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="w-12 h-12 text-cyber-400 animate-spin mx-auto mb-4" />
             <p className="text-gray-400">Loading tournament...</p>
@@ -280,7 +336,7 @@ function TournamentDetailContent() {
     return (
       <MainLayout showBackground={false}>
         <GlobalNavigation />
-        <div className="min-h-screen bg-gradient-to-br from-dark-50 via-dark-100 to-dark-200 flex items-center justify-center">
+        <div className="min-h-screen bg-gradient-to-br from-light-100 via-light-200 to-light-300 dark:from-dark-50 dark:via-dark-100 dark:to-dark-200 flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-400 mb-4">{error || 'Tournament not found'}</p>
             <Button onClick={handleBack} variant="outline">
@@ -297,9 +353,9 @@ function TournamentDetailContent() {
   return (
     <MainLayout showBackground={false}>
       <GlobalNavigation />
-      <div className="min-h-screen bg-gradient-to-br from-dark-50 via-dark-100 to-dark-200">
+      <div className="min-h-screen bg-gradient-to-br from-light-100 via-light-200 to-light-300 dark:from-dark-50 dark:via-dark-100 dark:to-dark-200">
         {/* Mobile Header */}
-        <div className="md:hidden bg-dark-100/95 backdrop-blur-xl border-b border-white/10 sticky top-0 z-40 px-4 py-3">
+        <div className="md:hidden bg-light-50/95 dark:bg-dark-100/95 backdrop-blur-xl border-b border-black/10 dark:border-white/10 sticky top-0 z-40 px-4 py-3">
           <Button
             variant="ghost"
             size="sm"
@@ -348,7 +404,7 @@ function TournamentDetailContent() {
                 <ActiveSectionComponent
                   tournament={tournament}
                   tournamentMembers={tournamentMembers}
-                  isAuthenticated={isAuthenticated}
+                  isAuthenticated={isAuthenticated && tournament.status !== 'completed'}
                   isLoading={loading}
                   onGenerateGroups={handleGenerateGroups}
                   onGenerateKnockout={handleGenerateKnockout}
@@ -359,12 +415,24 @@ function TournamentDetailContent() {
                   onDeleteTournament={handleDeleteTournament}
                   onCompleteTournament={handleCompleteTournament}
                   onRepairKnockout={handleRepairKnockout}
+                  onNavigate={(section) => setActiveSection(section as TournamentSection)}
                 />
               </motion.div>
             </Container>
           </main>
         </div>
       </div>
+
+      {/* Complete Tournament Confirmation */}
+      <ConfirmModal
+        isOpen={completeConfirmOpen}
+        title="Complete Tournament?"
+        message="This will mark the tournament as completed and award the title to the winner. This cannot be undone."
+        confirmLabel="Complete"
+        isDestructive
+        onConfirm={doCompleteTournament}
+        onCancel={() => setCompleteConfirmOpen(false)}
+      />
     </MainLayout>
   );
 }

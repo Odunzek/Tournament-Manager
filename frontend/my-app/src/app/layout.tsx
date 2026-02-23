@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider,  AuthModal } from "../lib/AuthContext"; // adjust path
+import { ThemeProvider } from "../lib/ThemeContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,10 +18,20 @@ export const metadata: Metadata = {
   title: "Football League Manager",
   description: "Created by Kachy",
   icons: {
-    icon: "/ea.png",
+    icon: "/icons/favicon.svg",
   },
-  
+
 };
+
+const themeScript = `
+  (function() {
+    try {
+      var theme = localStorage.getItem('theme');
+      var isDark = theme === 'dark' || (!theme || theme === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (isDark) document.documentElement.classList.add('dark');
+    } catch(e) {}
+  })();
+`;
 
 export default function RootLayout({
   children,
@@ -28,14 +39,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          {children}
-          <AuthModal /> {/* ✅ add this below children */}
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            {children}
+            <AuthModal />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -24,6 +24,7 @@ import { X, Trophy, Calendar, Users, Settings } from 'lucide-react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { createTournament, DEFAULT_CHAMPIONS_LEAGUE_SETTINGS, DEFAULT_KNOCKOUT_SETTINGS, DEFAULT_CUSTOM_SETTINGS } from '@/lib/tournamentUtils';
+import { useActiveSeason } from '@/hooks/useActiveSeason';
 
 interface CreateTournamentModalProps {
   isOpen: boolean;
@@ -40,12 +41,15 @@ const tournamentTypes = [
 ] as const;
 
 export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: CreateTournamentModalProps) {
+  const { activeSeason } = useActiveSeason();
+
   // Form state
   const [name, setName] = useState('');
   const [type, setType] = useState<'champions_league' | 'knockout' | 'league' | 'custom'>('champions_league');
   const [maxTeams, setMaxTeams] = useState(32);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [rules, setRules] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -92,10 +96,12 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
         name: name.trim(),
         type,
         status: 'setup',
+        seasonId: activeSeason?.id,
         maxTeams,
         startDate: startDate ? new Date(startDate) : undefined,
         endDate: endDate ? new Date(endDate) : undefined,
         settings,
+        rules: rules.trim() || undefined,
       });
 
       // Reset form and close modal
@@ -104,6 +110,7 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
       setMaxTeams(32);
       setStartDate('');
       setEndDate('');
+      setRules('');
 
       onSuccess?.();
       onClose();
@@ -174,6 +181,26 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
                 {error && (
                   <div className="bg-red-500/10 border border-red-500/20 rounded-tech p-4">
                     <p className="text-red-400 text-sm">{error}</p>
+                  </div>
+                )}
+
+                {/* Active Season Badge */}
+                {activeSeason ? (
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-cyber-500/10 border border-cyber-500/30 rounded-xl">
+                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                    <span className="text-sm text-light-700 dark:text-gray-300">
+                      Auto-assigning to season:
+                    </span>
+                    <span className="text-sm font-bold text-cyber-600 dark:text-cyber-400">
+                      {activeSeason.name}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                    <div className="w-2 h-2 rounded-full bg-amber-400" />
+                    <span className="text-sm text-amber-400">
+                      No active season — this tournament won&apos;t be linked to any season. Achievements won&apos;t be tracked per-season.
+                    </span>
                   </div>
                 )}
 
@@ -262,6 +289,22 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
                       disabled={isSubmitting}
                     />
                   </div>
+                </div>
+
+                {/* Tournament Rules */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-light-900 dark:text-white">
+                    Tournament Rules (Optional)
+                  </label>
+                  <textarea
+                    value={rules}
+                    onChange={(e) => setRules(e.target.value)}
+                    placeholder="e.g., No rage-quitting. Results must be submitted within 24 hours..."
+                    rows={4}
+                    disabled={isSubmitting}
+                    className="w-full px-4 py-2.5 bg-light-50 dark:bg-dark-100/50 backdrop-blur-sm border-2 border-cyber-500/25 dark:border-white/10 rounded-tech text-light-900 dark:text-gray-100 placeholder-light-500 dark:placeholder-gray-500 focus:outline-none focus:border-cyber-500 focus:ring-2 focus:ring-cyber-500/20 transition-all duration-200 resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                  <p className="text-xs text-light-600 dark:text-gray-400">Line breaks will be preserved when displayed.</p>
                 </div>
 
                 {/* Settings Preview */}

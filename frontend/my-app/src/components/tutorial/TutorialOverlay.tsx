@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { useTutorial } from './TutorialContext';
@@ -10,6 +10,7 @@ export default function TutorialOverlay() {
   const { isActive, currentFlow, currentStep, nextStep, prevStep, skipTutorial } = useTutorial();
   const [targetElement, setTargetElement] = useState<HTMLElement | null>(null);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   const step = currentFlow?.steps[currentStep];
 
@@ -29,10 +30,8 @@ export default function TutorialOverlay() {
       }
     };
 
-    // Initial find
     findElement();
 
-    // Update on scroll/resize
     const updateRect = () => {
       if (targetElement) {
         setTargetRect(targetElement.getBoundingClientRect());
@@ -64,180 +63,144 @@ export default function TutorialOverlay() {
   const isLastStep = currentStep === currentFlow.steps.length - 1;
   const progress = ((currentStep + 1) / currentFlow.steps.length) * 100;
 
-  // Calculate tooltip position
-  const getTooltipPosition = () => {
-    const isMobile = window.innerWidth < 768;
-
-    // On mobile, always center the tooltip for better visibility
-    if (!targetRect || step.position === 'center' || isMobile) {
-      return {
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-      };
-    }
-
-    const padding = 20;
-    const position: React.CSSProperties = {};
-
-    switch (step.position) {
-      case 'bottom':
-        position.top = `${targetRect.bottom + padding}px`;
-        position.left = `${targetRect.left + targetRect.width / 2}px`;
-        position.transform = 'translateX(-50%)';
-        break;
-      case 'top':
-        position.bottom = `${window.innerHeight - targetRect.top + padding}px`;
-        position.left = `${targetRect.left + targetRect.width / 2}px`;
-        position.transform = 'translateX(-50%)';
-        break;
-      case 'left':
-        position.top = `${targetRect.top + targetRect.height / 2}px`;
-        position.right = `${window.innerWidth - targetRect.left + padding}px`;
-        position.transform = 'translateY(-50%)';
-        break;
-      case 'right':
-        position.top = `${targetRect.top + targetRect.height / 2}px`;
-        position.left = `${targetRect.right + padding}px`;
-        position.transform = 'translateY(-50%)';
-        break;
-    }
-
-    return position;
-  };
-
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
+        key="tutorial-overlay"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[9999]"
         style={{ pointerEvents: isActive ? 'auto' : 'none' }}
       >
-        {/* Backdrop with spotlight effect */}
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm">
+        {/* Backdrop — only blur when no spotlight target (blur would obscure the highlighted element) */}
+        <div className={`absolute inset-0 bg-black/1 ${!targetRect ? 'backdrop-blur-sm' : ''}`}>
           {/* Spotlight cutout for target element */}
           {targetRect && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
+              key={`spotlight-${currentStep}`}
+              initial={{ opacity: 1, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
-              className="absolute"
+              className="absolute rounded-xl border-2 border-cyber-400 tutorial-spotlight"
               style={{
-                top: targetRect.top - 8,
-                left: targetRect.left - 8,
-                width: targetRect.width + 16,
-                height: targetRect.height + 16,
-                boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.7)',
-                borderRadius: '12px',
-                border: '3px solid #00d9ff',
+                top: targetRect.top - 6,
+                left: targetRect.left - 6,
+                width: targetRect.width + 12,
+                height: targetRect.height + 12,
+                boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 217, 255, 0.4)',
                 background: 'transparent',
-                animation: 'pulse-border 2s ease-in-out infinite',
               }}
             />
           )}
         </div>
 
-        {/* Tutorial Card */}
-        <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: -20 }}
-          transition={{ duration: 0.3 }}
-          className="absolute w-[90vw] max-w-md mx-4"
-          style={getTooltipPosition()}
-        >
-          <div className="bg-gradient-to-br from-light-100 to-light-200 dark:from-dark-100 dark:to-dark-200 border-2 border-cyber-500/50 rounded-2xl shadow-glow overflow-hidden">
-            {/* Close Button */}
-            <button
-              onClick={skipTutorial}
-              className="absolute top-4 right-4 text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white transition-colors z-10"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
+        {/* Card wrapper: full-width bottom sheet on mobile, centered modal on md+ */}
+        <div className="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center md:p-6 z-[10000]">
+          <motion.div
+            ref={sheetRef}
+            key={`sheet-${currentStep}`}
+            initial={{ y: 50, opacity: 0, scale: 0.97 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 50, opacity: 0, scale: 0.97 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            className="
+              relative w-full md:max-w-md
+              max-h-[52vh] md:max-h-[85vh] overflow-y-auto
+              rounded-t-2xl md:rounded-2xl
+              bg-gradient-to-br from-cyber-50 to-electric-50
+              dark:from-dark-100/80 dark:to-dark-200/80
+              backdrop-blur-xl
+              border-t-2 border-x-2 md:border-2
+              border-cyber-500/25 dark:border-white/10
+              shadow-light-cyber-lg dark:shadow-glow
+            "
+          >
             {/* Progress Bar */}
-            <div className="h-1.5 bg-light-200 dark:bg-dark-200">
+            <div className="h-1 bg-light-300 dark:bg-dark-300 rounded-t-2xl overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
                 className="h-full bg-gradient-to-r from-cyber-400 to-electric-500"
               />
             </div>
 
             {/* Content */}
-            <div className="p-4 sm:p-6">
-              {/* Icon */}
-              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-cyber flex items-center justify-center shadow-glow shrink-0">
-                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            <div
+              className="px-4 sm:px-5 pt-3 sm:pt-4 pb-4 sm:pb-5"
+              style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+            >
+              {/* Header: icon + title + close */}
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-cyber flex items-center justify-center shadow-glow shrink-0">
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-light-600 dark:text-gray-400 mb-1">
-                    Step {currentStep + 1} of {currentFlow.steps.length}
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-light-900 dark:text-white break-words">{step.title}</h3>
-                </div>
+                <h3 className="flex-1 min-w-0 text-xs sm:text-sm font-bold text-light-900 dark:text-white truncate">
+                  {step.title}
+                </h3>
+                <button
+                  onClick={skipTutorial}
+                  className="p-1 rounded-lg text-light-500 dark:text-gray-500 hover:text-light-900 dark:hover:text-white hover:bg-light-200 dark:hover:bg-white/10 transition-colors shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
               {/* Description */}
-              <p className="text-sm sm:text-base text-light-700 dark:text-gray-300 mb-4 sm:mb-6 leading-relaxed">{step.description}</p>
+              <p className="text-xs sm:text-sm text-light-600 dark:text-gray-400 leading-relaxed mb-2 sm:mb-3">
+                {step.description}
+              </p>
 
-              {/* Navigation Buttons */}
-              <div className="flex items-center justify-between gap-2 sm:gap-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
+              {/* Step dots */}
+              <div className="flex items-center justify-center gap-1.5 mb-3 sm:mb-4">
+                {currentFlow.steps.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`rounded-full transition-all duration-300 ${
+                      i === currentStep
+                        ? 'w-5 h-2 bg-cyber-500'
+                        : i < currentStep
+                        ? 'w-2 h-2 bg-cyber-400/50'
+                        : 'w-2 h-2 bg-light-300 dark:bg-dark-300'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {/* Navigation */}
+              <div className="flex items-center justify-between">
+                <button
                   onClick={skipTutorial}
-                  className="text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white text-xs sm:text-sm"
+                  className="text-xs text-light-500 dark:text-gray-500 hover:text-light-800 dark:hover:text-gray-300 transition-colors font-medium"
                 >
-                  Skip
-                </Button>
+                  Skip tour
+                </button>
 
-                <div className="flex gap-1.5 sm:gap-2">
+                <div className="flex items-center gap-2">
                   {!isFirstStep && (
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      leftIcon={<ChevronLeft className="w-4 h-4" />}
+                      leftIcon={<ChevronLeft className="w-3.5 h-3.5" />}
                       onClick={prevStep}
-                      className="px-2 sm:px-3"
                     >
-                      <span className="hidden xs:inline">Back</span>
+                      Back
                     </Button>
                   )}
                   <Button
                     variant="primary"
                     size="sm"
-                    rightIcon={!isLastStep ? <ChevronRight className="w-4 h-4" /> : undefined}
                     onClick={nextStep}
-                    glow
-                    className="px-3 sm:px-4"
+                    rightIcon={!isLastStep ? <ChevronRight className="w-3.5 h-3.5" /> : undefined}
                   >
-                    {isLastStep ? 'Start' : 'Next'}
+                    {isLastStep ? "Let's go!" : 'Next'}
                   </Button>
                 </div>
               </div>
             </div>
-          </div>
-        </motion.div>
-
-        {/* Pulse animation for border */}
-        <style jsx>{`
-          @keyframes pulse-border {
-            0%, 100% {
-              border-color: #00d9ff;
-              box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 217, 255, 0.5);
-            }
-            50% {
-              border-color: #00ff88;
-              box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 255, 136, 0.6);
-            }
-          }
-        `}</style>
+          </motion.div>
+        </div>
       </motion.div>
     </AnimatePresence>
   );
