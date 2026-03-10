@@ -121,6 +121,25 @@ async function getTournamentMatchesBetweenPlayers(
 ): Promise<HeadToHeadMatch[]> {
   const allMatches: HeadToHeadMatch[] = [];
 
+  // Helper: case-insensitive trimmed name comparison
+  const namesMatch = (a: string, b: string) =>
+    a.trim().toLowerCase() === b.trim().toLowerCase();
+
+  // Helper: safely parse a match date, fallback to tournament createdAt or now
+  const safeDate = (dateVal: any, fallback?: any): Date => {
+    try {
+      const d = convertTimestamp(dateVal);
+      if (d && !isNaN(d.getTime())) return d;
+    } catch {}
+    if (fallback) {
+      try {
+        const f = convertTimestamp(fallback);
+        if (f && !isNaN(f.getTime())) return f;
+      } catch {}
+    }
+    return new Date();
+  };
+
   try {
     // Get all tournaments
     let tournaments = await getTournaments();
@@ -138,12 +157,12 @@ async function getTournamentMatchesBetweenPlayers(
             const homeName = match.homeTeam;
             const awayName = match.awayTeam;
 
-            // Check if both players are in this match
-            if (
-              (homeName === playerAName && awayName === playerBName) ||
-              (homeName === playerBName && awayName === playerAName)
-            ) {
-              const isPlayerAHome = homeName === playerAName;
+            // Case-insensitive check if both players are in this match
+            const isAHomeBaway = namesMatch(homeName, playerAName) && namesMatch(awayName, playerBName);
+            const isBHomeAaway = namesMatch(homeName, playerBName) && namesMatch(awayName, playerAName);
+
+            if (isAHomeBaway || isBHomeAaway) {
+              const isPlayerAHome = namesMatch(homeName, playerAName);
               const playerAScore = isPlayerAHome
                 ? (match.homeScore ?? 0)
                 : (match.awayScore ?? 0);
@@ -157,8 +176,8 @@ async function getTournamentMatchesBetweenPlayers(
               else winner = 'draw';
 
               allMatches.push({
-                id: match.id || `${tournament.id}-group-${group.id}`,
-                date: convertTimestamp(match.matchDate) || new Date(),
+                id: match.id || `${tournament.id}-group-${group.id}-${allMatches.length}`,
+                date: safeDate(match.matchDate, tournament.createdAt),
                 playerAScore,
                 playerBScore,
                 winner,
@@ -176,15 +195,15 @@ async function getTournamentMatchesBetweenPlayers(
         const team1 = tie.team1;
         const team2 = tie.team2;
 
-        // Check if both players are in this tie
-        if (
-          (team1 === playerAName && team2 === playerBName) ||
-          (team1 === playerBName && team2 === playerAName)
-        ) {
-          const isPlayerATeam1 = team1 === playerAName;
+        // Case-insensitive check if both players are in this tie
+        const isATeam1 = namesMatch(team1, playerAName) && namesMatch(team2, playerBName);
+        const isBTeam1 = namesMatch(team1, playerBName) && namesMatch(team2, playerAName);
 
-          // Process first leg
-          if (tie.firstLeg.played) {
+        if (isATeam1 || isBTeam1) {
+          const isPlayerATeam1 = namesMatch(team1, playerAName);
+
+          // Process first leg — team1 is home in first leg
+          if (tie.firstLeg?.played) {
             const playerAScore = isPlayerATeam1
               ? (tie.firstLeg.homeScore ?? 0)
               : (tie.firstLeg.awayScore ?? 0);
@@ -199,7 +218,7 @@ async function getTournamentMatchesBetweenPlayers(
 
             allMatches.push({
               id: tie.firstLeg.id || `${tournament.id}-${tie.round}-leg1`,
-              date: convertTimestamp(tie.firstLeg.matchDate) || new Date(),
+              date: safeDate(tie.firstLeg.matchDate, tournament.createdAt),
               playerAScore,
               playerBScore,
               winner,
@@ -208,14 +227,14 @@ async function getTournamentMatchesBetweenPlayers(
             });
           }
 
-          // Process second leg
-          if (tie.secondLeg.played) {
-            const playerAScore = isPlayerATeam1
-              ? (tie.secondLeg.awayScore ?? 0)
-              : (tie.secondLeg.homeScore ?? 0);
-            const playerBScore = isPlayerATeam1
-              ? (tie.secondLeg.homeScore ?? 0)
-              : (tie.secondLeg.awayScore ?? 0);
+          // Process second leg — team2 is home in second leg
+          if (tie.secondLeg?.played) {
+            // In 2nd leg, home/away are swapped (team2 is home)
+            // So team1's score = awayScore, team2's score = homeScore
+            const team1Score = tie.secondLeg.awayScore ?? 0;
+            const team2Score = tie.secondLeg.homeScore ?? 0;
+            const playerAScore = isPlayerATeam1 ? team1Score : team2Score;
+            const playerBScore = isPlayerATeam1 ? team2Score : team1Score;
 
             let winner: 'playerA' | 'playerB' | 'draw';
             if (playerAScore > playerBScore) winner = 'playerA';
@@ -224,7 +243,7 @@ async function getTournamentMatchesBetweenPlayers(
 
             allMatches.push({
               id: tie.secondLeg.id || `${tournament.id}-${tie.round}-leg2`,
-              date: convertTimestamp(tie.secondLeg.matchDate) || new Date(),
+              date: safeDate(tie.secondLeg.matchDate, tournament.createdAt),
               playerAScore,
               playerBScore,
               winner,
@@ -297,7 +316,7 @@ export async function getGlobalHeadToHead(
       biggestWin: null,
     },
     totalMatches: allMatches.length,
-    recentMatches: allMatches.slice(0, 10),
+    recentMatches: allMatches,
     avgGoalsPerMatch: 0,
     leagueRecord: { playerAWins: 0, playerBWins: 0, draws: 0 },
     tournamentRecord: { playerAWins: 0, playerBWins: 0, draws: 0 },

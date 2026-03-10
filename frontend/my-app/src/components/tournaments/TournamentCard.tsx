@@ -32,20 +32,23 @@ export default function TournamentCard({ tournament, onClick }: TournamentCardPr
       hover
       glow={tournament.status === 'group_stage' || tournament.status === 'knockout'}
       onClick={onClick}
-      className="cursor-pointer"
+      className="cursor-pointer !p-3 sm:!p-4 !rounded-xl !h-[60px] sm:!h-[68px] flex flex-col justify-center"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <h3 className="text-base font-bold text-light-900 dark:text-white line-clamp-1 pr-2 mb-1">
-            {tournament.name}
-          </h3>
-          <p className="text-xs text-light-600 dark:text-gray-400">
-            {getTournamentTypeLabel()} · {tournament.currentTeams}/{tournament.maxTeams} teams
-          </p>
-        </div>
+      {/* Row 1: Name + Badge */}
+      <div className="flex items-center justify-between gap-1.5 mb-0.5">
+        <h3 className="text-xs sm:text-sm font-bold text-light-900 dark:text-white truncate">
+          {tournament.name}
+        </h3>
         <div className="flex-shrink-0">
-          <StatusBadge status={tournament.status} />
+          <StatusBadge status={tournament.status} size="sm" />
         </div>
+      </div>
+
+      {/* Row 2: Type + Team count */}
+      <div className="flex items-center gap-1">
+        <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400">
+          {getTournamentTypeLabel()} · {tournament.currentTeams}/{tournament.maxTeams} teams
+        </p>
       </div>
     </Card>
   );

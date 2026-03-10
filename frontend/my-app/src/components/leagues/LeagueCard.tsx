@@ -31,7 +31,7 @@ export default function LeagueCard({ league, onClick, leagueLeader }: LeagueCard
     const badge = badges[league.status];
 
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${badge.className}`}>
+      <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold border ${badge.className}`}>
         {badge.label}
       </span>
     );
@@ -43,29 +43,27 @@ export default function LeagueCard({ league, onClick, leagueLeader }: LeagueCard
       hover
       glow={league.status === 'active'}
       onClick={onClick}
-      className="cursor-pointer"
+      className="cursor-pointer !p-3 sm:!p-4 !rounded-xl !h-[60px] sm:!h-[68px] flex flex-col justify-center"
     >
-      <div className="flex flex-col gap-2">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-base font-bold text-light-900 dark:text-white line-clamp-1 pr-2 mb-1">
-              {league.name}
-            </h3>
-            <p className="text-xs text-light-600 dark:text-gray-400">{league.season}</p>
-          </div>
-          <div className="flex-shrink-0">{getStatusBadge()}</div>
-        </div>
+      {/* Row 1: Name + Badge */}
+      <div className="flex items-center justify-between gap-1.5 mb-0.5">
+        <h3 className="text-xs sm:text-sm font-bold text-light-900 dark:text-white truncate">
+          {league.name}
+        </h3>
+        <div className="flex-shrink-0">{getStatusBadge()}</div>
+      </div>
 
-        {/* League leader — only when active, single compact line */}
-        {leagueLeader && league.status === 'active' && (
-          <div className="flex items-center gap-1.5 pt-2 border-t border-black/10 dark:border-white/10">
-            <Trophy className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
-            <p className="text-xs text-light-600 dark:text-gray-400">Leader:</p>
-            <p className="text-xs font-semibold text-yellow-500 dark:text-yellow-400 truncate">
+      {/* Row 2: Season + optional Leader */}
+      <div className="flex items-center gap-1">
+        <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 shrink-0">{league.season}</p>
+        {leagueLeader && (league.status === 'active' || league.status === 'completed') && (
+          <>
+            <span className="text-light-300 dark:text-gray-600">·</span>
+            <Trophy className={`w-3 h-3 shrink-0 ${league.status === 'completed' ? 'text-amber-400' : 'text-yellow-400'}`} />
+            <p className={`text-[10px] sm:text-xs font-semibold truncate ${league.status === 'completed' ? 'text-amber-400' : 'text-yellow-500 dark:text-yellow-400'}`}>
               {leagueLeader}
             </p>
-          </div>
+          </>
         )}
       </div>
     </Card>

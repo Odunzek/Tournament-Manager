@@ -268,7 +268,7 @@ export default function LeagueDetailPage() {
         {/* Back Button */}
         <button
           onClick={() => router.push('/leagues')}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-2"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Leagues</span>

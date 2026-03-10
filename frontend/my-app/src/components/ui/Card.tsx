@@ -40,7 +40,7 @@ export default function Card({
         ${hover ? 'cursor-pointer' : ''}
         rounded-2xl p-6
         transition-all duration-200
-        h-full
+        w-full h-full
         ${className}
       `}
     >
