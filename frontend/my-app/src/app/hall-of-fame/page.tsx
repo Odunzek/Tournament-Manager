@@ -8,7 +8,7 @@ import MainLayout from '@/components/layouts/MainLayout';
 import Container from '@/components/layouts/Container';
 import GlobalNavigation from '@/components/layouts/GlobalNavigation';
 import PlayerAvatar from '@/components/players/PlayerAvatar';
-import PlayerCard from '@/components/players/PlayerCard';
+
 import { Player } from '@/types/player';
 import { useHallOfFame, useSeasonRecords } from '@/hooks/usePlayers';
 import { useSeasons } from '@/hooks/useSeasons';
@@ -86,7 +86,7 @@ export default function HallOfFamePage() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-8 relative"
+          className="text-center mb-4 sm:mb-8 relative"
         >
           {/* Animated Background Glow */}
           <motion.div
@@ -100,9 +100,9 @@ export default function HallOfFamePage() {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="mb-4"
+            className="mb-2 sm:mb-4"
           >
-            <Crown className="w-14 h-14 sm:w-20 sm:h-20 text-yellow-400 mx-auto drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]" />
+            <Crown className="w-10 h-10 sm:w-20 sm:h-20 text-yellow-400 mx-auto drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]" />
           </motion.div>
 
           {/* Title */}
@@ -110,7 +110,7 @@ export default function HallOfFamePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-4xl sm:text-5xl md:text-6xl font-black mb-3 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-400 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(234,179,8,0.5)] tracking-tight"
+            className="text-3xl sm:text-5xl md:text-6xl font-black mb-1.5 sm:mb-3 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-400 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(234,179,8,0.5)] tracking-tight"
             style={{ fontFamily: 'var(--font-orbitron), sans-serif' }}
           >
             HALL OF FAME
@@ -121,7 +121,7 @@ export default function HallOfFamePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="text-base sm:text-lg text-light-700 dark:text-gray-300 mb-4"
+            className="text-sm sm:text-lg text-light-700 dark:text-gray-300 mb-2 sm:mb-4"
           >
             Honoring the legends who have achieved greatness
           </motion.p>
@@ -133,9 +133,9 @@ export default function HallOfFamePage() {
             transition={{ delay: 0.5 }}
             className="flex flex-wrap justify-center gap-4 sm:gap-6"
           >
-            <div className="flex items-center gap-2 px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-full backdrop-blur-sm">
-              <Trophy className="w-4 h-4 text-yellow-400" />
-              <span className="text-yellow-400 font-bold text-sm">{hallOfFameMembers.length} Members</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-full backdrop-blur-sm">
+              <Trophy className="w-3.5 h-3.5 text-yellow-400" />
+              <span className="text-yellow-400 font-bold text-xs sm:text-sm">{hallOfFameMembers.length} Members</span>
             </div>
           </motion.div>
         </motion.div>
@@ -146,7 +146,7 @@ export default function HallOfFamePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.55 }}
-            className="flex items-center justify-center gap-3 mb-8"
+            className="flex items-center justify-center gap-3 mb-4 sm:mb-8"
           >
             <Calendar className="w-4 h-4 text-yellow-400" />
             <span className="text-light-600 dark:text-gray-400 font-semibold text-sm">View:</span>
@@ -180,89 +180,59 @@ export default function HallOfFamePage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="mb-8"
+            className="mb-4 sm:mb-8"
           >
-            <h2 className="text-xl font-bold text-light-900 dark:text-white mb-4 flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-yellow-400" />
+            <h2 className="text-lg sm:text-xl font-bold text-light-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
+              <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
               {selectedSeasonName ? `${selectedSeasonName} Records` : 'All-Time Records'}
             </h2>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {/* Most Titles */}
-              <motion.div
-                whileHover={{ scale: 1.03, y: -5 }}
-                onClick={() => handlePlayerClick(allTimeRecords.mostTitles)}
-                className="bg-gradient-to-br from-yellow-500/20 to-amber-600/20 border-2 border-yellow-500/30 rounded-2xl p-4 backdrop-blur-xl hover:shadow-[0_0_25px_rgba(234,179,8,0.4)] transition-all duration-300 cursor-pointer"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Trophy className="w-5 h-5 text-yellow-400" />
-                  <span className="text-xs text-light-600 dark:text-gray-400 font-semibold">Most Titles</span>
+            <div className="bg-gradient-to-r from-yellow-500/10 via-amber-500/5 to-yellow-500/10 border-2 border-yellow-500/20 rounded-2xl backdrop-blur-xl overflow-hidden">
+              <div className="grid grid-cols-4 divide-x divide-yellow-500/15">
+                {/* Most Titles */}
+                <div
+                  onClick={() => handlePlayerClick(allTimeRecords.mostTitles)}
+                  className="text-center px-1.5 py-3 sm:px-4 sm:py-4 cursor-pointer hover:bg-yellow-500/10 transition-colors"
+                >
+                  <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-1 font-semibold">Most Titles</p>
+                  <PlayerAvatar src={allTimeRecords.mostTitles.avatar} alt={allTimeRecords.mostTitles.name} size="sm" showBorder borderColor="border-yellow-500/50" className="mx-auto !w-8 !h-8 sm:!w-12 sm:!h-12 mb-1" />
+                  <p className="text-[10px] sm:text-xs font-bold text-light-900 dark:text-white truncate">{allTimeRecords.mostTitles.name}</p>
+                  <p className="text-base sm:text-xl font-black text-yellow-400">{getPlayerAchievements(allTimeRecords.mostTitles).totalTitles}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <PlayerAvatar src={allTimeRecords.mostTitles.avatar} alt={allTimeRecords.mostTitles.name} size="sm" showBorder borderColor="border-yellow-500/50" />
-                  <div>
-                    <div className="font-bold text-light-900 dark:text-white text-sm">{allTimeRecords.mostTitles.name}</div>
-                    <div className="text-xl font-black text-yellow-400">{getPlayerAchievements(allTimeRecords.mostTitles).totalTitles}</div>
-                  </div>
-                </div>
-              </motion.div>
 
-              {/* Most Leagues */}
-              <motion.div
-                whileHover={{ scale: 1.03, y: -5 }}
-                onClick={() => handlePlayerClick(allTimeRecords.mostLeagues)}
-                className="bg-gradient-to-br from-cyber-500/20 to-cyber-600/20 border-2 border-cyber-500/30 rounded-2xl p-4 backdrop-blur-xl hover:shadow-light-cyber dark:hover:shadow-glow transition-all duration-300 cursor-pointer"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Trophy className="w-5 h-5 text-cyber-400" />
-                  <span className="text-xs text-light-600 dark:text-gray-400 font-semibold">Most Leagues</span>
+                {/* Most Leagues */}
+                <div
+                  onClick={() => handlePlayerClick(allTimeRecords.mostLeagues)}
+                  className="text-center px-1.5 py-3 sm:px-4 sm:py-4 cursor-pointer hover:bg-cyber-500/10 transition-colors"
+                >
+                  <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-1 font-semibold">Most Leagues</p>
+                  <PlayerAvatar src={allTimeRecords.mostLeagues.avatar} alt={allTimeRecords.mostLeagues.name} size="sm" showBorder borderColor="border-cyber-500/50" className="mx-auto !w-8 !h-8 sm:!w-12 sm:!h-12 mb-1" />
+                  <p className="text-[10px] sm:text-xs font-bold text-light-900 dark:text-white truncate">{allTimeRecords.mostLeagues.name}</p>
+                  <p className="text-base sm:text-xl font-black text-cyber-400">{getPlayerAchievements(allTimeRecords.mostLeagues).leagueWins}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <PlayerAvatar src={allTimeRecords.mostLeagues.avatar} alt={allTimeRecords.mostLeagues.name} size="sm" showBorder borderColor="border-cyber-500/50" />
-                  <div>
-                    <div className="font-bold text-light-900 dark:text-white text-sm">{allTimeRecords.mostLeagues.name}</div>
-                    <div className="text-xl font-black text-cyber-400">{getPlayerAchievements(allTimeRecords.mostLeagues).leagueWins}</div>
-                  </div>
-                </div>
-              </motion.div>
 
-              {/* Most Tournaments */}
-              <motion.div
-                whileHover={{ scale: 1.03, y: -5 }}
-                onClick={() => handlePlayerClick(allTimeRecords.mostTournaments)}
-                className="bg-gradient-to-br from-electric-500/20 to-electric-600/20 border-2 border-electric-500/30 rounded-2xl p-4 backdrop-blur-xl hover:shadow-light-electric dark:hover:shadow-glow-purple transition-all duration-300 cursor-pointer"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Trophy className="w-5 h-5 text-electric-400" />
-                  <span className="text-xs text-light-600 dark:text-gray-400 font-semibold">Most Tournaments</span>
+                {/* Most Tournaments */}
+                <div
+                  onClick={() => handlePlayerClick(allTimeRecords.mostTournaments)}
+                  className="text-center px-1.5 py-3 sm:px-4 sm:py-4 cursor-pointer hover:bg-electric-500/10 transition-colors"
+                >
+                  <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-1 font-semibold">Most Tourneys</p>
+                  <PlayerAvatar src={allTimeRecords.mostTournaments.avatar} alt={allTimeRecords.mostTournaments.name} size="sm" showBorder borderColor="border-electric-500/50" className="mx-auto !w-8 !h-8 sm:!w-12 sm:!h-12 mb-1" />
+                  <p className="text-[10px] sm:text-xs font-bold text-light-900 dark:text-white truncate">{allTimeRecords.mostTournaments.name}</p>
+                  <p className="text-base sm:text-xl font-black text-electric-400">{getPlayerAchievements(allTimeRecords.mostTournaments).tournamentWins}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <PlayerAvatar src={allTimeRecords.mostTournaments.avatar} alt={allTimeRecords.mostTournaments.name} size="sm" showBorder borderColor="border-electric-500/50" />
-                  <div>
-                    <div className="font-bold text-light-900 dark:text-white text-sm">{allTimeRecords.mostTournaments.name}</div>
-                    <div className="text-xl font-black text-electric-400">{getPlayerAchievements(allTimeRecords.mostTournaments).tournamentWins}</div>
-                  </div>
-                </div>
-              </motion.div>
 
-              {/* Top Player */}
-              <motion.div
-                whileHover={{ scale: 1.03, y: -5 }}
-                onClick={() => handlePlayerClick(allTimeRecords.currentChampion)}
-                className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 border-2 border-green-500/30 rounded-2xl p-4 backdrop-blur-xl hover:shadow-[0_0_25px_rgba(34,197,94,0.4)] transition-all duration-300 cursor-pointer"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-5 h-5 text-green-400" />
-                  <span className="text-xs text-light-600 dark:text-gray-400 font-semibold">Top Player</span>
+                {/* Top Player */}
+                <div
+                  onClick={() => handlePlayerClick(allTimeRecords.currentChampion)}
+                  className="text-center px-1.5 py-3 sm:px-4 sm:py-4 cursor-pointer hover:bg-green-500/10 transition-colors"
+                >
+                  <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-1 font-semibold">Top Player</p>
+                  <PlayerAvatar src={allTimeRecords.currentChampion.avatar} alt={allTimeRecords.currentChampion.name} size="sm" showBorder borderColor="border-green-500/50" className="mx-auto !w-8 !h-8 sm:!w-12 sm:!h-12 mb-1" />
+                  <p className="text-[10px] sm:text-xs font-bold text-light-900 dark:text-white truncate">{allTimeRecords.currentChampion.name}</p>
+                  <p className="text-base sm:text-xl font-black text-green-400">{getPlayerAchievements(allTimeRecords.currentChampion).totalTitles}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <PlayerAvatar src={allTimeRecords.currentChampion.avatar} alt={allTimeRecords.currentChampion.name} size="sm" showBorder borderColor="border-green-500/50" />
-                  <div>
-                    <div className="font-bold text-light-900 dark:text-white text-sm">{allTimeRecords.currentChampion.name}</div>
-                    <div className="text-xl font-black text-green-400">{getPlayerAchievements(allTimeRecords.currentChampion).totalTitles}</div>
-                  </div>
-                </div>
-              </motion.div>
+              </div>
             </div>
           </motion.section>
         )}
@@ -273,14 +243,14 @@ export default function HallOfFamePage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
-            className="mb-8"
+            className="mb-4 sm:mb-8"
           >
-            <h2 className="text-xl font-bold text-light-900 dark:text-white mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-electric-400" />
+            <h2 className="text-lg sm:text-xl font-bold text-light-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-electric-400" />
               Recent Inductees
             </h2>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
               {recentInductees.map((player, index) => (
                 <motion.div
                   key={player.id}
@@ -289,18 +259,18 @@ export default function HallOfFamePage() {
                   transition={{ delay: 0.8 + index * 0.1 }}
                   whileHover={{ scale: 1.03, y: -5 }}
                   onClick={() => handlePlayerClick(player)}
-                  className="bg-gradient-to-br from-electric-500/20 to-electric-600/20 border-2 border-electric-500/30 rounded-2xl p-4 backdrop-blur-xl hover:shadow-light-electric dark:hover:shadow-glow-purple transition-all duration-300 cursor-pointer"
+                  className="bg-gradient-to-br from-electric-500/20 to-electric-600/20 border-2 border-electric-500/30 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 backdrop-blur-xl hover:shadow-light-electric dark:hover:shadow-glow-purple transition-all duration-300 cursor-pointer"
                 >
-                  <div className="flex items-center gap-3 mb-2">
-                    <PlayerAvatar src={player.avatar} alt={player.name} size="md" showBorder borderColor="border-electric-500/50" />
+                  <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2">
+                    <PlayerAvatar src={player.avatar} alt={player.name} size="sm" showBorder borderColor="border-electric-500/50" className="!w-10 !h-10 sm:!w-12 sm:!h-12" />
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-light-900 dark:text-white text-base truncate">{player.name}</div>
+                      <div className="font-bold text-light-900 dark:text-white text-sm sm:text-base truncate">{player.name}</div>
                       {player.psnId && player.psnId !== 'player' && (
-                        <div className="text-xs text-light-600 dark:text-gray-400">@{player.psnId}</div>
+                        <div className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400">@{player.psnId}</div>
                       )}
                     </div>
                   </div>
-                  <div className="flex justify-between items-center text-xs">
+                  <div className="flex justify-between items-center text-[10px] sm:text-xs">
                     <span className="text-light-600 dark:text-gray-400">
                       {convertTimestamp(getInductionDate(player)!).toLocaleDateString('en-US', {
                         month: 'short',
@@ -317,65 +287,72 @@ export default function HallOfFamePage() {
           </motion.section>
         )}
 
-        {/* Hall of Fame Members Grid */}
+        {/* Hall of Fame Members */}
         {!loading && hallOfFameMembers.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="mb-8"
+            className="mb-4 sm:mb-8"
           >
-            <h2 className="text-xl font-bold text-light-900 dark:text-white mb-4 flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-yellow-400" />
+            <h2 className="text-lg sm:text-xl font-bold text-light-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
+              <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
               {selectedSeasonName ? `${selectedSeasonName} Hall of Fame` : 'Hall of Fame Members'}
             </h2>
 
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
+            <div className="flex flex-wrap gap-2 sm:gap-2.5">
               {[...hallOfFameMembers]
                 .sort((a, b) => getPlayerAchievements(b).totalTitles - getPlayerAchievements(a).totalTitles)
-                .map((player, index) => (
-                  <motion.div
-                    key={player.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.9 + index * 0.05 }}
-                    className="relative"
-                  >
-                    {/* Admin remove button (season view only) */}
-                    {isAuthenticated && effectiveSeasonId && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveFromSeason(player);
-                        }}
-                        className="absolute -top-2 -right-2 z-10 w-6 h-6 flex items-center justify-center bg-red-500/80 hover:bg-red-500 rounded-full text-white transition-colors shadow-lg"
-                        title={`Remove ${player.name} from this season`}
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                    <PlayerCard
-                      player={
-                        effectiveSeasonId
-                          ? {
-                              ...player,
-                              achievements: {
-                                ...player.achievements,
-                                leagueWins: getPlayerAchievements(player).leagueWins,
-                                tournamentWins: getPlayerAchievements(player).tournamentWins,
-                                totalTitles: getPlayerAchievements(player).totalTitles,
-                                tier: getPlayerAchievements(player).tier,
-                              },
-                            }
-                          : player
-                      }
+                .map((player, index) => {
+                  const achievements = getPlayerAchievements(player);
+                  const isElite = achievements.totalTitles >= 3;
+                  return (
+                    <motion.div
+                      key={player.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.9 + index * 0.03 }}
                       onClick={() => handlePlayerClick(player)}
-                      size="sm"
-                      showTier={false}
-                      variant={getPlayerAchievements(player).totalTitles >= 10 ? 'premium' : 'default'}
-                    />
-                  </motion.div>
-                ))}
+                      className={`
+                        relative flex items-center gap-1.5 sm:gap-2 pl-1 pr-2.5 sm:pr-3 py-1 sm:py-1.5
+                        rounded-full cursor-pointer backdrop-blur-sm
+                        transition-all duration-200 hover:scale-105
+                        ${isElite
+                          ? 'bg-gradient-to-r from-yellow-500/20 to-amber-600/20 border border-yellow-500/30 hover:shadow-[0_0_15px_rgba(234,179,8,0.3)]'
+                          : 'bg-white/5 border border-white/15 hover:bg-white/10'
+                        }
+                      `}
+                    >
+                      {/* Admin remove button */}
+                      {isAuthenticated && effectiveSeasonId && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveFromSeason(player);
+                          }}
+                          className="absolute -top-1.5 -right-1.5 z-10 w-4 h-4 flex items-center justify-center bg-red-500/80 hover:bg-red-500 rounded-full text-white transition-colors"
+                          title={`Remove ${player.name}`}
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      )}
+                      <PlayerAvatar
+                        src={player.avatar}
+                        alt={player.name}
+                        size="sm"
+                        showBorder={isElite}
+                        borderColor="border-yellow-500/50"
+                        className="!w-6 !h-6 sm:!w-7 sm:!h-7"
+                      />
+                      <span className="text-xs sm:text-sm font-semibold text-light-900 dark:text-white max-w-[80px] sm:max-w-none truncate">
+                        {player.name}
+                      </span>
+                      <span className={`text-[10px] sm:text-xs font-bold ${isElite ? 'text-yellow-400' : 'text-light-500 dark:text-gray-400'}`}>
+                        {achievements.totalTitles}
+                      </span>
+                    </motion.div>
+                  );
+                })}
             </div>
           </motion.section>
         )}
@@ -386,10 +363,10 @@ export default function HallOfFamePage() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-center py-20"
+            className="text-center py-12 sm:py-20"
           >
-            <Crown className="w-20 h-20 text-gray-700 mx-auto mb-6" />
-            <h3 className="text-2xl font-bold text-light-600 dark:text-gray-400 mb-3">
+            <Crown className="w-14 h-14 sm:w-20 sm:h-20 text-gray-700 mx-auto mb-4 sm:mb-6" />
+            <h3 className="text-xl sm:text-2xl font-bold text-light-600 dark:text-gray-400 mb-3">
               {selectedSeasonName ? `No ${selectedSeasonName} Champions Yet` : 'Hall of Fame Awaits'}
             </h3>
             <p className="text-light-500 dark:text-gray-500 max-w-md mx-auto">

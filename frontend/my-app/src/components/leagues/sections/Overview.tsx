@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Users, TrendingUp, Target, Calendar, Edit, CheckCircle, UserPlus, Trash2, ScrollText, ChevronDown, ChevronUp, Edit3, Check, X } from 'lucide-react';
+import { Trophy, TrendingUp, Calendar, Edit, CheckCircle, UserPlus, Trash2, ScrollText, ChevronDown, ChevronUp, Edit3, Check, X } from 'lucide-react';
 import { League, LeaguePlayer, LeagueMatch } from '@/types/league';
 import { convertTimestamp, updateLeague } from '@/lib/leagueUtils';
 import Card from '../../ui/Card';
@@ -98,60 +98,54 @@ export default function Overview({
     const Icon = badge.icon;
 
     return (
-      <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${badge.className}`}>
-        <Icon className="w-4 h-4" />
+      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs ${badge.className}`}>
+        <Icon className="w-3 h-3" />
         <span className="font-bold">{badge.label}</span>
       </div>
     );
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* League Header */}
-      <Card variant="glass">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          <div className="flex-1">
-            <h2 className="text-3xl font-bold text-light-900 dark:text-white mb-2">{league.name}</h2>
-            <p className="text-lg text-light-600 dark:text-gray-400 mb-4">{league.season}</p>
-
-            <div className="flex flex-wrap gap-4 text-sm">
-              <div className="flex items-center gap-2 text-gray-300">
-                <Calendar className="w-4 h-4" />
-                <span>
-                  {startDate.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                  {endDate &&
-                    ` - ${endDate.toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}`}
-                </span>
-              </div>
-            </div>
+      <Card variant="glass" className="!p-3 sm:!p-6 relative">
+        <div className="absolute top-3 right-3">{getStatusBadge()}</div>
+        <div>
+          <h2 className="text-xl sm:text-3xl font-bold text-light-900 dark:text-white mb-0.5 sm:mb-2 pr-20">{league.name}</h2>
+          <p className="text-xs sm:text-lg text-light-600 dark:text-gray-400 mb-1 sm:mb-3">{league.season}</p>
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-light-500 dark:text-gray-300">
+            <Calendar className="w-3.5 h-3.5" />
+            <span>
+              {startDate.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+              {endDate &&
+                ` - ${endDate.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}`}
+            </span>
           </div>
-
-          <div>{getStatusBadge()}</div>
         </div>
 
         {/* Progress Bar */}
         {league.status === 'active' && (
-          <div className="mt-6">
-            <div className="flex items-center justify-between text-sm text-light-600 dark:text-gray-400 mb-2">
+          <div className="mt-3 sm:mt-6">
+            <div className="flex items-center justify-between text-xs sm:text-sm text-light-600 dark:text-gray-400 mb-2">
               <span>League Progress</span>
               <span>
                 {matchesPlayed} / {totalMatches} matches ({Math.round(matchProgress)}%)
               </span>
             </div>
-            <div className="w-full bg-dark-200 rounded-full h-3 overflow-hidden">
+            <div className="w-full bg-dark-200 rounded-full h-2 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${matchProgress}%` }}
                 transition={{ duration: 1, ease: 'easeOut' }}
-                className="h-3 bg-gradient-to-r from-cyber-400 to-electric-500"
+                className="h-2 bg-gradient-to-r from-cyber-400 to-electric-500"
               />
             </div>
           </div>
@@ -159,7 +153,7 @@ export default function Overview({
       </Card>
 
       {/* League Rules */}
-      <Card variant="glass">
+      <Card variant="glass" className="!p-3 sm:!p-6">
         <button
           onClick={() => { setRulesOpen(!rulesOpen); setIsEditingRules(false); setSaveRulesError(''); }}
           className="w-full flex items-center justify-between"
@@ -239,14 +233,14 @@ export default function Overview({
         >
           <Card
             variant="glass"
-            className="bg-gradient-to-br from-yellow-500/20 to-amber-600/20 border-2 border-yellow-500/30"
+            className="bg-gradient-to-br from-yellow-500/20 to-amber-600/20 border-2 border-yellow-500/30 !p-3 sm:!p-6"
           >
-            <div className="flex items-center gap-4">
-              <Trophy className="w-12 h-12 text-yellow-400" />
-              <div className="flex-1">
-                <p className="text-sm text-gray-300 mb-1">Current League Leader</p>
-                <h3 className="text-2xl font-bold text-yellow-400">{leagueLeader.name}</h3>
-                <div className="flex items-center gap-4 mt-2 text-sm text-gray-300">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <Trophy className="w-8 h-8 sm:w-12 sm:h-12 text-yellow-400" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm text-gray-300 mb-0.5 sm:mb-1">Current League Leader</p>
+                <h3 className="text-lg sm:text-2xl font-bold text-yellow-400">{leagueLeader.name}</h3>
+                <div className="flex items-center gap-2 sm:gap-4 mt-1 sm:mt-2 text-xs sm:text-sm text-gray-300 flex-wrap">
                   <span>{leagueLeader.points || 0} points</span>
                   <span>•</span>
                   <span>
@@ -262,80 +256,32 @@ export default function Overview({
       )}
 
       {/* Statistics Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card variant="glass" className="bg-gradient-to-br from-cyber-500/20 to-cyber-600/20 border-cyber-500/30 !p-3 sm:!p-6">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Users className="w-6 h-6 sm:w-8 sm:h-8 text-cyber-400" />
-              <div>
-                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400">Players</p>
-                <p className="text-xl sm:text-2xl font-bold text-light-900 dark:text-white">{playerCount}</p>
-              </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <Card variant="glass">
+          <div className="grid grid-cols-4 divide-x divide-black/10 dark:divide-white/10">
+            <div className="text-center px-2 py-1">
+              <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">Players</p>
+              <p className="text-base sm:text-2xl font-bold text-cyber-400">{playerCount}</p>
             </div>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card
-            variant="glass"
-            className="bg-gradient-to-br from-electric-500/20 to-electric-600/20 border-electric-500/30 !p-3 sm:!p-6"
-          >
-            <div className="flex items-center gap-2 sm:gap-3">
-              <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-electric-400" />
-              <div>
-                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400">Played</p>
-                <p className="text-xl sm:text-2xl font-bold text-light-900 dark:text-white">{matchesPlayed}</p>
-              </div>
+            <div className="text-center px-2 py-1">
+              <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">Played</p>
+              <p className="text-base sm:text-2xl font-bold text-electric-400">{matchesPlayed}</p>
             </div>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Card
-            variant="glass"
-            className="bg-gradient-to-br from-green-500/20 to-green-600/20 border-green-500/30 !p-3 sm:!p-6"
-          >
-            <div className="flex items-center gap-2 sm:gap-3">
-              <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-400" />
-              <div>
-                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400">Remaining</p>
-                <p className="text-xl sm:text-2xl font-bold text-light-900 dark:text-white">{Math.max(0, (league.totalMatches || 0) - (league.matchesPlayed || 0))}</p>
-              </div>
+            <div className="text-center px-2 py-1">
+              <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">Remaining</p>
+              <p className="text-base sm:text-2xl font-bold text-green-400">{Math.max(0, (league.totalMatches || 0) - (league.matchesPlayed || 0))}</p>
             </div>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <Card
-            variant="glass"
-            className="bg-gradient-to-br from-pink-500/20 to-pink-600/20 border-pink-500/30 !p-3 sm:!p-6"
-          >
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Target className="w-6 h-6 sm:w-8 sm:h-8 text-pink-400" />
-              <div>
-                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400">Total Goals</p>
-                <p className="text-xl sm:text-2xl font-bold text-light-900 dark:text-white">{totalGoals || 0}</p>
-              </div>
+            <div className="text-center px-2 py-1">
+              <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">Total Goals</p>
+              <p className="text-base sm:text-2xl font-bold text-pink-400">{totalGoals || 0}</p>
             </div>
-          </Card>
-        </motion.div>
-      </div>
+          </div>
+        </Card>
+      </motion.div>
 
       {/* Recent Results */}
       {recentMatches.length > 0 && (
@@ -354,13 +300,14 @@ export default function Overview({
 
       {/* Admin Actions */}
       {isAuthenticated && (
-        <Card variant="glass">
-          <h3 className="text-lg font-bold text-light-900 dark:text-white mb-4">Quick Actions</h3>
+        <Card variant="glass" className="!p-3 sm:!p-6">
+          <h3 className="text-sm sm:text-lg font-bold text-light-900 dark:text-white mb-2 sm:mb-4">Quick Actions</h3>
           {(onAddPlayers || onEndLeague) && (
-            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-2 sm:mb-4">
               {onAddPlayers && (
                 <Button
                   variant="outline"
+                  size="sm"
                   leftIcon={<UserPlus className="w-4 h-4" />}
                   className="flex-1"
                   onClick={onAddPlayers}
@@ -368,12 +315,13 @@ export default function Overview({
                   Add Players
                 </Button>
               )}
-              <Button variant="outline" leftIcon={<Edit className="w-4 h-4" />} className="flex-1" onClick={() => setShowEditModal(true)}>
+              <Button variant="outline" size="sm" leftIcon={<Edit className="w-4 h-4" />} className="flex-1" onClick={() => setShowEditModal(true)}>
                 Edit League
               </Button>
               {onEndLeague && league.status === 'active' && (
                 <Button
                   variant="outline"
+                  size="sm"
                   leftIcon={<CheckCircle className="w-4 h-4" />}
                   className="flex-1"
                   onClick={onEndLeague}
@@ -385,10 +333,11 @@ export default function Overview({
           )}
 
           {/* Delete League Section */}
-          <div className={(onAddPlayers || onEndLeague) ? 'mt-4 pt-4 border-t border-light-300 dark:border-white/10' : ''}>
-            <p className="text-xs text-light-600 dark:text-gray-400 mb-2">Danger Zone</p>
+          <div className={(onAddPlayers || onEndLeague) ? 'mt-2 sm:mt-4 pt-2 sm:pt-4 border-t border-light-300 dark:border-white/10' : ''}>
+            <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-1.5 sm:mb-2">Danger Zone</p>
             <Button
               variant="danger"
+              size="sm"
               leftIcon={<Trash2 className="w-4 h-4" />}
               onClick={() => setShowDeleteModal(true)}
               className="w-full"

@@ -306,7 +306,7 @@ export default function PlayerLeagueStatsPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="mb-4 sm:mb-6"
         >
-          <Card variant="glass" className="bg-gradient-to-br from-cyber-500/20 to-electric-500/20 border border-cyber-500/30">
+          <Card variant="glass" className="bg-gradient-to-br from-cyber-500/20 to-electric-500/20 border border-cyber-500/30 !p-3 sm:!p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-light-900 dark:text-white mb-1">{player.name}</h1>
@@ -321,48 +321,52 @@ export default function PlayerLeagueStatsPage() {
         <div className="mb-4 sm:mb-6">
           <h2 className="text-lg font-bold text-light-900 dark:text-white mb-3">League Stats</h2>
 
-          <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-3">
-            <Card variant="glass">
-              <p className="text-xs text-gray-400 mb-1">Position</p>
-              <p className="text-xl font-bold text-cyber-400">{player.position || 0}</p>
-            </Card>
-            <Card variant="glass">
-              <p className="text-xs text-gray-400 mb-1">Points</p>
-              <p className="text-xl font-bold text-electric-400">{player.points || 0}</p>
-            </Card>
-            <Card variant="glass">
-              <p className="text-xs text-gray-400 mb-1">Played</p>
-              <p className="text-xl font-bold text-light-900 dark:text-white">{player.played || 0}</p>
-            </Card>
-            <Card variant="glass">
-              <p className="text-xs text-gray-400 mb-1">Win Rate</p>
-              <p className="text-xl font-bold text-green-400">{isNaN(winRate) ? 0 : winRate.toFixed(0)}%</p>
-            </Card>
-          </div>
+          <Card variant="glass" className="mb-3">
+            <div className="grid grid-cols-4 divide-x divide-black/10 dark:divide-white/10">
+              <div className="text-center px-2 py-1">
+                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">Position</p>
+                <p className="text-base sm:text-2xl font-bold text-cyber-400">{player.position || 0}</p>
+              </div>
+              <div className="text-center px-2 py-1">
+                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">Points</p>
+                <p className="text-base sm:text-2xl font-bold text-electric-400">{player.points || 0}</p>
+              </div>
+              <div className="text-center px-2 py-1">
+                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">Played</p>
+                <p className="text-base sm:text-2xl font-bold text-light-900 dark:text-white">{player.played || 0}</p>
+              </div>
+              <div className="text-center px-2 py-1">
+                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">Win Rate</p>
+                <p className="text-base sm:text-2xl font-bold text-green-400">{isNaN(winRate) ? 0 : winRate.toFixed(0)}%</p>
+              </div>
+            </div>
+          </Card>
 
-          <div className="grid grid-cols-4 gap-2 sm:gap-4">
-            <Card variant="glass" className="bg-gradient-to-br from-green-500/10 to-green-600/10 border-green-500/20">
-              <p className="text-xs text-gray-400 mb-1">Won</p>
-              <p className="text-lg font-bold text-green-400">{player.won || 0}</p>
-            </Card>
-            <Card variant="glass" className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 border-yellow-500/20">
-              <p className="text-xs text-gray-400 mb-1">Draw</p>
-              <p className="text-lg font-bold text-yellow-400">{player.draw || 0}</p>
-            </Card>
-            <Card variant="glass" className="bg-gradient-to-br from-red-500/10 to-red-600/10 border-red-500/20">
-              <p className="text-xs text-gray-400 mb-1">Lost</p>
-              <p className="text-lg font-bold text-red-400">{player.lost || 0}</p>
-            </Card>
-            <Card variant="glass" className="bg-gradient-to-br from-cyber-500/10 to-cyber-600/10 border-cyber-500/20">
-              <p className="text-xs text-gray-400 mb-1">GD</p>
-              <p className={`text-lg font-bold ${(player.goalDifference || 0) > 0 ? 'text-green-400' : (player.goalDifference || 0) < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                {(player.goalDifference || 0) > 0 ? '+' : ''}{player.goalDifference || 0}
-              </p>
-            </Card>
-          </div>
+          <Card variant="glass">
+            <div className="grid grid-cols-4 divide-x divide-black/10 dark:divide-white/10">
+              <div className="text-center px-2 py-1">
+                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">Won</p>
+                <p className="text-base sm:text-2xl font-bold text-green-400">{player.won || 0}</p>
+              </div>
+              <div className="text-center px-2 py-1">
+                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">Draw</p>
+                <p className="text-base sm:text-2xl font-bold text-yellow-400">{player.draw || 0}</p>
+              </div>
+              <div className="text-center px-2 py-1">
+                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">Lost</p>
+                <p className="text-base sm:text-2xl font-bold text-red-400">{player.lost || 0}</p>
+              </div>
+              <div className="text-center px-2 py-1">
+                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">GD</p>
+                <p className={`text-base sm:text-2xl font-bold ${(player.goalDifference || 0) > 0 ? 'text-green-400' : (player.goalDifference || 0) < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                  {(player.goalDifference || 0) > 0 ? '+' : ''}{player.goalDifference || 0}
+                </p>
+              </div>
+            </div>
+          </Card>
 
           {player.form.length > 0 && (
-            <Card variant="glass" className="mt-3">
+            <Card variant="glass" className="mt-3 !p-3 sm:!p-6">
               <p className="text-xs font-semibold text-light-600 dark:text-gray-300 mb-2">Last 5 Matches</p>
               {getFormIndicator(player.form)}
             </Card>
