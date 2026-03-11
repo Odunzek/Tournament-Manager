@@ -108,7 +108,7 @@ export default function Overview({
   return (
     <div className="space-y-3 sm:space-y-6">
       {/* League Header */}
-      <Card variant="glass" className="!p-3 sm:!p-6 relative">
+      <Card variant="glass" className=" relative">
         <div className="absolute top-3 right-3">{getStatusBadge()}</div>
         <div>
           <h2 className="text-xl sm:text-3xl font-bold text-light-900 dark:text-white mb-0.5 sm:mb-2 pr-20">{league.name}</h2>
@@ -153,7 +153,7 @@ export default function Overview({
       </Card>
 
       {/* League Rules */}
-      <Card variant="glass" className="!p-3 sm:!p-6">
+      <Card variant="glass" className="">
         <button
           onClick={() => { setRulesOpen(!rulesOpen); setIsEditingRules(false); setSaveRulesError(''); }}
           className="w-full flex items-center justify-between"
@@ -233,7 +233,7 @@ export default function Overview({
         >
           <Card
             variant="glass"
-            className="bg-gradient-to-br from-yellow-500/20 to-amber-600/20 border-2 border-yellow-500/30 !p-3 sm:!p-6"
+            className="bg-gradient-to-br from-yellow-500/20 to-amber-600/20 border-2 border-yellow-500/30 "
           >
             <div className="flex items-center gap-3 sm:gap-4">
               <Trophy className="w-8 h-8 sm:w-12 sm:h-12 text-yellow-400" />
@@ -286,11 +286,11 @@ export default function Overview({
       {/* Recent Results */}
       {recentMatches.length > 0 && (
         <div>
-          <h3 className="text-xl font-bold text-light-900 dark:text-white mb-4 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-cyber-400" />
+          <h3 className="text-base sm:text-xl font-bold text-light-900 dark:text-white mb-2 sm:mb-4 flex items-center gap-2">
+            <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-cyber-400" />
             Recent Results
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-1.5 sm:space-y-3">
             {recentMatches.slice(0, 5).map((match, index) => (
               <MatchResultCard key={match.id} match={match} index={index} onMatchUpdated={onMatchUpdated} />
             ))}
@@ -300,33 +300,36 @@ export default function Overview({
 
       {/* Admin Actions */}
       {isAuthenticated && (
-        <Card variant="glass" className="!p-3 sm:!p-6">
+        <Card variant="glass" className="">
           <h3 className="text-sm sm:text-lg font-bold text-light-900 dark:text-white mb-2 sm:mb-4">Quick Actions</h3>
           {(onAddPlayers || onEndLeague) && (
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-2 sm:mb-4">
+            <div className="grid grid-cols-3 sm:flex sm:flex-row gap-2 sm:gap-3 mb-2 sm:mb-4">
               {onAddPlayers && (
                 <Button
                   variant="outline"
                   size="sm"
-                  leftIcon={<UserPlus className="w-4 h-4" />}
-                  className="flex-1"
+                  leftIcon={<UserPlus className="w-4 h-4 sm:w-4 sm:h-4" />}
+                  className="sm:flex-1 !px-0 sm:!px-3 justify-center"
                   onClick={onAddPlayers}
                 >
-                  Add Players
+                  <span className="hidden sm:inline">Add Players</span>
+                  <span className="sm:hidden text-[10px]">Players</span>
                 </Button>
               )}
-              <Button variant="outline" size="sm" leftIcon={<Edit className="w-4 h-4" />} className="flex-1" onClick={() => setShowEditModal(true)}>
-                Edit League
+              <Button variant="outline" size="sm" leftIcon={<Edit className="w-4 h-4 sm:w-4 sm:h-4" />} className="sm:flex-1 !px-0 sm:!px-3 justify-center" onClick={() => setShowEditModal(true)}>
+                <span className="hidden sm:inline">Edit League</span>
+                <span className="sm:hidden text-[10px]">Edit</span>
               </Button>
               {onEndLeague && league.status === 'active' && (
                 <Button
                   variant="outline"
                   size="sm"
-                  leftIcon={<CheckCircle className="w-4 h-4" />}
-                  className="flex-1"
+                  leftIcon={<CheckCircle className="w-4 h-4 sm:w-4 sm:h-4" />}
+                  className="sm:flex-1 !px-0 sm:!px-3 justify-center"
                   onClick={onEndLeague}
                 >
-                  End League
+                  <span className="hidden sm:inline">End League</span>
+                  <span className="sm:hidden text-[10px]">End</span>
                 </Button>
               )}
             </div>

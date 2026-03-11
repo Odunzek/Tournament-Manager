@@ -137,7 +137,7 @@ export default function Overview({
   const progress = totalMatches > 0 ? (playedMatches / totalMatches) * 100 : 0;
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-3 md:space-y-6">
       {/* Tournament Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -230,55 +230,44 @@ export default function Overview({
       </Card>
 
       {/* Stats Grid — compact on mobile */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <Card variant="glass" onClick={() => onNavigate?.('teams')}>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-tech bg-cyber-500/20 flex items-center justify-center shrink-0">
-              <Users className="w-4 h-4 sm:w-6 sm:h-6 text-cyber-400" />
-            </div>
-            <div>
-              <p className="text-xs text-light-600 dark:text-gray-400">Teams</p>
-              <p className="text-base sm:text-xl font-bold text-light-900 dark:text-white">{tournament.currentTeams}/{tournament.maxTeams}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="glass" onClick={() => onNavigate?.('groups')}>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-tech bg-electric-500/20 flex items-center justify-center shrink-0">
-              <Target className="w-4 h-4 sm:w-6 sm:h-6 text-electric-400" />
-            </div>
-            <div>
-              <p className="text-xs text-light-600 dark:text-gray-400">Groups</p>
-              <p className="text-base sm:text-xl font-bold text-light-900 dark:text-white">{tournament.groups?.length || 0}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="glass" onClick={() => onNavigate?.('knockout')}>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-tech bg-pink-500/20 flex items-center justify-center shrink-0">
-              <Trophy className="w-4 h-4 sm:w-6 sm:h-6 text-pink-400" />
-            </div>
-            <div>
-              <p className="text-xs text-light-600 dark:text-gray-400">KO Ties</p>
-              <p className="text-base sm:text-xl font-bold text-light-900 dark:text-white">{tournament.knockoutBracket?.length || 0}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="glass" onClick={() => onNavigate?.('fixtures')}>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-tech bg-purple-500/20 flex items-center justify-center shrink-0">
-              <BarChart3 className="w-4 h-4 sm:w-6 sm:h-6 text-purple-400" />
-            </div>
-            <div>
-              <p className="text-xs text-light-600 dark:text-gray-400">Played</p>
-              <p className="text-base sm:text-xl font-bold text-light-900 dark:text-white">{playedMatches}</p>
-            </div>
-          </div>
-        </Card>
-      </div>
+      <Card variant="glass">
+        <div className="grid grid-cols-4 divide-x divide-black/10 dark:divide-white/10 sm:hidden">
+          <button onClick={() => onNavigate?.('teams')} className="text-center px-1 py-1">
+            <p className="text-[10px] text-light-600 dark:text-gray-400 mb-0.5">Teams</p>
+            <p className="text-base font-bold text-cyber-400">{tournament.currentTeams}/{tournament.maxTeams}</p>
+          </button>
+          <button onClick={() => onNavigate?.('groups')} className="text-center px-1 py-1">
+            <p className="text-[10px] text-light-600 dark:text-gray-400 mb-0.5">Groups</p>
+            <p className="text-base font-bold text-electric-400">{tournament.groups?.length || 0}</p>
+          </button>
+          <button onClick={() => onNavigate?.('knockout')} className="text-center px-1 py-1">
+            <p className="text-[10px] text-light-600 dark:text-gray-400 mb-0.5">KO Ties</p>
+            <p className="text-base font-bold text-pink-400">{tournament.knockoutBracket?.length || 0}</p>
+          </button>
+          <button onClick={() => onNavigate?.('fixtures')} className="text-center px-1 py-1">
+            <p className="text-[10px] text-light-600 dark:text-gray-400 mb-0.5">Played</p>
+            <p className="text-base font-bold text-purple-400">{playedMatches}</p>
+          </button>
+        </div>
+        <div className="hidden sm:grid grid-cols-4 gap-4">
+          {[
+            { label: 'Teams', value: `${tournament.currentTeams}/${tournament.maxTeams}`, color: 'text-cyber-400', icon: Users, bg: 'bg-cyber-500/20', nav: 'teams' as const },
+            { label: 'Groups', value: tournament.groups?.length || 0, color: 'text-electric-400', icon: Target, bg: 'bg-electric-500/20', nav: 'groups' as const },
+            { label: 'KO Ties', value: tournament.knockoutBracket?.length || 0, color: 'text-pink-400', icon: Trophy, bg: 'bg-pink-500/20', nav: 'knockout' as const },
+            { label: 'Played', value: playedMatches, color: 'text-purple-400', icon: BarChart3, bg: 'bg-purple-500/20', nav: 'fixtures' as const },
+          ].map(({ label, value, color, icon: Icon, bg, nav }) => (
+            <button key={label} onClick={() => onNavigate?.(nav)} className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-tech ${bg} flex items-center justify-center shrink-0`}>
+                <Icon className={`w-6 h-6 ${color}`} />
+              </div>
+              <div className="text-left">
+                <p className="text-xs text-light-600 dark:text-gray-400">{label}</p>
+                <p className={`text-xl font-bold text-light-900 dark:text-white`}>{value}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </Card>
 
       {/* Progress + Details — merged into one card */}
       <Card variant="glass">
@@ -324,7 +313,7 @@ export default function Overview({
       {/* Admin Actions */}
       {isAuthenticated && (
         <Card variant="gradient">
-          <h3 className="text-lg font-bold text-light-900 dark:text-white mb-4">Admin Actions</h3>
+          <h3 className="text-sm sm:text-lg font-bold text-light-900 dark:text-white mb-2 sm:mb-4">Admin Actions</h3>
 
           {/* Setup Phase - Generate Groups */}
           {tournament.status === 'setup' && (

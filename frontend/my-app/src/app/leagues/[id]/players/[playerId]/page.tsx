@@ -210,30 +210,30 @@ export default function PlayerLeagueStatsPage() {
   const getPositionBadge = () => {
     if (player.position === 1) {
       return (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 rounded-full">
-          <Crown className="w-4 h-4 text-yellow-400" />
-          <span className="font-bold text-yellow-400 text-sm">1st Place</span>
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 rounded-full">
+          <Crown className="w-3.5 h-3.5 text-yellow-400" />
+          <span className="font-bold text-yellow-400 text-xs">1st Place</span>
         </div>
       );
     } else if (player.position === 2) {
       return (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-gray-400/20 to-gray-500/20 border border-gray-400/30 rounded-full">
-          <Medal className="w-4 h-4 text-gray-300" />
-          <span className="font-bold text-gray-300 text-sm">2nd Place</span>
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-gray-400/20 to-gray-500/20 border border-gray-400/30 rounded-full">
+          <Medal className="w-3.5 h-3.5 text-gray-300" />
+          <span className="font-bold text-gray-300 text-xs">2nd Place</span>
         </div>
       );
     } else if (player.position === 3) {
       return (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-500/20 to-orange-600/20 border border-orange-500/30 rounded-full">
-          <Medal className="w-4 h-4 text-orange-400" />
-          <span className="font-bold text-orange-400 text-sm">3rd Place</span>
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-orange-500/20 to-orange-600/20 border border-orange-500/30 rounded-full">
+          <Medal className="w-3.5 h-3.5 text-orange-400" />
+          <span className="font-bold text-orange-400 text-xs">3rd Place</span>
         </div>
       );
     }
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-light-200/50 dark:bg-dark-100/50 border border-black/10 dark:border-white/10 rounded-full">
-        <Trophy className="w-4 h-4 text-gray-400" />
-        <span className="font-bold text-gray-400 text-sm">{player.position}th Place</span>
+      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-light-200/50 dark:bg-dark-100/50 border border-black/10 dark:border-white/10 rounded-full">
+        <Trophy className="w-3.5 h-3.5 text-gray-400" />
+        <span className="font-bold text-gray-400 text-xs">{player.position}th Place</span>
       </div>
     );
   };
@@ -290,11 +290,11 @@ export default function PlayerLeagueStatsPage() {
   return (
     <MainLayout>
       <GlobalNavigation />
-      <Container maxWidth="2xl" className="py-4 sm:py-8">
+      <Container maxWidth="2xl" className="py-2 sm:py-8">
         {/* Back Button */}
         <button
-          onClick={() => router.push(`/leagues/${leagueId}`)}
-          className="flex items-center gap-2 text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white transition-colors mb-4"
+          onClick={() => router.push(`/leagues/${leagueId}?section=standings`)}
+          className="flex items-center gap-2 text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white transition-colors mb-1 sm:mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
           <span className="text-sm">Back to Standings</span>
@@ -306,11 +306,11 @@ export default function PlayerLeagueStatsPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="mb-4 sm:mb-6"
         >
-          <Card variant="glass" className="bg-gradient-to-br from-cyber-500/20 to-electric-500/20 border border-cyber-500/30 !p-3 sm:!p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-light-900 dark:text-white mb-1">{player.name}</h1>
-                <p className="text-sm text-light-600 dark:text-gray-400">{league.name}</p>
+          <Card variant="glass" className="bg-gradient-to-br from-cyber-500/20 to-electric-500/20 border border-cyber-500/30">
+            <div className="flex items-center justify-between gap-2 sm:gap-3">
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-3xl font-bold text-light-900 dark:text-white mb-0.5 sm:mb-1 truncate">{player.name}</h1>
+                <p className="text-xs sm:text-sm text-light-600 dark:text-gray-400">{league.name}</p>
               </div>
               {getPositionBadge()}
             </div>
@@ -319,7 +319,7 @@ export default function PlayerLeagueStatsPage() {
 
         {/* League Stats Summary */}
         <div className="mb-4 sm:mb-6">
-          <h2 className="text-lg font-bold text-light-900 dark:text-white mb-3">League Stats</h2>
+          <h2 className="text-base sm:text-lg font-bold text-light-900 dark:text-white mb-2 sm:mb-3">League Stats</h2>
 
           <Card variant="glass" className="mb-3">
             <div className="grid grid-cols-4 divide-x divide-black/10 dark:divide-white/10">
@@ -366,7 +366,7 @@ export default function PlayerLeagueStatsPage() {
           </Card>
 
           {player.form.length > 0 && (
-            <Card variant="glass" className="mt-3 !p-3 sm:!p-6">
+            <Card variant="glass" className="mt-3 ">
               <p className="text-xs font-semibold text-light-600 dark:text-gray-300 mb-2">Last 5 Matches</p>
               {getFormIndicator(player.form)}
             </Card>

@@ -171,19 +171,19 @@ export default function Results({ tournament, tournamentMembers }: ResultsProps)
           isExpanded={expandedSections.has('summary')}
           onToggle={() => toggleSection('summary')}
         >
-          <div className="grid grid-cols-2 gap-3 sm:gap-6">
+          <div className="grid grid-cols-2 gap-2 sm:gap-6">
             <Card variant="glass" className="bg-gradient-to-br from-yellow-500/20 to-amber-600/20 border-yellow-500/30">
-              <div className="text-center py-1">
-                <Trophy className="w-8 h-8 sm:w-12 sm:h-12 text-yellow-400 mx-auto mb-2" />
+              <div className="text-center">
+                <Trophy className="w-6 h-6 sm:w-12 sm:h-12 text-yellow-400 mx-auto mb-1 sm:mb-2" />
                 <p className="text-[10px] sm:text-sm text-gray-400 mb-0.5">Champion</p>
-                <h3 className="text-sm sm:text-2xl font-bold text-yellow-400 truncate">{champion}</h3>
+                <h3 className="text-xs sm:text-2xl font-bold text-yellow-400 truncate">{champion}</h3>
               </div>
             </Card>
             <Card variant="glass" className="bg-gradient-to-br from-gray-500/20 to-gray-600/20 border-gray-500/30">
-              <div className="text-center py-1">
-                <Award className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-2" />
+              <div className="text-center">
+                <Award className="w-6 h-6 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-1 sm:mb-2" />
                 <p className="text-[10px] sm:text-sm text-gray-400 mb-0.5">Runner-up</p>
-                <h3 className="text-sm sm:text-2xl font-bold text-gray-300 truncate">{runnerUp}</h3>
+                <h3 className="text-xs sm:text-2xl font-bold text-gray-300 truncate">{runnerUp}</h3>
               </div>
             </Card>
           </div>
@@ -198,7 +198,7 @@ export default function Results({ tournament, tournamentMembers }: ResultsProps)
         isExpanded={expandedSections.has('analytics')}
         onToggle={() => toggleSection('analytics')}
       >
-        <div className="space-y-3 sm:space-y-6">
+        <div className="space-y-2 sm:space-y-6">
 
           {/* Best Defense — full width */}
           <StatCard
@@ -344,9 +344,9 @@ function CollapsibleSection({ title, icon, isExpanded, onToggle, children }: Col
     <Card variant="glass">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between mb-2 sm:mb-4 hover:opacity-80 transition-opacity"
+        className="w-full flex items-center justify-between hover:opacity-80 transition-opacity"
       >
-        <h2 className="text-base sm:text-xl font-bold text-white flex items-center gap-2">
+        <h2 className="text-sm sm:text-xl font-bold text-white flex items-center gap-2">
           {icon}
           {title}
         </h2>
@@ -361,6 +361,7 @@ function CollapsibleSection({ title, icon, isExpanded, onToggle, children }: Col
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.3 }}
+          className="mt-2 sm:mt-4"
         >
           {children}
         </motion.div>

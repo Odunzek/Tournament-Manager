@@ -212,6 +212,7 @@ export default function LeaguesPage() {
           {isAuthenticated && (
             <Button
               variant="primary"
+              size="sm"
               leftIcon={<Plus className="w-4 h-4" />}
               onClick={() => setIsCreateModalOpen(true)}
               glow

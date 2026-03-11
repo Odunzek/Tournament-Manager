@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import MainLayout from '@/components/layouts/MainLayout';
 import Container from '@/components/layouts/Container';
@@ -24,6 +24,7 @@ import { LeaguePlayer, WinStreak } from '@/types/league';
 export default function LeagueDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const leagueId = params.id as string;
 
   const { league, loading: leagueLoading } = useLeague(leagueId);
@@ -31,7 +32,7 @@ export default function LeagueDetailPage() {
   const { players } = usePlayers();
   const { isAuthenticated } = useAuth();
 
-  const [activeSection, setActiveSection] = useState('overview');
+  const [activeSection, setActiveSection] = useState(searchParams.get('section') || 'overview');
   const [standings, setStandings] = useState<LeaguePlayer[]>([]);
   const [streaks, setStreaks] = useState<WinStreak[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -264,18 +265,18 @@ export default function LeagueDetailPage() {
   return (
     <MainLayout>
       <GlobalNavigation />
-      <Container maxWidth="2xl" className="py-4 sm:py-8 pb-24 md:pb-12">
+      <Container maxWidth="2xl" className="py-2 sm:py-8 pb-24 md:pb-12">
         {/* Back Button */}
         <button
           onClick={() => router.push('/leagues')}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-2"
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-1 sm:mb-2"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Leagues</span>
         </button>
 
         {/* Layout with Sidebar */}
-        <div className="flex flex-col md:flex-row gap-8">
+        <div className="flex flex-col md:flex-row gap-2 md:gap-8">
           {/* Sidebar Navigation */}
           <LeagueSidebar
             activeSection={activeSection}

@@ -109,8 +109,7 @@ export default function LeagueSidebar({
         </div>
       </div>
 
-      {/* Mobile spacer to prevent content from being hidden behind bottom nav */}
-      <div className="md:hidden h-20" />
+      {/* Mobile spacer removed — pb-24 on the Container handles bottom nav offset */}
     </>
   );
 }

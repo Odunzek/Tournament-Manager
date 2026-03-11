@@ -38,7 +38,7 @@ export default function Card({
         ${variantClasses[variant]}
         ${glow ? 'shadow-light-cyber-lg dark:shadow-glow' : 'shadow-card-light dark:shadow-xl'}
         ${hover ? 'cursor-pointer' : ''}
-        rounded-2xl p-6
+        rounded-2xl p-3 sm:p-6
         transition-all duration-200
         w-full h-full
         ${className}
