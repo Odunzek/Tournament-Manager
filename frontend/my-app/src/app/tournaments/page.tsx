@@ -177,7 +177,7 @@ function TournamentsContent() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-10 sm:py-20">
             <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 text-cyber-400 animate-spin mb-3" />
-            <p className="text-xs sm:text-sm text-gray-400">Loading tournaments...</p>
+            <p className="text-xs sm:text-sm text-light-600 dark:text-gray-400">Loading tournaments...</p>
           </div>
         ) : filteredTournaments.length > 0 ? (
           /* Tournaments Grid */
@@ -207,7 +207,7 @@ function TournamentsContent() {
           >
             <Filter className="w-12 h-12 sm:w-20 sm:h-20 text-gray-600 mx-auto mb-4 sm:mb-6" />
             <h3 className="text-lg sm:text-2xl font-bold text-light-900 dark:text-white mb-1 sm:mb-2">No tournaments found</h3>
-            <p className="text-xs sm:text-sm text-gray-400 mb-4 sm:mb-8">
+            <p className="text-xs sm:text-sm text-light-600 dark:text-gray-400 mb-4 sm:mb-8">
               {searchQuery || statusFilter !== 'all'
                 ? 'Try adjusting your filters or search query'
                 : 'Create your first tournament to get started'}

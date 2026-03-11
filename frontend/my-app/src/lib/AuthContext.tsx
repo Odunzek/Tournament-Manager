@@ -1,40 +1,75 @@
-// lib/AuthContext.tsx
+/**
+ * Authentication Context & Provider
+ *
+ * Manages admin authentication for the FIFA League Manager app.
+ * Uses a whitelist-based approach — only specific Google email addresses
+ * (set in NEXT_PUBLIC_ADMIN_EMAILS env var) are granted admin access.
+ *
+ * Auth flow:
+ * 1. All users start as anonymous (auto-signed-in by firebase.ts)
+ * 2. Admins click "Login" → Google OAuth popup → email checked against whitelist
+ * 3. If authorized → isAuthenticated=true → admin UI elements (edit/delete buttons) appear
+ * 4. If NOT authorized → immediately signed out → ACCESS_DENIED error shown
+ *
+ * Components using `isAuthenticated` to conditionally show admin features:
+ * - Tournament pages (edit matches, manage teams, adjust points)
+ * - League pages (record matches, add players, edit settings)
+ * - Player management (add/edit/delete players)
+ * - Season management (create/edit seasons)
+ *
+ * @see firebase.ts — Firebase initialization and anonymous auth
+ * @see GlobalNavigation.tsx — Login button that triggers setShowAuthModal(true)
+ */
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { auth, googleProvider, signInWithPopup, signOut, onAuthStateChanged } from './firebase';
 
+/** Shape of the authenticated admin user's profile info */
 interface AdminUser {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
 }
 
+/** All values exposed by the AuthContext to consuming components */
 interface AuthContextType {
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  adminUser: AdminUser | null;
-  login: () => Promise<void>;
-  logout: () => Promise<void>;
-  showAuthModal: boolean;
+  isAuthenticated: boolean;           // true if current user is an authorized admin
+  isLoading: boolean;                 // true while checking initial auth state
+  adminUser: AdminUser | null;        // Profile info of the logged-in admin (null if not admin)
+  login: () => Promise<void>;         // Triggers Google OAuth popup
+  logout: () => Promise<void>;        // Signs out (falls back to anonymous)
+  showAuthModal: boolean;             // Controls visibility of the AuthModal
   setShowAuthModal: (show: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Get authorized admin emails from environment variable
+/**
+ * Parse the comma-separated admin email whitelist from environment variable.
+ * Example: NEXT_PUBLIC_ADMIN_EMAILS="admin@gmail.com, manager@gmail.com"
+ */
 const getAuthorizedEmails = (): string[] => {
   const emails = process.env.NEXT_PUBLIC_ADMIN_EMAILS || '';
   return emails.split(',').map(email => email.trim().toLowerCase()).filter(Boolean);
 };
 
+/**
+ * Check if an email address is in the authorized admin whitelist.
+ * Used both during login (to reject unauthorized users) and on auth state change.
+ */
 const isAuthorizedAdmin = (email: string | null): boolean => {
   if (!email) return false;
   const authorizedEmails = getAuthorizedEmails();
   return authorizedEmails.includes(email.toLowerCase());
 };
 
+/**
+ * AuthProvider — wraps the entire app (in layout.tsx) to provide auth state.
+ * Listens for Firebase auth state changes and determines if the current
+ * user is an authorized admin based on the email whitelist.
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -113,6 +148,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Hook to access auth state from any component.
+ * Must be used within an AuthProvider (which wraps the entire app).
+ *
+ * @example
+ * const { isAuthenticated, login, logout } = useAuth();
+ * if (isAuthenticated) { // show admin controls }
+ */
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -121,7 +164,12 @@ export function useAuth() {
   return context;
 }
 
-// Authentication Modal Component
+/**
+ * AuthModal — the Google sign-in popup UI.
+ * Rendered in MainLayout, shown when `showAuthModal` is true.
+ * Handles the Google OAuth flow and displays error messages
+ * (e.g., "Access denied" for unauthorized emails, popup closed, etc.)
+ */
 export function AuthModal() {
   const { login, showAuthModal, setShowAuthModal } = useAuth();
   const [error, setError] = useState('');

@@ -1,3 +1,22 @@
+/**
+ * League StandingsTable
+ *
+ * Renders the full league standings as a sortable table. Clicking any column
+ * header re-sorts the rows; clicking the same header twice reverses direction.
+ * Default sort is by `position` ascending (league order: points → GD → GF → alpha).
+ *
+ * Special display features:
+ *   - Position 1-3 get Crown/Medal icons with gold/silver/bronze colours.
+ *   - Form column shows coloured vertical bars (green = W, yellow = D, red = L).
+ *   - If a player has point adjustments, a clickable badge shows the net delta
+ *     (e.g. "+3" in green or "-2" in red). Clicking opens the history modal.
+ *   - Admins with `isEditable` see a settings gear icon per row to open the
+ *     PointAdjustmentModal for applying new bonuses or deductions.
+ *   - Clicking any row navigates to that player's detail page.
+ *
+ * GF and GA columns are hidden on mobile (< sm breakpoint) to keep the table
+ * readable on a 375px screen.
+ */
 "use client";
 
 import React, { useState } from 'react';
@@ -9,29 +28,38 @@ import PointAdjustmentModal from '../tournaments/PointAdjustmentModal';
 import PointAdjustmentHistoryModal from '../tournaments/PointAdjustmentHistoryModal';
 
 interface StandingsTableProps {
-  players: LeaguePlayer[];
-  leagueId: string;
-  currentUserId?: string;
-  isEditable?: boolean;
+  players: LeaguePlayer[];        // Sorted standings rows from calculateStandings()
+  leagueId: string;               // Used for building the player detail page URL
+  currentUserId?: string;         // Highlights the current user's row (future use)
+  isEditable?: boolean;           // Shows the point adjustment gear icon when true
   onAdjustPoints?: (playerId: string, adjustment: number, reason: string) => Promise<void>;
 }
 
+/** Fields that can be used as the active sort key */
 type SortField = 'position' | 'name' | 'points' | 'goalsFor' | 'goalDifference';
 type SortDirection = 'asc' | 'desc';
 
 export default function StandingsTable({ players, leagueId, currentUserId, isEditable, onAdjustPoints }: StandingsTableProps) {
   const router = useRouter();
+  // Default: sort by position ascending (matches the calculated league order)
   const [sortField, setSortField] = useState<SortField>('position');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  // Tracks which player's adjustment modal is open
   const [selectedPlayer, setSelectedPlayer] = useState<LeaguePlayer | null>(null);
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
+  /**
+   * Toggle sort on a column header.
+   * Clicking the active column reverses direction.
+   * Switching to a new column defaults to descending for stats, ascending for position.
+   */
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
+      // Position naturally reads lowest-to-highest; stats read highest-to-lowest
       setSortDirection(field === 'position' ? 'asc' : 'desc');
     }
   };
@@ -78,9 +106,14 @@ export default function StandingsTable({ players, leagueId, currentUserId, isEdi
     return <span className="font-bold text-light-600 dark:text-gray-400">{position}</span>;
   };
 
+  /**
+   * Render a row of coloured vertical bars representing the player's last 5 results.
+   * Form is stored most-recent-first in the LeaguePlayer object.
+   * Green = Win, Yellow = Draw, Red = Loss. Shows a dash if no games played.
+   */
   const getFormIndicator = (form: ('W' | 'D' | 'L')[]) => {
     if (!form || form.length === 0) {
-      return <span className="text-xs text-gray-500">—</span>;
+      return <span className="text-xs text-light-500 dark:text-gray-500">—</span>;
     }
     return (
       <div className="flex gap-0.5">
@@ -125,7 +158,7 @@ export default function StandingsTable({ players, leagueId, currentUserId, isEdi
 
   return (
     <>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto custom-scrollbar">
         <div className="inline-block min-w-full align-middle">
           <table className="min-w-full">
             <thead>
@@ -212,7 +245,7 @@ export default function StandingsTable({ players, leagueId, currentUserId, isEdi
                                 ? 'bg-green-500/20 text-green-400'
                                 : totalAdj < 0
                                 ? 'bg-red-500/20 text-red-400'
-                                : 'bg-gray-500/20 text-gray-400'
+                                : 'bg-gray-500/20 text-light-600 dark:text-gray-400'
                             } hover:opacity-80 transition-opacity`}
                             title="View adjustment history"
                           >

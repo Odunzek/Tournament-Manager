@@ -1,3 +1,20 @@
+/**
+ * WinStreakCard
+ *
+ * A compact leaderboard card displayed in the Streaks & Stats section.
+ * Can show either the **current** streak (live, in-progress winning run)
+ * or the **longest** streak (all-time best consecutive wins) depending on
+ * the `showCurrent` prop.
+ *
+ * Visual details:
+ *   - Gold/silver/bronze gradient borders for positions 1–3.
+ *   - Flame icon appears when the current streak reaches 3+ wins.
+ *   - A small progress bar under the streak count fills proportionally
+ *     up to 10 wins (capped at 100% for streaks of 10+).
+ *   - Longest streak cards show the date the streak was achieved.
+ *
+ * Cards animate in with a staggered slide-from-left delay based on rank.
+ */
 "use client";
 
 import React from 'react';
@@ -8,9 +25,9 @@ import { convertTimestamp } from '@/lib/leagueUtils';
 import Card from '../ui/Card';
 
 interface WinStreakCardProps {
-  streak: WinStreak;
-  rank: number;
-  showCurrent?: boolean;
+  streak: WinStreak;       // Win streak data for a single player
+  rank: number;            // Position in the leaderboard (1 = best)
+  showCurrent?: boolean;   // true → show currentStreak, false → show longestStreak
 }
 
 export default function WinStreakCard({ streak, rank, showCurrent = true }: WinStreakCardProps) {
@@ -23,7 +40,7 @@ export default function WinStreakCard({ streak, rank, showCurrent = true }: WinS
 
   const getRankBadge = (rank: number) => {
     if (rank === 1) return <Crown className="w-4 h-4 text-yellow-400" />;
-    if (rank === 2) return <Medal className="w-4 h-4 text-gray-300" />;
+    if (rank === 2) return <Medal className="w-4 h-4 text-light-600 dark:text-gray-300" />;
     if (rank === 3) return <Medal className="w-4 h-4 text-orange-400" />;
     return <span className="text-xs font-bold text-light-600 dark:text-gray-400">{rank}</span>;
   };

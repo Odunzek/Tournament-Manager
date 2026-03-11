@@ -113,22 +113,34 @@ export async function getUnscopedTournaments(): Promise<Tournament[]> {
 // ─── Assign to Season ────────────────────────────────────────
 
 /**
- * Assign a single league to a season
+ * Assign a single league to a season.
+ * Throws if the league is already assigned to a different season.
  */
 export async function assignLeagueToSeason(
   leagueId: string,
   seasonId: string
 ): Promise<void> {
+  const snap = await getDoc(doc(db, 'leagues', leagueId));
+  const existing = snap.data()?.seasonId;
+  if (existing && existing !== seasonId) {
+    throw new Error(`League is already assigned to season ${existing}. Unassign it first.`);
+  }
   await updateDoc(doc(db, 'leagues', leagueId), { seasonId });
 }
 
 /**
- * Assign a single tournament to a season
+ * Assign a single tournament to a season.
+ * Throws if the tournament is already assigned to a different season.
  */
 export async function assignTournamentToSeason(
   tournamentId: string,
   seasonId: string
 ): Promise<void> {
+  const snap = await getDoc(doc(db, 'tournaments', tournamentId));
+  const existing = snap.data()?.seasonId;
+  if (existing && existing !== seasonId) {
+    throw new Error(`Tournament is already assigned to season ${existing}. Unassign it first.`);
+  }
   await updateDoc(doc(db, 'tournaments', tournamentId), { seasonId });
 }
 
@@ -323,10 +335,11 @@ export async function recomputeSeasonStats(seasonId: string): Promise<void> {
         if (tie.secondLeg?.played) totalMatches++;
       }
     }
-    // Map participant names to real player IDs
+    // Map participant names to real player IDs.
+    // For names that don't resolve, add a synthetic key so the count is never under-reported.
     for (const name of participantNames) {
       const realId = playerNameToId.get(name);
-      if (realId) playerSet.add(realId);
+      playerSet.add(realId ?? `__unresolved__${name}`);
     }
   }
 

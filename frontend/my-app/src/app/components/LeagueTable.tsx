@@ -822,7 +822,7 @@ export default function LeagueTable({
             </div>
 
             {/* desktop table */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto custom-scrollbar">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>
@@ -1213,7 +1213,7 @@ export default function LeagueTable({
                       <span>🕓</span>
                       <span>Recent Results</span>
                     </h3>
-                    <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                    <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-1">
                       {matches.map((m) => (
                         <div
                           key={m.id}

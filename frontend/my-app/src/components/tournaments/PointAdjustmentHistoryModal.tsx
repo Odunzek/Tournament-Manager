@@ -1,3 +1,18 @@
+/**
+ * PointAdjustmentHistoryModal
+ *
+ * A read-only modal that shows the full history of manual point adjustments
+ * applied to a specific player/team. Used in both league standings and
+ * tournament group standings.
+ *
+ * Displays:
+ *   - A net total banner at the top (e.g., "+3 pts" in green or "-2 pts" in red).
+ *   - Each individual adjustment with: Plus/Minus icon, amount, reason, timestamp.
+ *   - Adjustments are sorted newest-first so the most recent change is at the top.
+ *
+ * Opened by clicking the adjustment badge in StandingsTable (both league and tournament).
+ * The corresponding write modal is PointAdjustmentModal (separate component).
+ */
 "use client";
 
 import React from 'react';
@@ -8,8 +23,8 @@ import { PointAdjustment, convertTimestamp } from '@/lib/tournamentUtils';
 interface PointAdjustmentHistoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  teamName: string;
-  adjustments: PointAdjustment[];
+  teamName: string;          // Player/team display name for the modal title
+  adjustments: PointAdjustment[]; // All adjustment records to display
 }
 
 export default function PointAdjustmentHistoryModal({
@@ -18,8 +33,10 @@ export default function PointAdjustmentHistoryModal({
   teamName,
   adjustments,
 }: PointAdjustmentHistoryModalProps) {
+  /** Net sum of all adjustment amounts (positive = bonus, negative = deduction) */
   const totalAdjustment = adjustments.reduce((sum, adj) => sum + adj.amount, 0);
 
+  /** Sort adjustments newest-first for display */
   const sortedAdjustments = [...adjustments].sort((a, b) => {
     const dateA = convertTimestamp(a.timestamp);
     const dateB = convertTimestamp(b.timestamp);
@@ -75,7 +92,7 @@ export default function PointAdjustmentHistoryModal({
               </div>
 
               {/* Adjustment List */}
-              <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-4">
                 <div className="space-y-2">
                   {sortedAdjustments.map((adjustment) => {
                     const date = convertTimestamp(adjustment.timestamp);
@@ -103,7 +120,7 @@ export default function PointAdjustmentHistoryModal({
                             )}
                             {adjustment.amount > 0 ? '+' : ''}{adjustment.amount} pts
                           </div>
-                          <div className="flex items-center gap-1 text-[10px] text-gray-500">
+                          <div className="flex items-center gap-1 text-[10px] text-light-500 dark:text-gray-500">
                             <Clock className="w-2.5 h-2.5" />
                             {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                             {' '}

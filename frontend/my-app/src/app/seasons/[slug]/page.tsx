@@ -39,7 +39,7 @@ import { useHallOfFame } from '@/hooks/usePlayers';
 import PlayerAvatar from '@/components/players/PlayerAvatar';
 import { useAuth } from '@/lib/AuthContext';
 import { activateSeason, completeSeason, deleteSeason, getActiveSeason } from '@/lib/seasonUtils';
-import { copyGlobalRankingsToSeason, recomputeSeasonStats, unassignLeagueFromSeason, unassignTournamentFromSeason } from '@/lib/seasonIntegrationUtils';
+import { recomputeSeasonStats, unassignLeagueFromSeason, unassignTournamentFromSeason } from '@/lib/seasonIntegrationUtils';
 import { setSeasonAchievements } from '@/lib/playerUtils';
 
 export default function SeasonDetailPage() {
@@ -62,6 +62,16 @@ export default function SeasonDetailPage() {
   const { tournaments, loading: tournamentsLoading } = useSeasonTournaments(season?.id);
   const { players: hofPlayers, loading: hofLoading } = useHallOfFame(season?.id ?? null);
 
+  // Effect 1: Run once on first load when season and data are ready
+  const hasRunInitialRef = useRef(false);
+  useEffect(() => {
+    if (!season?.id || !isAuthenticated || leaguesLoading || tournamentsLoading) return;
+    if (hasRunInitialRef.current) return;
+    hasRunInitialRef.current = true;
+    recomputeSeasonStats(season.id).catch(console.error);
+  }, [season?.id, isAuthenticated, leaguesLoading, tournamentsLoading]);
+
+  // Effect 2: Run when count changes after initial load
   const prevCountRef = useRef<string>('');
   useEffect(() => {
     if (!season?.id || !isAuthenticated) return;
@@ -108,7 +118,6 @@ export default function SeasonDetailPage() {
     setActionLoading('activate');
     try {
       await activateSeason(season.id);
-      await copyGlobalRankingsToSeason(season.id);
     } catch (error) {
       console.error('Error activating season:', error);
     } finally {
@@ -833,14 +842,16 @@ export default function SeasonDetailPage() {
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
-                <button
-                  onClick={() => setDeleteConfirmOpen(true)}
-                  className="p-2 rounded-xl text-red-500 hover:text-red-400
-                             bg-red-500/10 hover:bg-red-500/20 transition-all"
-                  title="Delete season"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {season.status !== 'active' && (
+                  <button
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    className="p-2 rounded-xl text-red-500 hover:text-red-400
+                               bg-red-500/10 hover:bg-red-500/20 transition-all"
+                    title="Delete season"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             )}
           </div>

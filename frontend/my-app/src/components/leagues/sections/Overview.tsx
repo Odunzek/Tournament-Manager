@@ -1,3 +1,18 @@
+/**
+ * League Overview Section
+ *
+ * The first tab visible when a user opens a league. Shows:
+ *   - League header (name, season, dates, status badge)
+ *   - Collapsible rules panel with inline editing for admins
+ *   - Current leader highlight card (active leagues only)
+ *   - Quick stats grid (players, matches played, remaining, total goals)
+ *   - Last 5 match results
+ *   - Admin quick-action buttons (Add Players, Edit League, End League, Delete)
+ *
+ * The rules panel supports a truncation/expand pattern: if the rules text exceeds
+ * RULES_THRESHOLD characters, a "Read more" toggle is shown to avoid the card
+ * growing too tall by default.
+ */
 "use client";
 
 import React, { useState } from 'react';
@@ -13,15 +28,15 @@ import EditLeagueModal from '../EditLeagueModal';
 
 interface OverviewProps {
   league: League;
-  leagueLeader: LeaguePlayer | null;
-  recentMatches: LeagueMatch[];
-  totalGoals: number;
-  playerCount: number;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  onAddPlayers?: () => void;
-  onEndLeague?: () => void;
-  onMatchUpdated?: () => void;
+  leagueLeader: LeaguePlayer | null;   // Player at position 1 in the current standings
+  recentMatches: LeagueMatch[];         // Last N matches to show in the Recent Results section
+  totalGoals: number;                   // Sum of all goals across completed matches
+  playerCount: number;                  // Number of players enrolled in the league
+  isAuthenticated: boolean;             // Whether the current user is an authorized admin
+  isLoading: boolean;                   // True while standings are being recalculated
+  onAddPlayers?: () => void;            // Admin: opens the Add Players modal
+  onEndLeague?: () => void;             // Admin: triggers end-league confirmation
+  onMatchUpdated?: () => void;          // Callback to refresh standings after an edit
 }
 
 export default function Overview({
@@ -38,13 +53,18 @@ export default function Overview({
 }: OverviewProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  // Controls whether the rules accordion panel is open or collapsed
   const [rulesOpen, setRulesOpen] = useState(false);
+  // True while the admin is typing in the rules textarea
   const [isEditingRules, setIsEditingRules] = useState(false);
+  // Draft value for the rules textarea — kept in sync with saved rules on edit start
   const [editedRules, setEditedRules] = useState(league.rules || '');
   const [isSavingRules, setIsSavingRules] = useState(false);
   const [saveRulesError, setSaveRulesError] = useState('');
+  // True when the user has clicked "Read more" to see the full rules text
   const [rulesExpanded, setRulesExpanded] = useState(false);
 
+  // Rules truncation: collapse text longer than 300 chars by default
   const RULES_THRESHOLD = 300;
   const hasRules = Boolean(league.rules?.trim());
   const rulesIsLong = (league.rules?.length ?? 0) > RULES_THRESHOLD;
@@ -52,11 +72,13 @@ export default function Overview({
     ? league.rules!.slice(0, RULES_THRESHOLD) + '...'
     : league.rules;
 
+  /** Save the edited rules text back to Firestore. Clears the editing state on success. */
   const handleSaveRules = async () => {
     if (!league.id) return;
     setIsSavingRules(true);
     setSaveRulesError('');
     try {
+      // Pass undefined (not empty string) to remove the rules field entirely when cleared
       await updateLeague(league.id, {
         rules: editedRules.trim() || undefined,
       });
@@ -68,13 +90,16 @@ export default function Overview({
     }
   };
 
+  // Convert Firestore Timestamps to JS Dates for display
   const startDate = convertTimestamp(league.startDate);
   const endDate = league.endDate ? convertTimestamp(league.endDate) : null;
 
+  // Progress bar calculation: how many of the expected round-robin matches are done
   const totalMatches = league.totalMatches || 0;
   const matchesPlayed = league.matchesPlayed || 0;
   const matchProgress = totalMatches > 0 ? (matchesPlayed / totalMatches) * 100 : 0;
 
+  /** Returns a styled badge element for the current league status. */
   const getStatusBadge = () => {
     const badges = {
       active: {
@@ -165,7 +190,7 @@ export default function Overview({
               <span className="text-[11px] text-light-500 dark:text-gray-500 ml-1">None set</span>
             )}
           </div>
-          {rulesOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+          {rulesOpen ? <ChevronUp className="w-4 h-4 text-light-500 dark:text-gray-400" /> : <ChevronDown className="w-4 h-4 text-light-500 dark:text-gray-400" />}
         </button>
 
         {rulesOpen && (
@@ -238,9 +263,9 @@ export default function Overview({
             <div className="flex items-center gap-3 sm:gap-4">
               <Trophy className="w-8 h-8 sm:w-12 sm:h-12 text-yellow-400" />
               <div className="flex-1 min-w-0">
-                <p className="text-xs sm:text-sm text-gray-300 mb-0.5 sm:mb-1">Current League Leader</p>
+                <p className="text-xs sm:text-sm text-light-600 dark:text-gray-300 mb-0.5 sm:mb-1">Current League Leader</p>
                 <h3 className="text-lg sm:text-2xl font-bold text-yellow-400">{leagueLeader.name}</h3>
-                <div className="flex items-center gap-2 sm:gap-4 mt-1 sm:mt-2 text-xs sm:text-sm text-gray-300 flex-wrap">
+                <div className="flex items-center gap-2 sm:gap-4 mt-1 sm:mt-2 text-xs sm:text-sm text-light-600 dark:text-gray-300 flex-wrap">
                   <span>{leagueLeader.points || 0} points</span>
                   <span>•</span>
                   <span>

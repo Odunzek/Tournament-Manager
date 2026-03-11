@@ -208,29 +208,6 @@ export default function CreateSeasonModal({
                     )}
                   </div>
 
-                  {/* Status */}
-                  <div>
-                    <label className="block text-sm font-semibold text-light-700 dark:text-gray-300 mb-2">
-                      Status
-                    </label>
-                    <div className="flex gap-3">
-                      {(['setup', 'active'] as const).map((status) => (
-                        <button
-                          key={status}
-                          type="button"
-                          onClick={() => handleChange('status', status)}
-                          className={`flex-1 px-4 py-3 rounded-tech font-semibold transition-all ${
-                            formData.status === status
-                              ? 'bg-gradient-to-r from-cyber-500 to-electric-500 text-white'
-                              : 'bg-light-100 dark:bg-dark-100 text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white border-2 border-black/10 dark:border-white/10'
-                          }`}
-                        >
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   {/* Start Date */}
                   <div>
                     <label className="block text-sm font-semibold text-light-700 dark:text-gray-300 mb-2">

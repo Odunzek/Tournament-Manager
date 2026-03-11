@@ -148,7 +148,7 @@ export default function AssignToSeasonModal({
                         </h3>
                       </div>
                       {leagues.length > 0 ? (
-                        <div className="max-h-48 overflow-y-auto space-y-2 bg-light-100 dark:bg-dark-100 border border-black/10 dark:border-white/10 rounded-xl p-3">
+                        <div className="max-h-48 overflow-y-auto custom-scrollbar space-y-2 bg-light-100 dark:bg-dark-100 border border-black/10 dark:border-white/10 rounded-xl p-3">
                           {leagues.map((league) => (
                             <label
                               key={league.id}
@@ -196,7 +196,7 @@ export default function AssignToSeasonModal({
                         </h3>
                       </div>
                       {tournaments.length > 0 ? (
-                        <div className="max-h-48 overflow-y-auto space-y-2 bg-light-100 dark:bg-dark-100 border border-black/10 dark:border-white/10 rounded-xl p-3">
+                        <div className="max-h-48 overflow-y-auto custom-scrollbar space-y-2 bg-light-100 dark:bg-dark-100 border border-black/10 dark:border-white/10 rounded-xl p-3">
                           {tournaments.map((tournament) => (
                             <label
                               key={tournament.id}

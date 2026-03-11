@@ -1,4 +1,22 @@
-// lib/firebaseUtils.ts - UPDATED with member support
+/**
+ * Legacy Firebase Utility Functions
+ *
+ * IMPORTANT: This file is part of the OLD league/team/match system.
+ * The app has since been rebuilt with a new architecture:
+ *   - New leagues → lib/leagueUtils.ts + types/league.ts
+ *   - New tournaments → lib/tournamentUtils.ts
+ *   - New players → lib/playerUtils.ts
+ *
+ * This file is still imported by legacy components in `app/components/`
+ * (LeagueManager, RankingsManager, etc.) which haven't been migrated yet.
+ *
+ * Key differences from the new system:
+ * - Teams are separate Firestore documents (new system embeds player IDs in the league doc)
+ * - Matches are stored in a flat 'matches' collection (new system uses 'league_matches')
+ * - Stats are manually recalculated and written back to team docs
+ *
+ * @deprecated Prefer leagueUtils.ts for new league features
+ */
 import {
   collection,
   addDoc,

@@ -27,34 +27,45 @@ import Button from '../../ui/Button';
 import PlayerStatsModal from '../PlayerStatsModal';
 
 interface TeamsProps {
-  tournament: Tournament;
-  tournamentMembers: TournamentParticipant[];
+  tournament: Tournament;                         // Full tournament document
+  tournamentMembers: TournamentParticipant[];     // All participants (real-time from parent)
 }
 
 export default function Teams({ tournament, tournamentMembers }: TeamsProps) {
+  // Search state for filtering the displayed participants list
   const [searchQuery, setSearchQuery] = useState('');
+  // ID of the player whose stats modal is currently open (null = closed)
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+  // Controls the "Add Players" multi-select modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  // IDs selected in the Add Players modal before confirming
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [addError, setAddError] = useState('');
+  // ID of the participant being removed (shows inline spinner on that row)
   const [removingId, setRemovingId] = useState<string | null>(null);
+  // ID of the participant being moved to a different group
   const [movingId, setMovingId] = useState<string | null>(null);
+  // Pending move confirmation: which participant moves to which group
   const [pendingMove, setPendingMove] = useState<{
     team: TournamentParticipant;
     targetGroupId: string;
     targetGroupName: string;
   } | null>(null);
+  // Participant staged for removal — confirmed in an inline "Are you sure?" prompt
   const [pendingRemove, setPendingRemove] = useState<TournamentParticipant | null>(null);
   const { players, loading: playersLoading } = usePlayers();
   const { isAuthenticated } = useAuth();
 
-  // Filter teams by search
+  /** Case-insensitive name filter applied to the participants list */
   const filteredTeams = tournamentMembers.filter(team =>
     team.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Filter available players (not already in tournament)
+  /**
+   * Players from the global registry who are not already in this tournament.
+   * Used to populate the "Add Players" selection list.
+   */
   const availablePlayers = players.filter(
     (player) => !tournamentMembers.some((member) => member.name === player.name)
   );
@@ -130,8 +141,9 @@ export default function Teams({ tournament, tournamentMembers }: TeamsProps) {
   };
 
   // Group teams by group
+  const hasGroups = tournament.groups && tournament.groups.length > 0;
   const teamsByGroup = filteredTeams.reduce((acc, team) => {
-    const groupName = team.groupName || 'Unassigned';
+    const groupName = team.groupName || (hasGroups ? 'Ungrouped' : 'All Teams');
     if (!acc[groupName]) acc[groupName] = [];
     acc[groupName].push(team);
     return acc;
@@ -258,7 +270,7 @@ export default function Teams({ tournament, tournamentMembers }: TeamsProps) {
                         {/* Clickable stats area */}
                         <div
                           onClick={() => setSelectedPlayer(team.name)}
-                          className="flex items-center gap-3 p-4 cursor-pointer bg-dark-100/50 backdrop-blur-sm hover:bg-dark-100/70 transition-colors"
+                          className="flex items-center gap-3 p-4 cursor-pointer bg-light-200/50 dark:bg-dark-100/50 backdrop-blur-sm hover:bg-light-300/50 dark:hover:bg-dark-100/70 transition-colors"
                         >
                           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyber-500/20 to-electric-500/20 flex items-center justify-center flex-shrink-0">
                             <Users className="w-4 h-4 text-cyber-400" />
@@ -269,7 +281,7 @@ export default function Teams({ tournament, tournamentMembers }: TeamsProps) {
                               <p className="text-xs text-light-600 dark:text-gray-400 truncate">@{team.psnId}</p>
                             )}
                           </div>
-                          <ChevronRight className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                          <ChevronRight className="w-4 h-4 text-light-500 dark:text-gray-500 flex-shrink-0" />
                         </div>
 
                         {/* Admin action bar — completely separate from stats click */}
@@ -378,7 +390,7 @@ export default function Teams({ tournament, tournamentMembers }: TeamsProps) {
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <label className="block text-sm font-semibold text-gray-300">
+                    <label className="block text-sm font-semibold text-light-700 dark:text-gray-300">
                       Select Players <span className="text-red-400">*</span>
                     </label>
                     {availablePlayers.length > 0 && (
@@ -400,7 +412,7 @@ export default function Teams({ tournament, tournamentMembers }: TeamsProps) {
                       <p>All players have been added to this tournament</p>
                     </div>
                   ) : (
-                    <div className="max-h-96 overflow-y-auto space-y-2 bg-gray-900/30 rounded-lg p-3 border border-black/10 dark:border-white/10">
+                    <div className="max-h-96 overflow-y-auto custom-scrollbar space-y-2 bg-gray-900/30 rounded-lg p-3 border border-black/10 dark:border-white/10">
                       {availablePlayers.map((player) => (
                         <label
                           key={player.id}
@@ -495,23 +507,23 @@ export default function Teams({ tournament, tournamentMembers }: TeamsProps) {
           >
             <div className="bg-dark-200 border-2 border-cyber-500/30 rounded-tech-lg w-full max-w-sm p-6">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-bold text-white">Move Player</h3>
+                <h3 className="text-lg font-bold text-light-900 dark:text-white">Move Player</h3>
                 <button
                   onClick={() => setPendingMove(null)}
-                  className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+                  className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-light-500 dark:text-gray-400 hover:text-light-900 dark:hover:text-white"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="space-y-4">
-                <p className="text-sm text-gray-300 leading-relaxed">
+                <p className="text-sm text-light-700 dark:text-gray-300 leading-relaxed">
                   Move{' '}
-                  <span className="font-semibold text-white">{pendingMove.team.name}</span>{' '}
+                  <span className="font-semibold text-light-900 dark:text-white">{pendingMove.team.name}</span>{' '}
                   to{' '}
                   <span className="font-semibold text-cyber-400">{pendingMove.targetGroupName}</span>?
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-light-500 dark:text-gray-500">
                   Their current matches will be removed and new fixtures generated in the target group.
                 </p>
               </div>
@@ -551,20 +563,20 @@ export default function Teams({ tournament, tournamentMembers }: TeamsProps) {
                   <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
                     <Trash2 className="w-4 h-4 text-red-400" />
                   </div>
-                  <h3 className="text-lg font-bold text-white">Remove Player</h3>
+                  <h3 className="text-lg font-bold text-light-900 dark:text-white">Remove Player</h3>
                 </div>
                 <button
                   onClick={() => setPendingRemove(null)}
-                  className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+                  className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-light-500 dark:text-gray-400 hover:text-light-900 dark:hover:text-white"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="space-y-3">
-                <p className="text-sm text-gray-300 leading-relaxed">
+                <p className="text-sm text-light-700 dark:text-gray-300 leading-relaxed">
                   Remove{' '}
-                  <span className="font-semibold text-white">{pendingRemove.name}</span>{' '}
+                  <span className="font-semibold text-light-900 dark:text-white">{pendingRemove.name}</span>{' '}
                   from this tournament?
                 </p>
                 <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-xs text-red-300 leading-relaxed">
@@ -598,39 +610,26 @@ export default function Teams({ tournament, tournamentMembers }: TeamsProps) {
       )}
 
       {/* Stats Footer */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card variant="glass">
-          <div className="flex items-center justify-center gap-2">
-            <Users className="w-5 h-5 text-cyber-400" />
-            <p className="text-2xl font-bold text-light-900 dark:text-white">{tournamentMembers.length}</p>
+      <Card variant="glass">
+        <div className="grid grid-cols-4 divide-x divide-black/10 dark:divide-white/10">
+          <div className="text-center px-2 py-1">
+            <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">Teams</p>
+            <p className="text-base sm:text-2xl font-bold text-cyber-400">{tournamentMembers.length}</p>
           </div>
-        </Card>
-
-        <Card variant="glass">
-          <div className="flex items-center justify-center gap-2">
-            <Target className="w-5 h-5 text-electric-400" />
-            <p className="text-2xl font-bold text-light-900 dark:text-white">{tournament.maxTeams}</p>
+          <div className="text-center px-2 py-1">
+            <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">Max</p>
+            <p className="text-base sm:text-2xl font-bold text-electric-400">{tournament.maxTeams}</p>
           </div>
-        </Card>
-
-        <Card variant="glass">
-          <div className="flex items-center justify-center gap-2">
-            <Trophy className="w-5 h-5 text-pink-400" />
-            <p className="text-2xl font-bold text-light-900 dark:text-white">{tournament.groups?.length || 0}</p>
+          <div className="text-center px-2 py-1">
+            <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">Groups</p>
+            <p className="text-base sm:text-2xl font-bold text-pink-400">{tournament.groups?.length || 0}</p>
           </div>
-        </Card>
-
-        <Card variant="glass">
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-5 h-5 rounded-full bg-gradient-cyber flex items-center justify-center">
-              <span className="text-[10px] font-bold text-light-900 dark:text-white">%</span>
-            </div>
-            <p className="text-2xl font-bold text-light-900 dark:text-white">
-              {Math.round((tournamentMembers.length / tournament.maxTeams) * 100)}%
-            </p>
+          <div className="text-center px-2 py-1">
+            <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">Capacity</p>
+            <p className="text-base sm:text-2xl font-bold text-purple-400">{Math.round((tournamentMembers.length / tournament.maxTeams) * 100)}%</p>
           </div>
-        </Card>
-      </div>
+        </div>
+      </Card>
     </div>
   );
 }

@@ -324,7 +324,7 @@ function TournamentDetailContent() {
         <div className="min-h-screen bg-gradient-to-br from-light-100 via-light-200 to-light-300 dark:from-dark-50 dark:via-dark-100 dark:to-dark-200 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="w-12 h-12 text-cyber-400 animate-spin mx-auto mb-4" />
-            <p className="text-gray-400">Loading tournament...</p>
+            <p className="text-light-600 dark:text-gray-400">Loading tournament...</p>
           </div>
         </div>
       </MainLayout>

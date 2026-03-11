@@ -1,3 +1,28 @@
+/**
+ * PlayerStatsModal — Detailed tournament stats for a single participant.
+ *
+ * Opens as a modal dialog and aggregates all available stats for the selected
+ * player across both the group stage and knockout stage of a tournament.
+ *
+ * Stats computed client-side via `useMemo` from the full Tournament object:
+ *
+ * Group stage:
+ *   - Position in their group, P/W/D/L/GF/GA/GD/Pts
+ *   - Whether they qualified for the knockout stage
+ *
+ * Knockout stage:
+ *   - Each knockout tie (round label, opponent, aggregate score, outcome)
+ *   - Highest round reached (round_16, quarter_final, semi_final, final)
+ *   - Whether they won the tournament
+ *   - Who eliminated them (if applicable)
+ *
+ * Combined totals:
+ *   - Overall goals scored/conceded across the whole tournament
+ *   - Overall W/D/L/played record
+ *
+ * `ROUND_HIERARCHY` maps round keys to numeric values for comparison,
+ * allowing the "highest round" to be determined from the list of ties.
+ */
 "use client";
 
 import React, { useMemo } from 'react';
@@ -509,7 +534,7 @@ function getResultBadge(result: string): { bg: string; text: string; border: str
     case 'Winner':
       return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30', icon: '\u{1F3C6}' };
     case 'Runner-up':
-      return { bg: 'bg-gray-300/20', text: 'text-gray-300', border: 'border-gray-300/30', icon: '\u{1F948}' };
+      return { bg: 'bg-gray-300/20', text: 'text-light-700 dark:text-gray-300', border: 'border-gray-300/30', icon: '\u{1F948}' };
     case 'Semi Finals':
       return { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/30', icon: '\u{1F3C5}' };
     case 'Quarter Finals':
@@ -517,8 +542,8 @@ function getResultBadge(result: string): { bg: string; text: string; border: str
     case 'Round of 16':
       return { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/30', icon: '\u{26BD}' };
     case 'Group Stage':
-      return { bg: 'bg-gray-500/20', text: 'text-gray-400', border: 'border-gray-500/30', icon: '\u{1F4CB}' };
+      return { bg: 'bg-gray-500/20', text: 'text-light-700 dark:text-gray-400', border: 'border-gray-500/30', icon: '\u{1F4CB}' };
     default:
-      return { bg: 'bg-gray-500/20', text: 'text-gray-400', border: 'border-gray-500/30', icon: '\u{2796}' };
+      return { bg: 'bg-gray-500/20', text: 'text-light-700 dark:text-gray-400', border: 'border-gray-500/30', icon: '\u{2796}' };
   }
 }

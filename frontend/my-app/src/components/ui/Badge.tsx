@@ -1,3 +1,20 @@
+/**
+ * Badge — Small status pill/tag component with color variants.
+ *
+ * Used throughout the app to display status labels, counts, and tags.
+ * Animates in with a subtle scale-up effect via Framer Motion.
+ *
+ * Variants:
+ *   - 'default': Gray (neutral status)
+ *   - 'success': Green (active, won, completed)
+ *   - 'warning': Yellow (upcoming, pending)
+ *   - 'danger': Red (errors, eliminations, losses)
+ *   - 'info': Cyber blue (informational, feature highlights)
+ *
+ * @example
+ * <Badge variant="success">Active</Badge>
+ * <Badge variant="danger" glow>Eliminated</Badge>
+ */
 "use client";
 
 import React from 'react';
@@ -6,10 +23,11 @@ import { motion } from 'framer-motion';
 interface BadgeProps {
   children: React.ReactNode;
   variant?: 'default' | 'success' | 'warning' | 'danger' | 'info';
-  glow?: boolean;
+  glow?: boolean;      // Adds a colored shadow glow matching the variant
   className?: string;
 }
 
+/** Background, text, and border colors for each variant (light + dark modes) */
 const variantClasses = {
   default: 'bg-gray-500/20 text-light-800 dark:text-gray-300 border-2 border-gray-600/40 dark:border-gray-500/30',
   success: 'bg-green-500/20 text-green-700 dark:text-green-300 border-2 border-green-600/40 dark:border-green-500/30',

@@ -1,3 +1,23 @@
+/**
+ * Leagues Listing Page — `/leagues`
+ *
+ * Displays all leagues with search, season, and status filtering.
+ * Admins can create new leagues from this page via the CreateLeagueModal.
+ *
+ * Data flow:
+ *   - `useLeagues()` — real-time snapshot of all league documents, newest first.
+ *   - `usePlayers()` — needed to resolve player names when calculating league leaders.
+ *   - `useActiveSeason()` / `useSeasons()` — drive the season filter dropdown.
+ *
+ * Filtering logic (applied in order):
+ *   1. Season filter  — defaults to the currently active season; can be changed to
+ *                       any past season or "All Seasons".
+ *   2. Search query   — case-insensitive substring match on league name or season name.
+ *   3. Status filter  — All / Active / Upcoming / Completed toggle buttons.
+ *
+ * League leaders are fetched asynchronously (non-blocking) after the league list loads,
+ * so the cards render immediately with a placeholder until standings are ready.
+ */
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -37,7 +57,11 @@ export default function LeaguesPage() {
   });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  // Calculate league leaders for each league
+  /**
+   * League leaders map: { [leagueId]: playerName }.
+   * Populated asynchronously after leagues load — each card shows the
+   * current points leader once their standings have been calculated.
+   */
   const [leagueLeaders, setLeagueLeaders] = useState<Record<string, string>>({});
 
   React.useEffect(() => {
@@ -45,13 +69,15 @@ export default function LeaguesPage() {
       const leaders: Record<string, string> = {};
 
       for (const league of leagues) {
+        // Only compute standings for leagues that have been played (active or completed)
+        // and have at least one player assigned
         if ((league.status === 'active' || league.status === 'completed') && league.id && league.playerIds && league.playerIds.length > 0) {
           try {
             const leaguePlayers = players.filter((p) => league.playerIds.includes(p.id!));
             if (leaguePlayers.length > 0) {
               const standings = await calculateStandings(league.id, leaguePlayers);
               if (standings.length > 0) {
-                leaders[league.id] = standings[0].name;
+                leaders[league.id] = standings[0].name; // Position 1 = leader
               }
             }
           } catch (error) {
@@ -63,22 +89,29 @@ export default function LeaguesPage() {
       setLeagueLeaders(leaders);
     };
 
+    // Wait until both datasets are ready before attempting standings calculation
     if (leagues.length > 0 && players.length > 0) {
       fetchLeaders();
     }
   }, [leagues, players]);
 
-  // Filter and search leagues
+  /**
+   * Filtered leagues array derived from all three active filter states.
+   * Runs client-side (no extra Firestore queries) since all leagues are already loaded.
+   */
   const filteredLeagues = useMemo(() => {
     let result = [...leagues];
 
-    // Season filter
+    // --- 1. Season filter ---
+    // 'active_season' matches leagues whose seasonId equals the current active season's ID,
+    // OR (for legacy leagues that store season as a name string) whose season name matches.
     if (seasonFilter === 'active_season' && activeSeason?.id) {
       result = result.filter((league) =>
         league.seasonId === activeSeason.id ||
         (!league.seasonId && league.season === activeSeason.name)
       );
     } else if (seasonFilter !== 'all' && seasonFilter !== 'active_season') {
+      // A specific past season is selected
       const selectedSeason = seasons.find((s) => s.id === seasonFilter);
       result = result.filter((league) =>
         league.seasonId === seasonFilter ||
@@ -86,7 +119,7 @@ export default function LeaguesPage() {
       );
     }
 
-    // Search filter
+    // --- 2. Text search ---
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -96,7 +129,7 @@ export default function LeaguesPage() {
       );
     }
 
-    // Status filter
+    // --- 3. Status filter ---
     if (filters.status !== 'all') {
       result = result.filter((league) => league.status === filters.status);
     }
@@ -104,10 +137,16 @@ export default function LeaguesPage() {
     return result;
   }, [searchQuery, filters, leagues, seasonFilter, activeSeason, seasons]);
 
+  /** Navigate to the league detail page when a league card is clicked. */
   const handleLeagueClick = (leagueId: string) => {
     router.push(`/leagues/${leagueId}`);
   };
 
+  /**
+   * Create a new league from the form data submitted by CreateLeagueModal.
+   * Calculates `totalMatches` using the round-robin formula `n*(n-1)/2` so the
+   * league progress bar is accurate from the moment the league is created.
+   */
   const handleCreateLeagueSubmit = async (data: {
     name: string;
     season: string;
@@ -226,7 +265,7 @@ export default function LeaguesPage() {
         {leaguesLoading ? (
           <div className="flex flex-col items-center justify-center py-10 sm:py-20">
             <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 text-cyber-400 animate-spin mb-3" />
-            <p className="text-xs sm:text-sm text-gray-400">Loading leagues...</p>
+            <p className="text-xs sm:text-sm text-light-600 dark:text-gray-400">Loading leagues...</p>
           </div>
         ) : filteredLeagues.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
@@ -254,7 +293,7 @@ export default function LeaguesPage() {
           >
             <Filter className="w-12 h-12 sm:w-20 sm:h-20 text-gray-600 mx-auto mb-4 sm:mb-6" />
             <h3 className="text-lg sm:text-2xl font-bold text-light-900 dark:text-white mb-1 sm:mb-2">No leagues found</h3>
-            <p className="text-xs sm:text-sm text-gray-400 mb-4 sm:mb-8">
+            <p className="text-xs sm:text-sm text-light-600 dark:text-gray-400 mb-4 sm:mb-8">
               {searchQuery || filters.status !== 'all'
                 ? 'Try adjusting your filters or search query'
                 : 'Create your first league to get started'}

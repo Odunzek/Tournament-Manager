@@ -1,3 +1,26 @@
+/**
+ * Player League Detail Page — `/leagues/[id]/players/[playerId]`
+ *
+ * Shows comprehensive stats for a single player within a specific league.
+ * Accessible by clicking any player name in the StandingsTable.
+ *
+ * Data fetched (all client-side from Firestore via hooks + utils):
+ *   - Full league data (`useLeague`) and all matches (`useLeagueMatches`).
+ *   - Standings are recalculated to find this player's rank and stats.
+ *   - `getPlayerLeagueStats` returns the player's match history, unfaced opponents,
+ *     and win rate.
+ *
+ * Head-to-head section (OpponentRow component):
+ *   - Groups all matches by opponent with aggregate W/D/L summary visible at a glance.
+ *   - Expanding an opponent row shows individual match scores and dates.
+ *   - "Leg N" labels appear when multiple matches were played against the same opponent.
+ *
+ * The page also shows:
+ *   - League position (with Crown/Medal icons for top 3)
+ *   - Full P/W/D/L/GF/GA/GD/Pts stat line
+ *   - Win rate percentage
+ *   - Players not yet faced (remaining round-robin fixtures)
+ */
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -13,6 +36,16 @@ import { usePlayers } from '@/hooks/usePlayers';
 import { calculateStandings, getPlayerLeagueStats, convertTimestamp } from '@/lib/leagueUtils';
 import { LeaguePlayer } from '@/types/league';
 
+/**
+ * OpponentRow — Collapsible row showing H2H record against a single opponent.
+ *
+ * The collapsed state shows the opponent's name and aggregate W/D/L stats inline.
+ * Expanding reveals individual match rows with score, result badge, and leg number
+ * (when there are multiple legs, e.g., if the round-robin has home+away matches).
+ *
+ * `getMatchResult` is passed from the parent so it can determine W/D/L from the
+ * perspective of the player being viewed (not always playerA in the match record).
+ */
 function OpponentRow({
   group,
   playerId,
@@ -73,14 +106,14 @@ function OpponentRow({
                     <div className="flex items-center gap-2">
                       <span className={`text-xs font-bold w-4 text-center ${result.color}`}>{result.label}</span>
                       {group.matches.length > 1 && (
-                        <span className="text-xs text-gray-500">Leg {legIndex + 1}</span>
+                        <span className="text-xs text-light-500 dark:text-gray-500">Leg {legIndex + 1}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-3">
                       <span className={`text-sm font-bold ${result.color}`}>
                         {playerScore} – {opponentScore}
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-light-500 dark:text-gray-400">
                         {convertTimestamp(match.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
                     </div>
@@ -178,7 +211,7 @@ export default function PlayerLeagueStatsPage() {
         <Container maxWidth="2xl" className="py-4 sm:py-8">
           <div className="text-center py-16">
             <Loader2 className="w-12 h-12 text-cyber-400 mx-auto mb-4 animate-spin" />
-            <p className="text-gray-400">Loading player stats...</p>
+            <p className="text-light-600 dark:text-gray-400">Loading player stats...</p>
           </div>
         </Container>
       </MainLayout>
@@ -191,8 +224,8 @@ export default function PlayerLeagueStatsPage() {
         <GlobalNavigation />
         <Container maxWidth="2xl" className="py-4 sm:py-8">
           <div className="text-center py-16">
-            <h3 className="text-xl font-bold text-gray-400 mb-2">Player Not Found</h3>
-            <p className="text-gray-500 mb-6">This player is not in this league</p>
+            <h3 className="text-xl font-bold text-light-700 dark:text-gray-400 mb-2">Player Not Found</h3>
+            <p className="text-light-500 dark:text-gray-500 mb-6">This player is not in this league</p>
             <button
               onClick={() => router.push(`/leagues/${leagueId}`)}
               className="px-6 py-2 bg-cyber-500 hover:bg-cyber-600 text-white rounded-tech-lg transition-colors"
@@ -218,8 +251,8 @@ export default function PlayerLeagueStatsPage() {
     } else if (player.position === 2) {
       return (
         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-gray-400/20 to-gray-500/20 border border-gray-400/30 rounded-full">
-          <Medal className="w-3.5 h-3.5 text-gray-300" />
-          <span className="font-bold text-gray-300 text-xs">2nd Place</span>
+          <Medal className="w-3.5 h-3.5 text-light-600 dark:text-gray-300" />
+          <span className="font-bold text-light-600 dark:text-gray-300 text-xs">2nd Place</span>
         </div>
       );
     } else if (player.position === 3) {
@@ -232,8 +265,8 @@ export default function PlayerLeagueStatsPage() {
     }
     return (
       <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-light-200/50 dark:bg-dark-100/50 border border-black/10 dark:border-white/10 rounded-full">
-        <Trophy className="w-3.5 h-3.5 text-gray-400" />
-        <span className="font-bold text-gray-400 text-xs">{player.position}th Place</span>
+        <Trophy className="w-3.5 h-3.5 text-light-500 dark:text-gray-400" />
+        <span className="font-bold text-light-500 dark:text-gray-400 text-xs">{player.position}th Place</span>
       </div>
     );
   };
@@ -358,7 +391,7 @@ export default function PlayerLeagueStatsPage() {
               </div>
               <div className="text-center px-2 py-1">
                 <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400 mb-0.5">GD</p>
-                <p className={`text-base sm:text-2xl font-bold ${(player.goalDifference || 0) > 0 ? 'text-green-400' : (player.goalDifference || 0) < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                <p className={`text-base sm:text-2xl font-bold ${(player.goalDifference || 0) > 0 ? 'text-green-400' : (player.goalDifference || 0) < 0 ? 'text-red-400' : 'text-light-500 dark:text-gray-400'}`}>
                   {(player.goalDifference || 0) > 0 ? '+' : ''}{player.goalDifference || 0}
                 </p>
               </div>
@@ -402,7 +435,7 @@ export default function PlayerLeagueStatsPage() {
           ) : (
             <Card variant="glass">
               <div className="text-center py-8">
-                <p className="text-gray-400 text-sm">No matches played yet</p>
+                <p className="text-light-600 dark:text-gray-400 text-sm">No matches played yet</p>
               </div>
             </Card>
           )}

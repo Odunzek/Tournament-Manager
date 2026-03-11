@@ -30,6 +30,7 @@ interface KnockoutProps {
   tournament: Tournament;
   isAuthenticated: boolean;
   isLoading: boolean;
+  /** Setter passed from the parent page — used to update local state after recording a match */
   setTournament: (tournament: Tournament) => void;
 }
 
@@ -39,6 +40,10 @@ export default function Knockout({
   isLoading,
   setTournament,
 }: KnockoutProps) {
+  /**
+   * When non-null, the RecordResultModal is open for the specified tie leg.
+   * Contains all data needed to pre-populate the modal (team names, existing scores for edits).
+   */
   const [recordingMatch, setRecordingMatch] = useState<{
     tieId: string;
     leg: 'first' | 'second';
@@ -48,10 +53,12 @@ export default function Knockout({
     initialAwayScore?: number;
   } | null>(null);
 
+  /** The tie currently open in the full-tie edit modal (edit both legs simultaneously) */
   const [editingTie, setEditingTie] = useState<KnockoutTie | null>(null);
+  /** Set of round keys whose accordion panel is currently expanded */
   const [expandedRounds, setExpandedRounds] = useState<Set<string>>(new Set());
 
-  // Initialize expanded rounds (all expanded by default)
+  // All rounds start expanded so the full bracket is visible on load
   useEffect(() => {
     if (!tournament.knockoutBracket) return;
 
@@ -606,7 +613,7 @@ function EditTieModal({ tie, teamOptions, onClose, onSubmit }: EditTieModalProps
           </div>
         )}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Team 1 (Home first leg)</label>
+          <label className="block text-sm font-medium text-light-700 dark:text-gray-300 mb-2">Team 1 (Home first leg)</label>
           <CustomDropdown
             value={team1}
             onChange={(val) => setTeam1(val as string)}
@@ -615,7 +622,7 @@ function EditTieModal({ tie, teamOptions, onClose, onSubmit }: EditTieModalProps
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Team 2 (Away first leg)</label>
+          <label className="block text-sm font-medium text-light-700 dark:text-gray-300 mb-2">Team 2 (Away first leg)</label>
           <CustomDropdown
             value={team2}
             onChange={(val) => setTeam2(val as string)}

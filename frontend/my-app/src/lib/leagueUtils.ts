@@ -1,7 +1,23 @@
 /**
  * League Firebase Utilities
  *
- * Functions for managing 1v1 FIFA Leagues in Firestore
+ * Core data layer for the FIFA League Manager's round-robin league system.
+ * This module provides all Firestore CRUD operations for leagues and their matches,
+ * as well as pure-logic helpers that derive standings, win streaks, and per-player
+ * statistics from raw match data.
+ *
+ * Leagues follow a round-robin format where every player faces every other player.
+ * Total matches for a league are calculated as n(n-1)/2 where n is the number of
+ * players. Points are awarded as: Win = 3 pts, Draw = 1 pt, Loss = 0 pts.
+ *
+ * The module also handles backward compatibility with a legacy match data format
+ * (homeTeam/awayTeam) that may still exist in older Firestore documents.
+ *
+ * Collections used:
+ *   - `leagues`        -- League metadata (name, players, settings, point adjustments)
+ *   - `leagueMatches`  -- Individual match results linked to a league via `leagueId`
+ *
+ * @module leagueUtils
  */
 
 import {
@@ -23,21 +39,34 @@ import { League, LeagueMatch, LeaguePlayer, LeaguePointAdjustment, WinStreak } f
 import { v4 as uuidv4 } from 'uuid';
 import { Player } from '@/types/player';
 
+/** Firestore collection name for league documents. */
 const LEAGUES_COLLECTION = 'leagues';
+
+/** Firestore collection name for match documents (newer format). */
 const MATCHES_COLLECTION = 'leagueMatches';
 
 /**
- * Convert Firestore Timestamp to JavaScript Date
+ * Convert a Firestore Timestamp (or any timestamp-like value) to a JavaScript Date.
+ *
+ * Handles multiple input shapes because match dates may arrive as Firestore
+ * `Timestamp` objects, plain `Date` instances, numeric seconds, or serialised
+ * strings depending on how the data was originally written or cached.
+ *
+ * @param timestamp - A Firestore Timestamp, Date, numeric seconds value, date string, or nullish value.
+ * @returns A valid JavaScript `Date`. Falls back to `new Date()` (now) if the input is falsy or unparseable.
  */
 export const convertTimestamp = (timestamp: any): Date => {
   if (!timestamp) return new Date();
   if (timestamp instanceof Date) return timestamp;
+  // Firestore Timestamp objects expose a `.toDate()` method
   if (timestamp.toDate && typeof timestamp.toDate === 'function') {
     return timestamp.toDate();
   }
+  // Plain object with `seconds` field (e.g., serialised Firestore Timestamp)
   if (timestamp.seconds !== undefined) {
     return new Date(timestamp.seconds * 1000);
   }
+  // Last resort: try the built-in Date constructor (handles ISO strings, epoch ms, etc.)
   try {
     return new Date(timestamp);
   } catch {
@@ -46,7 +75,14 @@ export const convertTimestamp = (timestamp: any): Date => {
 };
 
 /**
- * Create a new league
+ * Create a new league in Firestore.
+ *
+ * Initialises `matchesPlayed` to 0 and stamps `createdAt` / `updatedAt` with
+ * the Firestore server timestamp so clocks are consistent across clients.
+ *
+ * @param leagueData - All league fields except `id` (Firestore auto-generates the document ID).
+ * @returns The Firestore-generated document ID for the new league.
+ * @throws Re-throws any Firestore write error after logging.
  */
 export const createLeague = async (leagueData: Omit<League, 'id'>): Promise<string> => {
   try {
@@ -64,7 +100,12 @@ export const createLeague = async (leagueData: Omit<League, 'id'>): Promise<stri
 };
 
 /**
- * Get all leagues
+ * Fetch every league from Firestore, ordered newest-first by creation date.
+ *
+ * Used on the leagues listing / dashboard page to show all available leagues.
+ *
+ * @returns An array of {@link League} objects sorted by `createdAt` descending.
+ * @throws Re-throws any Firestore read error after logging.
  */
 export const getAllLeagues = async (): Promise<League[]> => {
   try {
@@ -82,7 +123,11 @@ export const getAllLeagues = async (): Promise<League[]> => {
 };
 
 /**
- * Get a single league by ID
+ * Fetch a single league document by its Firestore ID.
+ *
+ * @param leagueId - The Firestore document ID of the league.
+ * @returns The {@link League} object if found, or `null` if the document does not exist.
+ * @throws Re-throws any Firestore read error after logging.
  */
 export const getLeagueById = async (leagueId: string): Promise<League | null> => {
   try {
@@ -100,7 +145,13 @@ export const getLeagueById = async (leagueId: string): Promise<League | null> =>
 };
 
 /**
- * Update league
+ * Partially update an existing league document in Firestore.
+ *
+ * Automatically stamps `updatedAt` with the server timestamp on every call.
+ *
+ * @param leagueId - The Firestore document ID of the league to update.
+ * @param updates  - A partial {@link League} object containing only the fields to change.
+ * @throws Re-throws any Firestore write error after logging.
  */
 export const updateLeague = async (
   leagueId: string,
@@ -119,7 +170,13 @@ export const updateLeague = async (
 };
 
 /**
- * Delete league
+ * Delete a league document from Firestore.
+ *
+ * **Note:** This only removes the league metadata document. To also delete all
+ * associated match documents, use {@link deleteLeagueWithMatches} instead.
+ *
+ * @param leagueId - The Firestore document ID of the league to delete.
+ * @throws Re-throws any Firestore delete error after logging.
  */
 export const deleteLeague = async (leagueId: string): Promise<void> => {
   try {
@@ -131,8 +188,15 @@ export const deleteLeague = async (leagueId: string): Promise<void> => {
 };
 
 /**
- * Add players to an existing league
- * Recalculates total matches based on new player count
+ * Add one or more players to an existing league.
+ *
+ * Merges `newPlayerIds` with the league's current roster (deduplicating) and
+ * recalculates `totalMatches` using the round-robin formula `n(n-1)/2` so the
+ * league's progress bar stays accurate.
+ *
+ * @param leagueId     - The Firestore document ID of the league.
+ * @param newPlayerIds - Array of player IDs to add to the league.
+ * @throws If the league document is not found or Firestore write fails.
  */
 export const addPlayersToLeague = async (
   leagueId: string,
@@ -164,11 +228,21 @@ export const addPlayersToLeague = async (
 };
 
 /**
- * Get all matches for a league
+ * Fetch all matches belonging to a given league, sorted newest-first.
+ *
+ * Implements a fallback strategy for backward compatibility:
+ *   1. Query the current `leagueMatches` collection with a Firestore `orderBy`.
+ *   2. If that fails (e.g., composite index not yet built) or returns nothing,
+ *      fall back to the legacy `matches` collection and sort client-side.
+ *   3. If both fail, return an empty array instead of throwing, so the UI can
+ *      still render an empty state.
+ *
+ * @param leagueId - The Firestore document ID of the league whose matches to fetch.
+ * @returns An array of {@link LeagueMatch} objects sorted by date descending (newest first).
  */
 export const getLeagueMatches = async (leagueId: string): Promise<LeagueMatch[]> => {
   try {
-    // Try new collection name first
+    // Strategy 1: Query the current `leagueMatches` collection with server-side ordering
     try {
       const querySnapshot = await getDocs(
         query(

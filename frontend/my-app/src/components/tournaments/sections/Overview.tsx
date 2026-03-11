@@ -58,6 +58,7 @@ interface OverviewProps {
 const formatDate = (date: any) => {
   if (!date) return 'Not set';
   const jsDate = convertTimestamp(date);
+  if (isNaN(jsDate.getTime())) return 'Not set';
   return jsDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 };
 
@@ -170,7 +171,7 @@ export default function Overview({
               <span className="text-[11px] text-light-500 dark:text-gray-500 ml-1">None set</span>
             )}
           </div>
-          {rulesOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+          {rulesOpen ? <ChevronUp className="w-4 h-4 text-light-500 dark:text-gray-400" /> : <ChevronDown className="w-4 h-4 text-light-500 dark:text-gray-400" />}
         </button>
 
         {rulesOpen && (

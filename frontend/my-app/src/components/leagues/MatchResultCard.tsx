@@ -1,3 +1,21 @@
+/**
+ * MatchResultCard
+ *
+ * Displays a single completed league match result. Adapts its layout based
+ * on screen size:
+ *   - **Mobile (< sm)**: Compact inline row with truncated names and tiny scores.
+ *     Fits 3+ results on a 375px screen without scrolling.
+ *   - **Desktop (sm+)**: Full-width Card with large score display, date footer,
+ *     and an edit button for admins.
+ *
+ * The winner's name receives full opacity; the loser's name is dimmed (opacity-50/60).
+ * Drawn matches colour both scores yellow.
+ *
+ * Admins see an edit icon/button that opens EditMatchModal for score correction.
+ * On success, `onMatchUpdated` is called so the parent page can recalculate standings.
+ *
+ * Animation: staggered fade-in based on `index` prop (0.05s delay per card).
+ */
 "use client";
 
 import React, { useState } from 'react';
@@ -11,9 +29,9 @@ import Button from '../ui/Button';
 import EditMatchModal from './EditMatchModal';
 
 interface MatchResultCardProps {
-  match: LeagueMatch;
-  index?: number;
-  onMatchUpdated?: () => void;
+  match: LeagueMatch;             // The completed match to display
+  index?: number;                 // Card index in the list (used for animation stagger)
+  onMatchUpdated?: () => void;    // Callback to refresh standings after editing a score
 }
 
 export default function MatchResultCard({ match, index = 0, onMatchUpdated }: MatchResultCardProps) {
@@ -46,7 +64,7 @@ export default function MatchResultCard({ match, index = 0, onMatchUpdated }: Ma
           {/* Score */}
           <div className="flex items-center gap-1 px-1.5 shrink-0">
             <span className={`text-sm font-black ${playerAWon ? 'text-green-400' : isDraw ? 'text-yellow-400' : 'text-light-500 dark:text-gray-500'}`}>{scoreA}</span>
-            <span className="text-[10px] text-gray-500">-</span>
+            <span className="text-[10px] text-light-500 dark:text-gray-500">-</span>
             <span className={`text-sm font-black ${playerBWon ? 'text-green-400' : isDraw ? 'text-yellow-400' : 'text-light-500 dark:text-gray-500'}`}>{scoreB}</span>
           </div>
 
@@ -80,7 +98,7 @@ export default function MatchResultCard({ match, index = 0, onMatchUpdated }: Ma
 
             <div className="flex items-center gap-3 px-4">
               <div className={`text-2xl font-black ${playerAWon ? 'text-green-400' : isDraw ? 'text-yellow-400' : 'text-light-600 dark:text-gray-400'}`}>{scoreA}</div>
-              <div className="text-gray-500 font-bold">-</div>
+              <div className="text-light-500 dark:text-gray-500 font-bold">-</div>
               <div className={`text-2xl font-black ${playerBWon ? 'text-green-400' : isDraw ? 'text-yellow-400' : 'text-light-600 dark:text-gray-400'}`}>{scoreB}</div>
             </div>
 

@@ -106,7 +106,7 @@ export default function TutorialOverlay() {
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
             className="
               relative w-full md:max-w-md
-              max-h-[52vh] md:max-h-[85vh] overflow-y-auto
+              max-h-[52vh] md:max-h-[85vh] overflow-y-auto custom-scrollbar
               rounded-t-2xl md:rounded-2xl
               bg-gradient-to-br from-cyber-50 to-electric-50
               dark:from-dark-100/80 dark:to-dark-200/80

@@ -1,13 +1,31 @@
+/**
+ * Input — Themed text input component with optional label, icons, and error state.
+ *
+ * Provides consistent styling for all form inputs across the app.
+ * Features a glass-like background with cyber-themed focus ring.
+ * Supports left/right icons (commonly used for search icons, toggles, etc.)
+ *
+ * Uses React's `useId()` to generate unique IDs for label-input association
+ * when no explicit `id` prop is provided.
+ *
+ * @example
+ * <Input
+ *   label="Player Name"
+ *   placeholder="Enter name..."
+ *   leftIcon={<Search className="w-4 h-4" />}
+ *   error={errors.name}
+ * />
+ */
 "use client";
 
 import React, { useId } from 'react';
 import { motion } from 'framer-motion';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  error?: string;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
+  label?: string;              // Optional label text above the input
+  error?: string;              // Error message displayed below the input (red text)
+  leftIcon?: React.ReactNode;  // Icon inside the input, left side (adds left padding)
+  rightIcon?: React.ReactNode; // Icon inside the input, right side (adds right padding)
 }
 
 export default function Input({
