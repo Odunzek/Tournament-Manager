@@ -11,9 +11,11 @@ interface StandingsProps {
   leagueId: string;
   currentUserId?: string;
   isLoading: boolean;
+  isEditable?: boolean;
+  onAdjustPoints?: (playerId: string, adjustment: number, reason: string) => Promise<void>;
 }
 
-export default function Standings({ standings, leagueId, currentUserId, isLoading }: StandingsProps) {
+export default function Standings({ standings, leagueId, currentUserId, isLoading, isEditable, onAdjustPoints }: StandingsProps) {
   if (isLoading) {
     return (
       <div className="text-center py-16">
@@ -50,7 +52,7 @@ export default function Standings({ standings, leagueId, currentUserId, isLoadin
 
       {/* Standings Table */}
       <Card variant="glass">
-        <StandingsTable players={standings} leagueId={leagueId} currentUserId={currentUserId} />
+        <StandingsTable players={standings} leagueId={leagueId} currentUserId={currentUserId} isEditable={isEditable} onAdjustPoints={onAdjustPoints} />
       </Card>
 
       {/* Legend */}

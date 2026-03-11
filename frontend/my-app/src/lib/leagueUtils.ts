@@ -19,7 +19,8 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { League, LeagueMatch, LeaguePlayer, WinStreak } from '@/types/league';
+import { League, LeagueMatch, LeaguePlayer, LeaguePointAdjustment, WinStreak } from '@/types/league';
+import { v4 as uuidv4 } from 'uuid';
 import { Player } from '@/types/player';
 
 const LEAGUES_COLLECTION = 'leagues';
@@ -371,7 +372,8 @@ export const deleteLeagueWithMatches = async (leagueId: string): Promise<void> =
  */
 export const calculateStandings = async (
   leagueId: string,
-  playersList: Player[]
+  playersList: Player[],
+  pointAdjustments?: Record<string, LeaguePointAdjustment[]>
 ): Promise<LeaguePlayer[]> => {
   try {
     const rawMatches = await getLeagueMatches(leagueId);
@@ -482,6 +484,18 @@ export const calculateStandings = async (
     Object.values(playerStats).forEach((player) => {
       player.goalDifference = player.goalsFor - player.goalsAgainst;
     });
+
+    // Apply point adjustments
+    if (pointAdjustments) {
+      Object.entries(pointAdjustments).forEach(([playerId, adjustments]) => {
+        if (playerStats[playerId] && adjustments.length > 0) {
+          const totalAdj = adjustments.reduce((sum, adj) => sum + adj.amount, 0);
+          playerStats[playerId].points += totalAdj;
+          playerStats[playerId].pointAdjustments = adjustments;
+          playerStats[playerId].totalAdjustment = totalAdj;
+        }
+      });
+    }
 
     // Sort by points, then goal difference, then goals for, then alphabetically
     const standings = Object.values(playerStats).sort((a, b) => {
@@ -689,6 +703,46 @@ export const getPlayerLeagueStats = async (
     };
   } catch (error) {
     console.error('Error getting player league stats:', error);
+    throw error;
+  }
+};
+
+/**
+ * Adjust a player's points manually (for rule violations, fair play bonuses, etc.)
+ */
+export const adjustPlayerPoints = async (
+  leagueId: string,
+  playerId: string,
+  adjustment: number,
+  reason: string
+): Promise<void> => {
+  try {
+    const league = await getLeagueById(leagueId);
+    if (!league) throw new Error('League not found');
+
+    const pointAdjustment: LeaguePointAdjustment = {
+      id: uuidv4(),
+      amount: adjustment,
+      reason,
+      timestamp: Timestamp.now(),
+      adjustedBy: 'admin',
+    };
+
+    const existingAdjustments = league.pointAdjustments || {};
+    const playerAdjustments = existingAdjustments[playerId] || [];
+
+    const updatedAdjustments = {
+      ...existingAdjustments,
+      [playerId]: [...playerAdjustments, pointAdjustment],
+    };
+
+    const docRef = doc(db, LEAGUES_COLLECTION, leagueId);
+    await updateDoc(docRef, {
+      pointAdjustments: updatedAdjustments,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error adjusting player points:', error);
     throw error;
   }
 };

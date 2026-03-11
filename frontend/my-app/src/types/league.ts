@@ -4,6 +4,14 @@
  * Defines types for the 1v1 FIFA League system where individual players ARE teams.
  */
 
+export interface LeaguePointAdjustment {
+  id: string;
+  amount: number;
+  reason: string;
+  timestamp: any; // Firestore Timestamp or Date
+  adjustedBy: string; // Admin identifier
+}
+
 export interface LeaguePlayer {
   id: string;
   name: string;
@@ -17,6 +25,8 @@ export interface LeaguePlayer {
   points: number;
   position: number;
   form: ('W' | 'D' | 'L')[]; // Last 5 matches (most recent first)
+  pointAdjustments?: LeaguePointAdjustment[];
+  totalAdjustment?: number;
 }
 
 export interface LeagueMatch {
@@ -57,6 +67,7 @@ export interface League {
   rules?: string;
   createdAt: any; // Firestore Timestamp
   updatedAt: any; // Firestore Timestamp
+  pointAdjustments?: Record<string, LeaguePointAdjustment[]>;
 }
 
 export interface PlayerLeagueStats {

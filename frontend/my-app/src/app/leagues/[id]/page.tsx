@@ -17,7 +17,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useLeague, useLeagueMatches } from '@/hooks/useLeagues';
 import { usePlayers } from '@/hooks/usePlayers';
 import { useAuth } from '@/lib/AuthContext';
-import { calculateStandings, calculateWinStreaks, addPlayersToLeague, updateLeague } from '@/lib/leagueUtils';
+import { calculateStandings, calculateWinStreaks, addPlayersToLeague, updateLeague, adjustPlayerPoints } from '@/lib/leagueUtils';
 import { incrementLeagueWins } from '@/lib/playerUtils';
 import { LeaguePlayer, WinStreak } from '@/types/league';
 
@@ -95,7 +95,7 @@ export default function LeagueDetailPage() {
 
       setIsCalculating(true);
       try {
-        const calculatedStandings = await calculateStandings(league.id, leaguePlayers);
+        const calculatedStandings = await calculateStandings(league.id, leaguePlayers, league.pointAdjustments || {});
         const calculatedStreaks = await calculateWinStreaks(league.id, leaguePlayers);
 
         setStandings(calculatedStandings);
@@ -153,7 +153,7 @@ export default function LeagueDetailPage() {
 
       // Auto-award league title to the winner
       if (leaguePlayers.length > 0) {
-        const finalStandings = await calculateStandings(league.id, leaguePlayers);
+        const finalStandings = await calculateStandings(league.id, leaguePlayers, league.pointAdjustments || {});
         if (finalStandings.length > 0 && finalStandings[0].id) {
           await incrementLeagueWins(finalStandings[0].id, league.seasonId);
         }
@@ -172,7 +172,7 @@ export default function LeagueDetailPage() {
 
     setIsCalculating(true);
     try {
-      const calculatedStandings = await calculateStandings(league.id, leaguePlayers);
+      const calculatedStandings = await calculateStandings(league.id, leaguePlayers, league?.pointAdjustments || {});
       const calculatedStreaks = await calculateWinStreaks(league.id, leaguePlayers);
 
       setStandings(calculatedStandings);
@@ -182,6 +182,13 @@ export default function LeagueDetailPage() {
     } finally {
       setIsCalculating(false);
     }
+  };
+
+  // Handle point adjustment
+  const handleAdjustPoints = async (playerId: string, adjustment: number, reason: string) => {
+    if (!league?.id) return;
+    await adjustPlayerPoints(league.id, playerId, adjustment, reason);
+    // Firestore onSnapshot will auto-update league, triggering recalculation
   };
 
   // Disable admin actions if league is already completed
@@ -244,7 +251,7 @@ export default function LeagueDetailPage() {
           />
         );
       case 'standings':
-        return <Standings standings={standings} leagueId={league.id!} {...sectionProps} />;
+        return <Standings standings={standings} leagueId={league.id!} isEditable={isEditable} onAdjustPoints={isEditable ? handleAdjustPoints : undefined} {...sectionProps} />;
       case 'results':
         return <Results matches={matches} players={leaguePlayers} onMatchUpdated={isEditable ? handleMatchUpdated : undefined} {...sectionProps} />;
       case 'streaks':
