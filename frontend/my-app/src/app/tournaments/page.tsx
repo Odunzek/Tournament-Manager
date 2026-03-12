@@ -109,7 +109,7 @@ function TournamentsContent() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="flex flex-col sm:flex-row gap-4 mb-8"
+          className="flex flex-col sm:flex-row gap-3 mb-4 sm:mb-6"
         >
           <div className="flex-1">
             <Input
@@ -163,6 +163,7 @@ function TournamentsContent() {
           {isAuthenticated && (
             <Button
               variant="primary"
+              size="sm"
               leftIcon={<Plus className="w-4 h-4" />}
               onClick={handleCreateTournament}
               glow
@@ -174,13 +175,13 @@ function TournamentsContent() {
 
         {/* Loading State */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-12 h-12 text-cyber-400 animate-spin mb-4" />
-            <p className="text-gray-400">Loading tournaments...</p>
+          <div className="flex flex-col items-center justify-center py-10 sm:py-20">
+            <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 text-cyber-400 animate-spin mb-3" />
+            <p className="text-xs sm:text-sm text-light-600 dark:text-gray-400">Loading tournaments...</p>
           </div>
         ) : filteredTournaments.length > 0 ? (
           /* Tournaments Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
             {filteredTournaments.map((tournament, index) => (
               <motion.div
                 key={tournament.id}
@@ -202,11 +203,11 @@ function TournamentsContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-center py-20"
+            className="text-center py-10 sm:py-20"
           >
-            <Filter className="w-20 h-20 text-gray-600 mx-auto mb-6" />
-            <h3 className="text-2xl font-bold text-light-900 dark:text-white mb-2">No tournaments found</h3>
-            <p className="text-gray-400 mb-8">
+            <Filter className="w-12 h-12 sm:w-20 sm:h-20 text-gray-600 mx-auto mb-4 sm:mb-6" />
+            <h3 className="text-lg sm:text-2xl font-bold text-light-900 dark:text-white mb-1 sm:mb-2">No tournaments found</h3>
+            <p className="text-xs sm:text-sm text-light-600 dark:text-gray-400 mb-4 sm:mb-8">
               {searchQuery || statusFilter !== 'all'
                 ? 'Try adjusting your filters or search query'
                 : 'Create your first tournament to get started'}
@@ -225,38 +226,26 @@ function TournamentsContent() {
           </motion.div>
         )}
 
-        {/* Stats Footer */}
+        {/* Stats Footer — inline glass grid */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4"
+          className="mt-8 sm:mt-12 bg-white/90 dark:bg-white/5 backdrop-blur-xl border-2 border-cyber-500/30 dark:border-white/10 rounded-xl overflow-hidden"
         >
-          {[
-            { label: 'Total Tournaments', value: filteredTournaments.length },
-            {
-              label: 'Active',
-              value: filteredTournaments.filter(t => t.status === 'group_stage' || t.status === 'knockout').length,
-            },
-            {
-              label: 'Setup',
-              value: filteredTournaments.filter(t => t.status === 'setup').length,
-            },
-            {
-              label: 'Completed',
-              value: filteredTournaments.filter(t => t.status === 'completed').length,
-            },
-          ].map((stat, index) => (
-            <div
-              key={stat.label}
-              className="text-center p-4 bg-light-200/50 dark:bg-dark-100/50 backdrop-blur-md border border-black/10 dark:border-white/10 rounded-xl"
-            >
-              <p className="text-xs text-light-700 dark:text-gray-300 mb-1">{stat.label}</p>
-              <p className="text-2xl font-bold text-light-900 dark:text-white">
-                {stat.value}
-              </p>
-            </div>
-          ))}
+          <div className="grid grid-cols-4 divide-x divide-black/10 dark:divide-white/10">
+            {[
+              { label: 'Total', value: filteredTournaments.length },
+              { label: 'Active', value: filteredTournaments.filter(t => t.status === 'group_stage' || t.status === 'knockout').length },
+              { label: 'Setup', value: filteredTournaments.filter(t => t.status === 'setup').length },
+              { label: 'Done', value: filteredTournaments.filter(t => t.status === 'completed').length },
+            ].map((stat) => (
+              <div key={stat.label} className="text-center py-2.5 sm:py-3 px-1">
+                <p className="text-base sm:text-xl font-bold text-light-900 dark:text-white">{stat.value}</p>
+                <p className="text-[10px] sm:text-xs text-light-600 dark:text-gray-400">{stat.label}</p>
+              </div>
+            ))}
+          </div>
         </motion.div>
 
         {/* Create Tournament Modal (Admin Only) */}

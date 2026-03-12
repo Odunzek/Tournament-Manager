@@ -1,3 +1,25 @@
+/**
+ * Button — Themed button component with multiple variants and loading state.
+ *
+ * Wraps a Framer Motion button with consistent cyber-themed styling.
+ * All buttons get scale-on-hover/tap animations unless disabled/loading.
+ *
+ * Variants:
+ *   - 'primary': Cyber-to-electric gradient (main CTA)
+ *   - 'secondary': Electric-to-pink gradient (secondary actions)
+ *   - 'outline': Bordered, transparent background
+ *   - 'ghost': Subtle background, minimal visual weight
+ *   - 'danger': Red gradient for destructive actions (delete, remove)
+ *
+ * @example
+ * <Button variant="primary" leftIcon={<Plus />} onClick={handleAdd}>
+ *   Add Player
+ * </Button>
+ *
+ * <Button variant="danger" isLoading={isDeleting}>
+ *   Delete League
+ * </Button>
+ */
 "use client";
 
 import React from 'react';
@@ -7,12 +29,13 @@ import { Loader2 } from 'lucide-react';
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
-  isLoading?: boolean;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
-  glow?: boolean;
+  isLoading?: boolean;       // Shows spinner and disables interaction
+  leftIcon?: React.ReactNode; // Icon rendered before the label
+  rightIcon?: React.ReactNode; // Icon rendered after the label
+  glow?: boolean;            // Adds animated neon glow effect
 }
 
+/** Tailwind classes for each button variant (handles both light and dark modes) */
 const variantClasses = {
   primary: 'bg-gradient-to-r from-cyber-600 to-electric-600 dark:from-cyber-500 dark:to-electric-600 text-white hover:from-cyber-700 hover:to-electric-700 dark:hover:from-cyber-600 dark:hover:to-electric-700 shadow-light-cyber-lg dark:shadow-glow',
   secondary: 'bg-gradient-to-r from-electric-600 to-pink-600 dark:from-electric-500 dark:to-pink-600 text-white hover:from-electric-700 hover:to-pink-700 dark:hover:from-electric-600 dark:hover:to-pink-700 shadow-light-electric-lg dark:shadow-glow-purple',

@@ -1,3 +1,18 @@
+/**
+ * Tournament StandingsTable — Group stage standings for a single group.
+ *
+ * Used in the Groups section to show the sorted standings for each group.
+ * Positions listed in `highlightPositions` (default: [1, 2]) receive a
+ * cyber-gradient left border to indicate qualification spots.
+ *
+ * Layout:
+ *   - **Desktop (md+)**: Full table with all columns (P, W, D, L, GF, GA, GD, Pts).
+ *   - **Mobile (< md)**: Compact card list — each team gets a single row with
+ *     essential stats only (position, name, W/D/L, GD, Pts).
+ *     If `expandable` is true, tapping a mobile row expands to show GF/GA.
+ *
+ * Rows animate in with a staggered left-slide effect (0.05s per row).
+ */
 "use client";
 
 import React, { useState } from 'react';
@@ -34,7 +49,7 @@ export default function StandingsTable({
       )}
 
       {/* Desktop View */}
-      <div className="hidden md:block overflow-x-auto">
+      <div className="hidden md:block overflow-x-auto custom-scrollbar">
         <table className="w-full">
           <thead>
             <tr className="border-b border-light-300 dark:border-white/10">
@@ -145,14 +160,14 @@ export default function StandingsTable({
                   w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
                   ${isHighlighted(team.position)
                     ? 'bg-gradient-to-r from-cyber-500 to-electric-600 text-white'
-                    : 'bg-white/10 text-gray-400'
+                    : 'bg-light-300 dark:bg-white/10 text-light-600 dark:text-gray-400'
                   }
                 `}>
                   {team.position}
                 </div>
                 <div className="flex-1">
-                  <p className="font-bold text-white">{team.teamName}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="font-bold text-light-900 dark:text-white">{team.teamName}</p>
+                  <p className="text-xs text-light-600 dark:text-gray-400">
                     P: {team.played} • Pts: {team.points}
                   </p>
                 </div>
@@ -161,11 +176,11 @@ export default function StandingsTable({
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <p className="text-lg font-bold text-cyber-400">{team.points}</p>
-                  <p className="text-xs text-gray-400">pts</p>
+                  <p className="text-xs text-light-600 dark:text-gray-400">pts</p>
                 </div>
 
                 {expandable && (
-                  <div className="text-gray-400">
+                  <div className="text-light-500 dark:text-gray-400">
                     {expandedRows.has(team.teamId) ? (
                       <ChevronUp className="w-5 h-5" />
                     ) : (
@@ -187,23 +202,23 @@ export default function StandingsTable({
                 >
                   <div className="grid grid-cols-3 gap-3 p-4">
                     <div className="text-center">
-                      <p className="text-xs text-gray-400 mb-1">W-D-L</p>
-                      <p className="text-sm font-semibold text-white">
+                      <p className="text-xs text-light-600 dark:text-gray-400 mb-1">W-D-L</p>
+                      <p className="text-sm font-semibold text-light-900 dark:text-white">
                         {team.won}-{team.drawn}-{team.lost}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-xs text-gray-400 mb-1">Goals</p>
-                      <p className="text-sm font-semibold text-white">
+                      <p className="text-xs text-light-600 dark:text-gray-400 mb-1">Goals</p>
+                      <p className="text-sm font-semibold text-light-900 dark:text-white">
                         {team.goalsFor}-{team.goalsAgainst}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-xs text-gray-400 mb-1">GD</p>
+                      <p className="text-xs text-light-600 dark:text-gray-400 mb-1">GD</p>
                       <p className={`text-sm font-semibold ${
                         team.goalDifference > 0 ? 'text-green-400' :
                         team.goalDifference < 0 ? 'text-red-400' :
-                        'text-white'
+                        'text-light-900 dark:text-white'
                       }`}>
                         {team.goalDifference > 0 ? '+' : ''}{team.goalDifference}
                       </p>

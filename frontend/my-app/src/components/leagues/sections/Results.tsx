@@ -1,3 +1,27 @@
+/**
+ * League Results Section
+ *
+ * Displays all completed matches in the league, organized by player.
+ * Unlike a flat match list, this section groups results from each player's
+ * perspective, making it easy to see head-to-head records between any two players.
+ *
+ * Data structure (computed via useMemo):
+ *   PlayerGroup[]
+ *     └─ matchups: MatchupGroup[]    (one per opponent)
+ *         └─ matches: LeagueMatch[]  (individual results vs. that opponent)
+ *
+ * UI behaviour:
+ *   - Each PlayerGroup is collapsible (click player name to expand/collapse).
+ *   - Each MatchupGroup within a player is also collapsible.
+ *   - Clicking a MatchupGroup shows the individual match rows with scores,
+ *     date, and (for admins) an edit button.
+ *   - A summary W/D/L record is always visible on the player row even when collapsed.
+ *
+ * `getMatchResult` is a pure function that determines W/D/L from the perspective
+ * of a specific player, handling both playerA and playerB positions.
+ *
+ * `MatchRow` and `PlayerSection` are internal sub-components used for rendering.
+ */
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -10,17 +34,19 @@ import Card from '../../ui/Card';
 import EditMatchModal from '../EditMatchModal';
 
 interface ResultsProps {
-  matches: LeagueMatch[];
-  players: Player[];
-  isLoading: boolean;
-  onMatchUpdated?: () => void;
+  matches: LeagueMatch[];        // All completed matches for this league
+  players: Player[];             // Players enrolled in the league (for name lookups)
+  isLoading: boolean;            // True while standings are being recalculated
+  onMatchUpdated?: () => void;   // Callback to refresh standings after an edit
 }
 
+/** Groups matches between a specific player and a single opponent */
 interface MatchupGroup {
   opponentName: string;
   matches: LeagueMatch[];
 }
 
+/** All results for a single player, grouped by opponent */
 interface PlayerGroup {
   playerId: string;
   playerName: string;
@@ -31,6 +57,10 @@ interface PlayerGroup {
   losses: number;
 }
 
+/**
+ * Determine the W/D/L result of a match from the perspective of a specific player.
+ * Returns a label ('W'/'D'/'L'), a text colour class, and a background class for styling.
+ */
 function getMatchResult(match: LeagueMatch, perspectivePlayerId: string) {
   const isPlayerA = match.playerA === perspectivePlayerId;
   const myScore = isPlayerA ? (match.scoreA || 0) : (match.scoreB || 0);
@@ -64,7 +94,7 @@ function MatchRow({ match, onMatchUpdated }: { match: LeagueMatch; onMatchUpdate
           <span className={`text-sm font-black ${playerAWon ? 'text-green-400' : isDraw ? 'text-yellow-400' : 'text-light-600 dark:text-gray-400'}`}>
             {scoreA}
           </span>
-          <span className="text-gray-500 text-xs">-</span>
+          <span className="text-light-500 dark:text-gray-500 text-xs">-</span>
           <span className={`text-sm font-black ${playerBWon ? 'text-green-400' : isDraw ? 'text-yellow-400' : 'text-light-600 dark:text-gray-400'}`}>
             {scoreB}
           </span>
@@ -120,13 +150,13 @@ function CompactMatchRow({ match, perspectivePlayerId, onMatchUpdated }: {
       <div className={`flex items-center justify-between px-2 py-1 rounded-lg border ${result.bg}`}>
         <div className="flex items-center gap-1.5">
           <span className={`text-[11px] font-bold w-4 text-center ${result.color}`}>{result.label}</span>
-          <span className="text-[10px] font-semibold text-gray-500 w-4">
+          <span className="text-[10px] font-semibold text-light-500 dark:text-gray-500 w-4">
             {isHome ? 'H' : 'A'}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className={`text-xs font-bold ${result.color}`}>{myScore} – {oppScore}</span>
-          <span className="text-[10px] text-gray-400">
+          <span className="text-[10px] text-light-500 dark:text-gray-400">
             {matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </span>
           {isAuthenticated && (
@@ -175,7 +205,7 @@ function MatchupSection({ matchup, perspectivePlayerId, onMatchUpdated }: {
         className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg bg-light-100/30 dark:bg-white/[0.03] border border-black/5 dark:border-white/5 hover:bg-light-200/40 dark:hover:bg-white/[0.06] transition-colors"
       >
         <div className="flex items-center gap-2 min-w-0">
-          <Users className="w-3 h-3 text-gray-500 shrink-0" />
+          <Users className="w-3 h-3 text-light-500 dark:text-gray-500 shrink-0" />
           <span className="text-xs font-semibold text-light-900 dark:text-white truncate">
             vs {matchup.opponentName}
           </span>
@@ -187,7 +217,7 @@ function MatchupSection({ matchup, perspectivePlayerId, onMatchUpdated }: {
             <span className="text-red-400 font-bold">{l}L</span>
           </div>
           <ChevronDown
-            className={`w-3.5 h-3.5 text-gray-500 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+            className={`w-3.5 h-3.5 text-light-500 dark:text-gray-500 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
           />
         </div>
       </button>
@@ -346,7 +376,7 @@ export default function Results({ matches, players, isLoading, onMatchUpdated }:
         <div className="text-center py-16">
           <ListChecks className="w-16 h-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-light-600 dark:text-gray-400 mb-2">No Results Yet</h3>
-          <p className="text-gray-500">Match results will appear here after they are recorded</p>
+          <p className="text-light-500 dark:text-gray-500">Match results will appear here after they are recorded</p>
         </div>
       </Card>
     );
@@ -367,7 +397,7 @@ export default function Results({ matches, players, isLoading, onMatchUpdated }:
         </h2>
 
         <div className="flex items-center gap-2 shrink-0">
-          <Filter className="w-3.5 h-3.5 text-gray-400" />
+          <Filter className="w-3.5 h-3.5 text-light-500 dark:text-gray-400" />
           <select
             value={selectedPlayer}
             onChange={(e) => setSelectedPlayer(e.target.value)}

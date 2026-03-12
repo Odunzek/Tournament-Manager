@@ -1,7 +1,36 @@
+/**
+ * League Detail Page
+ *
+ * The main page for viewing and managing a single league. Accessible at `/leagues/[id]`.
+ *
+ * Architecture:
+ *   - Uses real-time Firestore hooks (`useLeague`, `useLeagueMatches`) so the UI
+ *     updates automatically when data changes without manual refreshes.
+ *   - Standings and win streaks are computed client-side via `calculateStandings`
+ *     and `calculateWinStreaks` from `leagueUtils.ts` whenever the match list changes.
+ *   - The page supports two player-roster formats:
+ *       (a) New leagues: `league.playerIds` array (explicit roster)
+ *       (b) Legacy leagues: players are inferred from match history
+ *
+ * Sections (rendered by `renderSection` switch):
+ *   - overview    : League header, progress bar, recent results, admin quick actions
+ *   - standings   : Full standings table with point adjustment support
+ *   - results     : Filterable list of all played matches
+ *   - streaks     : Win streak leaderboard and player form analysis
+ *   - record      : Admin-only form for recording new match results
+ *
+ * Admin-only features (gated by `isAuthenticated && league.status !== 'completed'`):
+ *   - Add players to the league
+ *   - Record match results
+ *   - Edit match scores
+ *   - Adjust player points (bonuses / deductions)
+ *   - End the league (marks as completed, awards title to winner)
+ *   - Delete the league
+ */
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import MainLayout from '@/components/layouts/MainLayout';
 import Container from '@/components/layouts/Container';
@@ -17,39 +46,55 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useLeague, useLeagueMatches } from '@/hooks/useLeagues';
 import { usePlayers } from '@/hooks/usePlayers';
 import { useAuth } from '@/lib/AuthContext';
-import { calculateStandings, calculateWinStreaks, addPlayersToLeague, updateLeague } from '@/lib/leagueUtils';
+import { calculateStandings, calculateWinStreaks, addPlayersToLeague, updateLeague, adjustPlayerPoints } from '@/lib/leagueUtils';
 import { incrementLeagueWins } from '@/lib/playerUtils';
 import { LeaguePlayer, WinStreak } from '@/types/league';
 
 export default function LeagueDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const leagueId = params.id as string;
 
+  // Real-time Firestore subscriptions — data updates automatically
   const { league, loading: leagueLoading } = useLeague(leagueId);
   const { matches, loading: matchesLoading } = useLeagueMatches(leagueId);
-  const { players } = usePlayers();
+  const { players } = usePlayers(); // All players in the system
   const { isAuthenticated } = useAuth();
 
-  const [activeSection, setActiveSection] = useState('overview');
+  // Section navigation — can be seeded from URL query param (e.g., ?section=standings)
+  const [activeSection, setActiveSection] = useState(searchParams.get('section') || 'overview');
+  // Client-side computed standings (sorted by pts → GD → GF → alpha)
   const [standings, setStandings] = useState<LeaguePlayer[]>([]);
+  // Client-side computed win streak data for the Streaks section
   const [streaks, setStreaks] = useState<WinStreak[]>([]);
+  // True while standings/streaks are being recalculated asynchronously
   const [isCalculating, setIsCalculating] = useState(false);
   const [isAddPlayersModalOpen, setIsAddPlayersModalOpen] = useState(false);
   const [endLeagueConfirmOpen, setEndLeagueConfirmOpen] = useState(false);
 
-  // Filter players to only those in this league
+  /**
+   * Derive the filtered list of players who belong to this league.
+   *
+   * Supports two data formats:
+   *   - **New format**: `league.playerIds` array — filter the global players list.
+   *   - **Legacy format**: leagues created before `playerIds` was added have no
+   *     roster field, so we reconstruct it from match history. Matches written
+   *     in the old schema use `homeTeam`/`awayTeam` name strings which are
+   *     normalised to `legacy_<Name>` IDs by `useLeagueMatches`. These become
+   *     virtual player stubs so standings can still be computed.
+   */
   const leaguePlayers = useMemo(() => {
     if (!league) return [];
 
-    // If league has playerIds (new format), use it
+    // New format: explicit playerIds roster on the league document
     if (league.playerIds && league.playerIds.length > 0) {
       return players.filter((player) => league.playerIds.includes(player.id!));
     }
 
-    // For old leagues without playerIds, extract player IDs from matches
+    // Legacy format: infer roster from who appeared in match records
     const playerIdsFromMatches = new Set<string>();
-    const playerNamesMap = new Map<string, string>(); // Map player ID to name
+    const playerNamesMap = new Map<string, string>(); // playerId → display name
 
     matches.forEach((match) => {
       if (match.playerA) {
@@ -62,22 +107,21 @@ export default function LeagueDetailPage() {
       }
     });
 
-    // Build player list: real players + virtual players for legacy IDs
+    // Build player list: real player documents + virtual stubs for legacy IDs
     const leaguePlayersList = [];
 
     playerIdsFromMatches.forEach((playerId) => {
-      // Try to find real player
       const realPlayer = players.find((player) => player.id === playerId);
 
       if (realPlayer) {
         leaguePlayersList.push(realPlayer);
       } else if (playerId.startsWith('legacy_')) {
-        // Create virtual player object for legacy player
+        // Construct a minimal virtual player object for players without a Firestore doc
         const playerName = playerNamesMap.get(playerId) || playerId.replace('legacy_', '').replace(/_/g, ' ');
         leaguePlayersList.push({
           id: playerId,
           name: playerName,
-          psnId: playerName, // Use name as PSN ID for legacy players
+          psnId: playerName,
           createdAt: null,
           updatedAt: null,
         });
@@ -87,14 +131,19 @@ export default function LeagueDetailPage() {
     return leaguePlayersList;
   }, [league, players, matches]);
 
-  // Calculate standings and streaks whenever matches change
+  /**
+   * Recalculate standings and win streaks whenever the league data or match list changes.
+   * Both calculations are async (they re-fetch from Firestore) and run together so
+   * both sections are always in sync after a match is recorded or edited.
+   */
   useEffect(() => {
     const calculateData = async () => {
       if (!league?.id || leaguePlayers.length === 0) return;
 
       setIsCalculating(true);
       try {
-        const calculatedStandings = await calculateStandings(league.id, leaguePlayers);
+        // Pass pointAdjustments so manual bonus/deduction records are factored in
+        const calculatedStandings = await calculateStandings(league.id, leaguePlayers, league.pointAdjustments || {});
         const calculatedStreaks = await calculateWinStreaks(league.id, leaguePlayers);
 
         setStandings(calculatedStandings);
@@ -107,9 +156,9 @@ export default function LeagueDetailPage() {
     };
 
     calculateData();
-  }, [league, leaguePlayers, matches]);
+  }, [league, leaguePlayers, matches]); // Re-run on any data change
 
-  // Calculate total goals
+  /** Sum of all goals scored across every completed match in this league. */
   const totalGoals = useMemo(() => {
     return matches.reduce((sum, match) => {
       if (match.played) {
@@ -121,39 +170,46 @@ export default function LeagueDetailPage() {
     }, 0);
   }, [matches]);
 
-  // Get league leader
+  /** The player at position 1 in the sorted standings, or null before first calculation. */
   const leagueLeader = standings.length > 0 ? standings[0] : null;
 
-  // Handle adding players to league
+  /**
+   * Add one or more players to this league.
+   * The league document's `playerIds` array and `totalMatches` are updated atomically
+   * by `addPlayersToLeague`. Real-time listeners automatically refresh the UI.
+   */
   const handleAddPlayers = async (newPlayerIds: string[]) => {
     if (!league?.id) return;
 
     try {
       await addPlayersToLeague(league.id, newPlayerIds);
-      // Modal will close automatically on success
-      // Data will update automatically through real-time listeners
     } catch (error) {
       console.error('Error adding players to league:', error);
-      throw error; // Let modal handle error display
+      throw error; // Bubble up so the modal can show an error state
     }
   };
 
-  // Handle ending league — opens confirm modal
+  /** Open the end-league confirmation modal. Actual logic runs in `doEndLeague`. */
   const handleEndLeague = () => {
     if (!league?.id) return;
     setEndLeagueConfirmOpen(true);
   };
 
-  // Actual end-league logic, called after confirmation
+  /**
+   * Finalise the league after user confirms:
+   *   1. Mark the league as 'completed' in Firestore.
+   *   2. Re-compute final standings to determine the winner.
+   *   3. Increment the winner's league win count (global + per-season).
+   */
   const doEndLeague = async () => {
     if (!league?.id) return;
     try {
       await updateLeague(league.id, { status: 'completed' });
 
-      // Auto-award league title to the winner
       if (leaguePlayers.length > 0) {
-        const finalStandings = await calculateStandings(league.id, leaguePlayers);
+        const finalStandings = await calculateStandings(league.id, leaguePlayers, league.pointAdjustments || {});
         if (finalStandings.length > 0 && finalStandings[0].id) {
+          // Award the league title and update the player's achievement tier
           await incrementLeagueWins(finalStandings[0].id, league.seasonId);
         }
       }
@@ -164,14 +220,17 @@ export default function LeagueDetailPage() {
     }
   };
 
-  // Handle match update
+  /**
+   * Triggered by the EditMatchModal after a score is changed.
+   * Manually re-fetches standings/streaks instead of waiting for the
+   * Firestore snapshot to propagate (avoids a brief stale-standings flash).
+   */
   const handleMatchUpdated = async () => {
-    // Force recalculation of standings and streaks
     if (!league?.id || leaguePlayers.length === 0) return;
 
     setIsCalculating(true);
     try {
-      const calculatedStandings = await calculateStandings(league.id, leaguePlayers);
+      const calculatedStandings = await calculateStandings(league.id, leaguePlayers, league?.pointAdjustments || {});
       const calculatedStreaks = await calculateWinStreaks(league.id, leaguePlayers);
 
       setStandings(calculatedStandings);
@@ -183,7 +242,21 @@ export default function LeagueDetailPage() {
     }
   };
 
-  // Disable admin actions if league is already completed
+  /**
+   * Apply a manual point adjustment to a player (bonus or deduction).
+   * Writes the adjustment to the league document's `pointAdjustments` map.
+   * The Firestore `onSnapshot` listener will fire, causing the standings
+   * to be recalculated automatically via the `useEffect` above.
+   */
+  const handleAdjustPoints = async (playerId: string, adjustment: number, reason: string) => {
+    if (!league?.id) return;
+    await adjustPlayerPoints(league.id, playerId, adjustment, reason);
+  };
+
+  /**
+   * Admin controls (edit matches, adjust points, end league) are only active while
+   * the league is still ongoing. Completed leagues are read-only.
+   */
   const isEditable = isAuthenticated && league?.status !== 'completed';
   const loading = leagueLoading || matchesLoading;
 
@@ -194,7 +267,7 @@ export default function LeagueDetailPage() {
         <Container maxWidth="2xl" className="py-4 sm:py-8">
           <div className="text-center py-16">
             <Loader2 className="w-12 h-12 text-cyber-400 mx-auto mb-4 animate-spin" />
-            <p className="text-gray-400">Loading league...</p>
+            <p className="text-light-600 dark:text-gray-400">Loading league...</p>
           </div>
         </Container>
       </MainLayout>
@@ -207,8 +280,8 @@ export default function LeagueDetailPage() {
         <GlobalNavigation />
         <Container maxWidth="2xl" className="py-4 sm:py-8">
           <div className="text-center py-16">
-            <h3 className="text-xl font-bold text-gray-400 mb-2">League Not Found</h3>
-            <p className="text-gray-500 mb-6">This league does not exist or has been deleted</p>
+            <h3 className="text-xl font-bold text-light-700 dark:text-gray-400 mb-2">League Not Found</h3>
+            <p className="text-light-500 dark:text-gray-500 mb-6">This league does not exist or has been deleted</p>
             <button
               onClick={() => router.push('/leagues')}
               className="px-6 py-2 bg-cyber-500 hover:bg-cyber-600 text-white rounded-tech-lg transition-colors"
@@ -243,7 +316,7 @@ export default function LeagueDetailPage() {
           />
         );
       case 'standings':
-        return <Standings standings={standings} leagueId={league.id!} {...sectionProps} />;
+        return <Standings standings={standings} leagueId={league.id!} isEditable={isEditable} onAdjustPoints={isEditable ? handleAdjustPoints : undefined} {...sectionProps} />;
       case 'results':
         return <Results matches={matches} players={leaguePlayers} onMatchUpdated={isEditable ? handleMatchUpdated : undefined} {...sectionProps} />;
       case 'streaks':
@@ -264,18 +337,18 @@ export default function LeagueDetailPage() {
   return (
     <MainLayout>
       <GlobalNavigation />
-      <Container maxWidth="2xl" className="py-4 sm:py-8 pb-24 md:pb-12">
+      <Container maxWidth="2xl" className="py-2 sm:py-8 pb-24 md:pb-12">
         {/* Back Button */}
         <button
           onClick={() => router.push('/leagues')}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
+          className="flex items-center gap-2 text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white transition-colors mb-1 sm:mb-2"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Leagues</span>
         </button>
 
         {/* Layout with Sidebar */}
-        <div className="flex flex-col md:flex-row gap-8">
+        <div className="flex flex-col md:flex-row gap-2 md:gap-8">
           {/* Sidebar Navigation */}
           <LeagueSidebar
             activeSection={activeSection}

@@ -25,7 +25,7 @@ export default function Table({
   striped = false
 }: TableProps) {
   return (
-    <div className={`overflow-x-auto ${className}`}>
+    <div className={`overflow-x-auto custom-scrollbar ${className}`}>
       <table className="w-full">
         {/* Header */}
         <thead>

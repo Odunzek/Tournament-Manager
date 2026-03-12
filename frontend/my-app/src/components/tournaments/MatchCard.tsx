@@ -1,3 +1,21 @@
+/**
+ * MatchCard — Tournament match display card.
+ *
+ * Renders a single match for the Fixtures/Groups sections of a tournament.
+ * Handles three match states:
+ *   - **Scheduled**: Shows "VS" in the score area and (optionally) a "Record Result" button.
+ *   - **Completed**: Animates in the score with a gradient text effect.
+ *   - **Live**: The Card gets a `glow` effect to visually highlight the active match.
+ *
+ * Optional display props:
+ *   - `showGroup`: Shows the round/group label (e.g., "Group A", "Semi-Final") in the header.
+ *   - `showDate`: Shows the scheduled date and time in the footer.
+ *
+ * Two-legged knockout ties display a "1st Leg" / "2nd Leg" pill badge below the score.
+ *
+ * The card becomes clickable when an `onClick` handler is provided (cursor changes to pointer
+ * and the Card gets lift-on-hover animation via the `hover` prop).
+ */
 "use client";
 
 import React from 'react';
@@ -68,7 +86,7 @@ export default function MatchCard({
                 >
                   {match.homeScore}
                 </motion.div>
-                <span className="text-gray-500">-</span>
+                <span className="text-light-500 dark:text-gray-500">-</span>
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -78,7 +96,7 @@ export default function MatchCard({
                 </motion.div>
               </div>
             ) : (
-              <div className="text-lg font-semibold text-gray-500">VS</div>
+              <div className="text-lg font-semibold text-light-500 dark:text-gray-500">VS</div>
             )}
           </div>
 

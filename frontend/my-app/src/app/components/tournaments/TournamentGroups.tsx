@@ -349,7 +349,7 @@ function GroupCard({
         <h6 className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">
           Standings
         </h6>
-        <div className="-mx-2 sm:mx-0 overflow-x-auto">
+        <div className="-mx-2 sm:mx-0 overflow-x-auto custom-scrollbar">
           <div className="min-w-[320px] px-2 sm:px-0 space-y-2">
             {sorted.map((s, i) => (
               <div

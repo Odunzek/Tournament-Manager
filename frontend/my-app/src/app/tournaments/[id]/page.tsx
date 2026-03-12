@@ -324,7 +324,7 @@ function TournamentDetailContent() {
         <div className="min-h-screen bg-gradient-to-br from-light-100 via-light-200 to-light-300 dark:from-dark-50 dark:via-dark-100 dark:to-dark-200 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="w-12 h-12 text-cyber-400 animate-spin mx-auto mb-4" />
-            <p className="text-gray-400">Loading tournament...</p>
+            <p className="text-light-600 dark:text-gray-400">Loading tournament...</p>
           </div>
         </div>
       </MainLayout>
@@ -355,7 +355,7 @@ function TournamentDetailContent() {
       <GlobalNavigation />
       <div className="min-h-screen bg-gradient-to-br from-light-100 via-light-200 to-light-300 dark:from-dark-50 dark:via-dark-100 dark:to-dark-200">
         {/* Mobile Header */}
-        <div className="md:hidden bg-light-50/95 dark:bg-dark-100/95 backdrop-blur-xl border-b border-black/10 dark:border-white/10 sticky top-0 z-40 px-4 py-3">
+        <div className="md:hidden bg-light-50/95 dark:bg-dark-100/95 backdrop-blur-xl border-b border-black/10 dark:border-white/10 sticky top-0 z-40 px-4 py-1.5">
           <Button
             variant="ghost"
             size="sm"
@@ -376,7 +376,7 @@ function TournamentDetailContent() {
 
           {/* Main Content */}
           <main className="flex-1 min-h-screen">
-            <Container maxWidth="2xl" className="py-6 sm:py-8 pb-24 md:pb-8">
+            <Container maxWidth="2xl" className="py-2 sm:py-8 pb-24 md:pb-8">
               {/* Desktop Back Button */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}

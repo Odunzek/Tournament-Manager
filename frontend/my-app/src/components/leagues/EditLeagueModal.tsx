@@ -116,7 +116,7 @@ export default function EditLeagueModal({ isOpen, onClose, league }: EditLeagueM
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="fixed inset-x-0 bottom-0 sm:inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
           >
-            <div className="bg-light-50 dark:bg-dark-50 border border-black/10 dark:border-white/10 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="bg-light-50 dark:bg-dark-50 border border-black/10 dark:border-white/10 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl">
 
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-black/10 dark:border-white/10">

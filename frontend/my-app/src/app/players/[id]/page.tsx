@@ -200,7 +200,7 @@ export default function PlayerDetailPage() {
             <Trophy className="w-5 h-5 text-yellow-400" />
             Achievements
           </h2>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto custom-scrollbar">
             <TrophyDisplay
               leagueWins={player.achievements.leagueWins}
               tournamentWins={player.achievements.tournamentWins}

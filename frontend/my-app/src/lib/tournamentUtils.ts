@@ -1,3 +1,31 @@
+/**
+ * @file tournamentUtils.ts
+ *
+ * Core utility module for the FIFA League Manager tournament system.
+ * Provides all data-access and business-logic functions for creating,
+ * managing, and progressing tournaments stored in Firebase Firestore.
+ *
+ * Supported tournament formats:
+ *  - **League (custom):** Round-robin group stage only. Every team plays
+ *    every other team home and away; final standings decide the winner.
+ *  - **Knockout:** Single-elimination bracket with two-legged ties.
+ *    Aggregate scores determine the winner; tied aggregates trigger a replay.
+ *  - **Groups + Knockout (champions_league):** Group stage followed by a
+ *    knockout bracket. Top finishers from each group qualify, and the best
+ *    third-place teams may also advance to fill a power-of-two bracket.
+ *
+ * Key responsibilities:
+ *  - CRUD operations for tournaments and their members in Firestore.
+ *  - Automatic group generation with round-robin fixture scheduling.
+ *  - Recording and editing match results for both group and knockout stages.
+ *  - Calculating and sorting group standings (points, GD, GF tiebreakers).
+ *  - Qualifying teams from groups into a properly-sized knockout bracket.
+ *  - Generating knockout ties, detecting round completion, and auto-advancing
+ *    winners to the next round (including replay handling for drawn aggregates).
+ *  - Real-time Firestore snapshot listeners for live UI updates.
+ *  - Manual point adjustment support (deductions / bonuses).
+ */
+
 // lib/tournamentUtils.ts
 import {
   collection,
@@ -16,6 +44,19 @@ import {
 import { db } from './firebase';
 import { v4 as uuidv4 } from "uuid";
 
+/**
+ * Converts a Firestore Timestamp (or any timestamp-like value) into a native JavaScript Date.
+ *
+ * Handles multiple input formats gracefully:
+ * - Native `Date` objects are returned as-is.
+ * - Firestore `Timestamp` instances (with `.toDate()`) are converted.
+ * - Plain objects with a `seconds` field are treated as epoch seconds.
+ * - Strings and numbers are parsed via the `Date` constructor.
+ * - Falsy / unparseable values fall back to `new Date()` (current time).
+ *
+ * @param timestamp - The value to convert. Can be a Firestore Timestamp, Date, number, string, or null/undefined.
+ * @returns A JavaScript `Date` representing the same point in time.
+ */
 // Convert Firestore Timestamp to JavaScript Date
 export const convertTimestamp = (timestamp: any): Date => {
   if (!timestamp) return new Date();
@@ -43,6 +84,19 @@ export const convertTimestamp = (timestamp: any): Date => {
   }
 };
 
+/**
+ * Recursively strips all `undefined` and `null` values from an object or array.
+ *
+ * Firestore rejects documents that contain `undefined` fields, so this helper
+ * is called before every write to ensure the payload is clean.
+ *
+ * - Arrays are mapped recursively; null/undefined elements are filtered out.
+ * - Objects are cloned with only defined, non-null properties.
+ * - Primitives are returned as-is.
+ *
+ * @param obj - The value to sanitize (object, array, or primitive).
+ * @returns A deep-cleaned copy of `obj`, or `null` if the input itself is null/undefined.
+ */
 // Remove ALL undefined values
 const removeUndefinedValues = (obj: any): any => {
   if (obj === null || obj === undefined) {
@@ -51,6 +105,12 @@ const removeUndefinedValues = (obj: any): any => {
 
   if (Array.isArray(obj)) {
     return obj.map(item => removeUndefinedValues(item)).filter(item => item !== null && item !== undefined);
+  }
+
+  // Date objects must be passed through as-is — they have typeof === 'object'
+  // but Object.keys() returns [] for them, which would strip them to {}
+  if (obj instanceof Date) {
+    return obj;
   }
 
   if (typeof obj === 'object') {

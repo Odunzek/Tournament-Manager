@@ -35,11 +35,13 @@ const statusConfig: Record<Status, {
 
 export default function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
   const config = statusConfig[status];
+  const sizeClass = size === 'sm' ? '!px-2 !py-0.5 !text-[10px] sm:!text-xs !border' : '';
 
   return (
     <Badge
       variant={config.variant}
       glow={status === 'group_stage' || status === 'knockout' || status === 'active' || status === 'live'}
+      className={sizeClass}
     >
       {config.label}
     </Badge>

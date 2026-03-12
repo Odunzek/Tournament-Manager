@@ -100,6 +100,13 @@ export default function PlayerCard({
           </p>
         )}
 
+        {/* Compact mobile titles for sm size */}
+        {size === 'sm' && (
+          <span className={`text-[10px] font-bold mt-0.5 sm:hidden ${isHallOfFame ? 'text-yellow-400' : 'text-light-600 dark:text-gray-400'}`}>
+            <Trophy className="w-2.5 h-2.5 inline mr-0.5" />{player.achievements.totalTitles}
+          </span>
+        )}
+
         {/* Total Titles Badge (hidden on mobile for sm size) */}
         <div
           className={`

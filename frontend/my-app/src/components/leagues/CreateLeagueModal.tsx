@@ -29,7 +29,7 @@ export default function CreateLeagueModal({
   onSubmit,
   players,
 }: CreateLeagueModalProps) {
-  const { activeSeason } = useActiveSeason();
+  const { activeSeason, loading: seasonLoading } = useActiveSeason();
   const [formData, setFormData] = useState({
     name: '',
     season: '',
@@ -130,7 +130,7 @@ export default function CreateLeagueModal({
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="fixed inset-x-0 bottom-0 sm:inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
           >
-            <div className="bg-light-50 dark:bg-dark-50 border border-black/10 dark:border-white/10 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl">
+            <div className="bg-light-50 dark:bg-dark-50 border border-black/10 dark:border-white/10 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto custom-scrollbar shadow-2xl">
 
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-black/10 dark:border-white/10">
@@ -149,17 +149,23 @@ export default function CreateLeagueModal({
               {/* Form */}
               <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
 
+                {/* Guard: no active season */}
+                {!seasonLoading && !activeSeason ? (
+                  <div className="text-center py-10 space-y-3">
+                    <Trophy className="w-12 h-12 text-gray-500 mx-auto" />
+                    <p className="font-semibold text-light-900 dark:text-white">No Active Season</p>
+                    <p className="text-sm text-light-600 dark:text-gray-400">
+                      Create and activate a season before adding a league.
+                    </p>
+                  </div>
+                ) : (
+                <>
                 {/* Active Season badge */}
-                {activeSeason ? (
+                {activeSeason && (
                   <div className="flex items-center gap-2 px-3 py-2 bg-cyber-500/10 border border-cyber-500/30 rounded-xl">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shrink-0" />
                     <span className="text-xs text-light-700 dark:text-gray-300">Season:</span>
                     <span className="text-xs font-bold text-cyber-600 dark:text-cyber-400 truncate">{activeSeason.name}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                    <span className="text-xs text-amber-400">No active season — league won&apos;t be linked to a season.</span>
                   </div>
                 )}
 
@@ -253,7 +259,7 @@ export default function CreateLeagueModal({
 
                   {/* Player list */}
                   {players.length > 0 ? (
-                    <div className="max-h-44 overflow-y-auto rounded-xl border border-black/10 dark:border-white/10 divide-y divide-black/5 dark:divide-white/5">
+                    <div className="max-h-44 overflow-y-auto custom-scrollbar rounded-xl border border-black/10 dark:border-white/10 divide-y divide-black/5 dark:divide-white/5">
                       {players
                         .filter((p) =>
                           p.name.toLowerCase().includes(playerSearch.toLowerCase()) ||
@@ -304,10 +310,11 @@ export default function CreateLeagueModal({
                   <Button type="button" variant="ghost" className="flex-1" onClick={onClose} disabled={isSubmitting}>
                     Cancel
                   </Button>
-                  <Button type="submit" variant="primary" className="flex-1" isLoading={isSubmitting} glow>
+                  <Button type="submit" variant="primary" className="flex-1" isLoading={isSubmitting} disabled={isSubmitting || seasonLoading} glow>
                     {isSubmitting ? 'Creating...' : 'Create League'}
                   </Button>
                 </div>
+                </>)}
               </form>
             </div>
           </motion.div>

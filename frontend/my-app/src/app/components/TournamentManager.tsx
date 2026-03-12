@@ -1011,7 +1011,7 @@ export default function TournamentManager() {
                 </div>
                 {/* Sub-Navigation Tabs */}
                 <div className="bg-gray-50 px-3 sm:px-6 py-2.5 sm:py-3 border-b border-gray-200">
-                  <div className="flex space-x-2 overflow-x-auto whitespace-nowrap">
+                  <div className="flex space-x-2 overflow-x-auto custom-scrollbar whitespace-nowrap">
                     {[
                       { id: "overview", label: "Overview", icon: "📊" },
                       { id: "teams", label: "Teams", icon: "👥" },
@@ -1062,7 +1062,7 @@ export default function TournamentManager() {
                 <div className="p-4 sm:p-6">
                   {/* Overview Tab */}
                   {manageTab === "overview" && (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto custom-scrollbar">
                       <TournamentOverview
                         tournament={selectedTournament}
                         isLoading={isLoading}
@@ -1075,7 +1075,7 @@ export default function TournamentManager() {
 
                   {/* Teams Tab */}
                   {manageTab === "teams" && (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto custom-scrollbar">
                       <TournamentTeams
                         tournament={selectedTournament}
                         tournamentMembers={tournamentMembers}
@@ -1094,7 +1094,7 @@ export default function TournamentManager() {
 
                   {/* Groups Tab */}
                   {manageTab === "groups" && (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto custom-scrollbar">
                       <TournamentGroups
                         tournament={selectedTournament}
                         isLoading={isLoading}
@@ -1109,7 +1109,7 @@ export default function TournamentManager() {
 
                   {/* Knockout Tab */}
                   {manageTab === "knockout" && (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto custom-scrollbar">
                       <TournamentKnockout
                         tournament={selectedTournament}
                         isLoading={isLoading}
@@ -1133,7 +1133,7 @@ export default function TournamentManager() {
 
                   {/* Results Tab */}
                   {manageTab === "results" && (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto custom-scrollbar">
                       <TournamentResults tournament={selectedTournament} />
                     </div>
                   )}
@@ -1167,7 +1167,7 @@ export default function TournamentManager() {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="max-h-[90vh] overflow-auto rounded-2xl">
+          <div className="max-h-[90vh] overflow-auto custom-scrollbar rounded-2xl">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300">
               <div className="p-8">
                 <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-red-100 rounded-full">
@@ -1213,7 +1213,7 @@ export default function TournamentManager() {
       {/* Match Recording Modal - Handles both Group and Knockout matches */}
       {(recordingMatch || recordingKnockoutMatch) && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="max-h-[90vh] overflow-auto rounded-2xl">
+          <div className="max-h-[90vh] overflow-auto custom-scrollbar rounded-2xl">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300">
               <div className="p-8">
                 <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-blue-100 rounded-full">

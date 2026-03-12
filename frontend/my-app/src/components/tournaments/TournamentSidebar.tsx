@@ -24,7 +24,7 @@ const navItems: NavItem[] = [
   { id: 'fixtures', label: 'Fixtures', icon: <Calendar className="w-5 h-5" /> },
   { id: 'teams', label: 'Teams', icon: <Trophy className="w-5 h-5" /> },
   { id: 'knockout', label: 'Knockout', icon: <Target className="w-5 h-5" /> },
-  { id: 'results', label: 'Results', icon: <BarChart3 className="w-5 h-5" /> },
+  { id: 'results', label: 'Stats', icon: <BarChart3 className="w-5 h-5" /> },
 ];
 
 export default function TournamentSidebar({

@@ -1,7 +1,16 @@
 /**
- * Firebase Player Utilities
+ * @file playerUtils.ts
+ * @description Firebase Player Utilities — CRUD operations, real-time subscriptions,
+ * achievement management, and Hall of Fame tracking for player records.
  *
- * CRUD operations and real-time subscriptions for player management
+ * Players are the core entities in the FIFA League Manager. Each player has:
+ * - Basic info (name, PSN ID, avatar)
+ * - Global achievements (lifetime league/tournament wins, tier, Hall of Fame status)
+ * - Per-season achievements (wins scoped to a specific season)
+ *
+ * When a player is created they are automatically appended to the P4P (pound-for-pound)
+ * rankings at the bottom. Deleting a player performs a cascade removal from rankings,
+ * active/upcoming leagues, and upcoming tournaments while preserving historical data.
  */
 
 import {
@@ -27,7 +36,14 @@ import { Player, PlayerFormData, SeasonAchievements, calculateTier } from '@/typ
 import { getActiveSeason } from './seasonUtils';
 
 /**
- * Create a new player in Firestore
+ * Create a new player in Firestore.
+ *
+ * Also auto-adds the player to the global P4P rankings at the lowest position.
+ * If the player has at least 1 title, an `inductionDate` is recorded for Hall of Fame eligibility.
+ *
+ * @param playerData - Player form fields plus optional pre-set achievement counts.
+ * @returns The Firestore document ID of the newly created player.
+ * @throws If the Firestore write fails.
  */
 export const createPlayer = async (
   playerData: PlayerFormData & {
@@ -105,7 +121,11 @@ export const createPlayer = async (
 };
 
 /**
- * Get all players from Firestore
+ * Get all players from Firestore, ordered by creation date (newest first).
+ *
+ * Firestore Timestamps are normalised to ISO-8601 strings for consistency.
+ *
+ * @returns Array of all Player objects. Returns an empty array on error.
  */
 export const getPlayers = async (): Promise<Player[]> => {
   try {
@@ -137,7 +157,10 @@ export const getPlayers = async (): Promise<Player[]> => {
 };
 
 /**
- * Get a single player by ID
+ * Get a single player by their Firestore document ID.
+ *
+ * @param playerId - The Firestore document ID of the player.
+ * @returns The Player object if found, or `null` if not found or on error.
  */
 export const getPlayerById = async (playerId: string): Promise<Player | null> => {
   try {
@@ -170,7 +193,15 @@ export const getPlayerById = async (playerId: string): Promise<Player | null> =>
 };
 
 /**
- * Update a player's information
+ * Update a player's information (name, PSN ID, avatar, and/or achievements).
+ *
+ * When achievements are provided the tier and totalTitles are recalculated.
+ * If the player crosses the Hall of Fame threshold (1+ titles) for the first time,
+ * an `inductionDate` is stamped automatically.
+ *
+ * @param playerId - Firestore document ID of the player to update.
+ * @param updates  - Partial player form fields and optional achievement overrides.
+ * @throws If the player is not found or the Firestore write fails.
  */
 export const updatePlayer = async (
   playerId: string,
@@ -358,7 +389,13 @@ export const deletePlayer = async (playerId: string): Promise<void> => {
 };
 
 /**
- * Search players by name or PSN ID
+ * Search players by name or PSN ID (case-insensitive substring match).
+ *
+ * Fetches all players then filters client-side because Firestore does not
+ * natively support case-insensitive substring queries.
+ *
+ * @param searchQuery - The search term to match against player name or PSN ID.
+ * @returns Matching Player objects. Returns an empty array on error.
  */
 export const searchPlayers = async (searchQuery: string): Promise<Player[]> => {
   try {
@@ -376,7 +413,9 @@ export const searchPlayers = async (searchQuery: string): Promise<Player[]> => {
 };
 
 /**
- * Get Hall of Fame members (1+ titles)
+ * Get all Hall of Fame members (players with 1 or more total titles).
+ *
+ * @returns Array of Player objects that qualify for the Hall of Fame.
  */
 export const getHallOfFameMembers = async (): Promise<Player[]> => {
   try {

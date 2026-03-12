@@ -9,7 +9,7 @@ import Container from '@/components/layouts/Container';
 import GlobalNavigation from '@/components/layouts/GlobalNavigation';
 import PlayerAvatar from '@/components/players/PlayerAvatar';
 import PlayerFormModal from '@/components/players/PlayerFormModal';
-import HeadToHeadModal from '@/components/players/HeadToHeadModal';
+
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { Player, PlayerFilters } from '@/types/player';
@@ -24,7 +24,7 @@ export default function PlayersPage() {
   const { isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isH2HModalOpen, setIsH2HModalOpen] = useState(false);
+
   const [filters, setFilters] = useState<PlayerFilters>({
     search: '',
     hallOfFameOnly: false,
@@ -132,7 +132,7 @@ export default function PlayersPage() {
               variant="secondary"
               size="sm"
               leftIcon={<Target className="w-3.5 h-3.5" />}
-              onClick={() => setIsH2HModalOpen(true)}
+              onClick={() => router.push('/players/compare')}
               disabled={players.length < 2}
             >
               Compare
@@ -273,11 +273,6 @@ export default function PlayersPage() {
         mode="add"
       />
 
-      <HeadToHeadModal
-        isOpen={isH2HModalOpen}
-        onClose={() => setIsH2HModalOpen(false)}
-        players={players}
-      />
     </MainLayout>
   );
 }

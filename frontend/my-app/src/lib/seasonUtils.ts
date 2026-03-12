@@ -24,6 +24,7 @@ import {
   Timestamp,
   Unsubscribe,
   writeBatch,
+  WriteBatch,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Season, SeasonFormData } from '@/types/season';
@@ -182,8 +183,21 @@ export const getActiveSeason = async (): Promise<Season | null> => {
 };
 
 /**
- * Async lock to prevent concurrent activateSeason calls
+ * Helper: split operations into chunks of 499 and commit each as a separate batch.
+ * Firestore has a hard limit of 500 writes per batch.
  */
+async function commitInChunks(ops: Array<(batch: WriteBatch) => void>): Promise<void> {
+  const CHUNK = 499;
+  for (let i = 0; i < ops.length; i += CHUNK) {
+    const batch = writeBatch(db);
+    ops.slice(i, i + CHUNK).forEach((op) => op(batch));
+    await batch.commit();
+  }
+}
+
+// NOTE: This lock is JavaScript module-level only — it does NOT protect across
+// multiple browser tabs or server instances. For a small single-admin app this
+// is acceptable. A Firestore transaction would be needed for true atomicity.
 let activateSeasonLock = false;
 
 /**
@@ -222,6 +236,39 @@ export const activateSeason = async (seasonId: string, completePrevious = true):
       status: 'active',
       updatedAt: serverTimestamp(),
     });
+
+    // Copy global rankings into the season's rankings subcollection.
+    // Resets coolOff/wildCard for the fresh season.
+    // If this fails, roll back the season to 'setup' to keep data consistent.
+    try {
+      const globalSnap = await getDocs(
+        query(collection(db, 'rankings'), orderBy('rank', 'asc'))
+      );
+      if (!globalSnap.empty) {
+        const seasonRankingsCol = collection(db, SEASONS_COLLECTION, seasonId, 'rankings');
+        const rankOps = globalSnap.docs.map((d) => {
+          const data = d.data();
+          return (batch: WriteBatch) => {
+            batch.set(doc(seasonRankingsCol, data.memberId), {
+              memberId: data.memberId,
+              name: data.name,
+              rank: data.rank,
+              coolOff: '',
+              wildCard: '',
+              updatedAt: serverTimestamp(),
+            });
+          };
+        });
+        await commitInChunks(rankOps);
+      }
+    } catch (rankingsError) {
+      // Rollback: revert season to setup
+      await updateDoc(doc(db, SEASONS_COLLECTION, seasonId), {
+        status: 'setup',
+        updatedAt: serverTimestamp(),
+      });
+      throw new Error('Failed to copy rankings. Season activation was rolled back.');
+    }
 
     return result;
   } catch (error) {
@@ -302,28 +349,35 @@ export const subscribeToSeasons = (
  */
 export const deleteSeason = async (seasonId: string): Promise<void> => {
   try {
-    // 1. Remove seasonId from linked leagues (use deleteField instead of empty string)
+    // Guard: refuse to delete an active season
+    const seasonSnap = await getDoc(doc(db, SEASONS_COLLECTION, seasonId));
+    if (!seasonSnap.exists()) throw new Error('Season not found.');
+    if (seasonSnap.data()?.status === 'active') {
+      throw new Error('Cannot delete an active season. Complete or deactivate it first.');
+    }
+
+    // 1. Remove seasonId from linked leagues
     const leaguesSnap = await getDocs(
       query(collection(db, 'leagues'), where('seasonId', '==', seasonId))
     );
     if (!leaguesSnap.empty) {
-      const batch = writeBatch(db);
-      leaguesSnap.docs.forEach((d) => {
-        batch.update(doc(db, 'leagues', d.id), { seasonId: deleteField() });
-      });
-      await batch.commit();
+      await commitInChunks(
+        leaguesSnap.docs.map((d) => (batch) => {
+          batch.update(doc(db, 'leagues', d.id), { seasonId: deleteField() });
+        })
+      );
     }
 
-    // 2. Remove seasonId from linked tournaments (use deleteField instead of empty string)
+    // 2. Remove seasonId from linked tournaments
     const tournamentsSnap = await getDocs(
       query(collection(db, 'tournaments'), where('seasonId', '==', seasonId))
     );
     if (!tournamentsSnap.empty) {
-      const batch = writeBatch(db);
-      tournamentsSnap.docs.forEach((d) => {
-        batch.update(doc(db, 'tournaments', d.id), { seasonId: deleteField() });
-      });
-      await batch.commit();
+      await commitInChunks(
+        tournamentsSnap.docs.map((d) => (batch) => {
+          batch.update(doc(db, 'tournaments', d.id), { seasonId: deleteField() });
+        })
+      );
     }
 
     // 3. Clean up seasonAchievements from all player documents
@@ -333,14 +387,14 @@ export const deleteSeason = async (seasonId: string): Promise<void> => {
       return data.seasonAchievements && data.seasonAchievements[seasonId];
     });
     if (playersToClean.length > 0) {
-      const batch = writeBatch(db);
-      playersToClean.forEach((d) => {
-        batch.update(doc(db, 'players', d.id), {
-          [`seasonAchievements.${seasonId}`]: deleteField(),
-          updatedAt: new Date(),
-        });
-      });
-      await batch.commit();
+      await commitInChunks(
+        playersToClean.map((d) => (batch) => {
+          batch.update(doc(db, 'players', d.id), {
+            [`seasonAchievements.${seasonId}`]: deleteField(),
+            updatedAt: new Date(),
+          });
+        })
+      );
     }
 
     // 4. Delete rankings subcollection
@@ -348,11 +402,11 @@ export const deleteSeason = async (seasonId: string): Promise<void> => {
       collection(db, SEASONS_COLLECTION, seasonId, 'rankings')
     );
     if (!rankingsSnap.empty) {
-      const batch = writeBatch(db);
-      rankingsSnap.docs.forEach((d) => {
-        batch.delete(doc(db, SEASONS_COLLECTION, seasonId, 'rankings', d.id));
-      });
-      await batch.commit();
+      await commitInChunks(
+        rankingsSnap.docs.map((d) => (batch) => {
+          batch.delete(doc(db, SEASONS_COLLECTION, seasonId, 'rankings', d.id));
+        })
+      );
     }
 
     // 5. Delete the season document

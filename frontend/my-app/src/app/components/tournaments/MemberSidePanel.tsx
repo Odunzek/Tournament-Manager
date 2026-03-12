@@ -109,7 +109,7 @@ export default function MemberSidePanel({
           </div>
 
           {/* Body */}
-          <div className="p-4 sm:p-6 space-y-6 overflow-y-auto">
+          <div className="p-4 sm:p-6 space-y-6 overflow-y-auto custom-scrollbar">
             {/* Profile Section */}
             <section>
               <h4 className="text-sm font-semibold text-blue-700 mb-3">Profile</h4>
