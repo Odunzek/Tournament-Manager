@@ -167,6 +167,7 @@ export function useAuth() {
 /**
  * AuthModal — the Google sign-in popup UI.
  * Rendered in MainLayout, shown when `showAuthModal` is true.
+ * Uses the shared Modal component for consistent styling.
  * Handles the Google OAuth flow and displays error messages
  * (e.g., "Access denied" for unauthorized emails, popup closed, etc.)
  */
@@ -184,9 +185,8 @@ export function AuthModal() {
     } catch (err: unknown) {
       if (err instanceof Error) {
         if (err.message === 'ACCESS_DENIED') {
-          setError('Access denied. Your Google account is not authorized for admin access.');
+          setError('Access denied. Your account is not authorized for admin access.');
         } else if (err.message.includes('popup-closed-by-user')) {
-          // User closed the popup, don't show an error
           setError('');
         } else {
           setError('Sign-in failed. Please try again.');
@@ -207,79 +207,64 @@ export function AuthModal() {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-light-50 to-light-100 dark:from-dark-100 dark:to-dark-200 rounded-tech shadow-card-light dark:shadow-glow border border-cyber-500/20 dark:border-cyber-500/30 max-w-md w-full mx-4 transform transition-all duration-300">
-        <div className="p-8">
-          <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 bg-gradient-cyber rounded-tech shadow-glow">
-            <span className="text-3xl">🔐</span>
-          </div>
-          <h3 className="text-2xl font-bold text-light-900 dark:text-white text-center mb-3">
-            Admin Authentication
-          </h3>
-          <p className="text-light-600 dark:text-gray-400 text-center mb-8">
-            Sign in with your authorized Google account to access admin features
+      <div className="bg-gradient-to-br from-light-50 to-light-100 dark:from-dark-100 dark:to-dark-200 rounded-tech shadow-card-light dark:shadow-glow border border-cyber-500/20 dark:border-cyber-500/30 max-w-sm w-full transform transition-all duration-300">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 border-b border-black/10 dark:border-white/10">
+          <h2 className="text-base sm:text-lg font-bold text-light-900 dark:text-white">Admin Login</h2>
+          <button
+            onClick={handleClose}
+            className="text-light-500 dark:text-gray-400 hover:text-light-900 dark:hover:text-white transition-colors p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-4 py-4 sm:px-5 sm:py-5">
+          <p className="text-xs sm:text-sm text-light-600 dark:text-gray-400 mb-4">
+            Sign in with your authorized Google account to access admin features.
           </p>
 
-          <div className="space-y-6">
-            {error && (
-              <div className="flex items-center gap-2 text-red-400 bg-red-500/10 border border-red-500/30 rounded-tech px-4 py-3">
-                <span className="text-sm">⚠️</span>
-                <span className="text-sm font-medium">{error}</span>
-              </div>
-            )}
-
-            <button
-              onClick={handleGoogleSignIn}
-              disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-800 px-6 py-4 rounded-tech font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 border-2 border-gray-800 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Signing in...</span>
-                </div>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                  </svg>
-                  <span>Sign in with Google</span>
-                </>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={isLoading}
-              className="w-full bg-light-200 hover:bg-light-300 dark:bg-dark-50 dark:hover:bg-dark-100 text-light-700 dark:text-gray-300 px-6 py-4 rounded-tech font-bold transition-all duration-300 border border-black/10 dark:border-white/10 hover:border-black/20 dark:hover:border-white/20 disabled:opacity-50"
-            >
-              Cancel
-            </button>
-          </div>
-
-          <div className="mt-6 p-4 bg-cyber-500/10 rounded-tech border border-cyber-500/20">
-            <div className="flex items-start space-x-3">
-              <span className="text-cyber-400 text-lg mt-0.5">ℹ️</span>
-              <div className="text-sm text-light-600 dark:text-gray-400">
-                <p>Only authorized Google accounts can access admin features. Contact the administrator if you need access.</p>
-              </div>
+          {error && (
+            <div className="flex items-start gap-2 text-red-400 bg-red-500/10 border border-red-500/30 rounded-tech px-3 py-2 mb-4">
+              <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+              <span className="text-xs sm:text-sm font-medium">{error}</span>
             </div>
-          </div>
+          )}
+
+          <button
+            onClick={handleGoogleSignIn}
+            disabled={isLoading}
+            className="w-full flex items-center justify-center gap-2.5 bg-white hover:bg-gray-50 text-gray-800 px-4 py-2.5 sm:py-3 rounded-tech font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          >
+            {isLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-gray-800 border-t-transparent rounded-full animate-spin"></div>
+                <span>Signing in...</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+                <span>Sign in with Google</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 py-3 sm:px-5 border-t border-black/10 dark:border-white/10 bg-light-200/50 dark:bg-dark-200/50">
+          <p className="text-[11px] sm:text-xs text-light-500 dark:text-gray-500 text-center">
+            Only authorized accounts can access admin features.
+          </p>
         </div>
       </div>
     </div>
