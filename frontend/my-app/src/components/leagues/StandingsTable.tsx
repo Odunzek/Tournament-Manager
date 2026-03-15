@@ -21,7 +21,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, ChevronUp, ChevronDown, Crown, Medal, Settings } from 'lucide-react';
+import { ArrowUpRight, ChevronUp, ChevronDown, Crown, Medal, Settings, UserMinus } from 'lucide-react';
 import { LeaguePlayer } from '@/types/league';
 import { useRouter } from 'next/navigation';
 import PointAdjustmentModal from '../tournaments/PointAdjustmentModal';
@@ -33,13 +33,14 @@ interface StandingsTableProps {
   currentUserId?: string;         // Highlights the current user's row (future use)
   isEditable?: boolean;           // Shows the point adjustment gear icon when true
   onAdjustPoints?: (playerId: string, adjustment: number, reason: string) => Promise<void>;
+  onRemovePlayer?: (playerId: string, playerName: string) => void;
 }
 
 /** Fields that can be used as the active sort key */
 type SortField = 'position' | 'name' | 'points' | 'goalsFor' | 'goalDifference';
 type SortDirection = 'asc' | 'desc';
 
-export default function StandingsTable({ players, leagueId, currentUserId, isEditable, onAdjustPoints }: StandingsTableProps) {
+export default function StandingsTable({ players, leagueId, currentUserId, isEditable, onAdjustPoints, onRemovePlayer }: StandingsTableProps) {
   const router = useRouter();
   // Default: sort by position ascending (matches the calculated league order)
   const [sortField, setSortField] = useState<SortField>('position');
@@ -263,6 +264,18 @@ export default function StandingsTable({ players, leagueId, currentUserId, isEdi
                             title="Adjust points"
                           >
                             <Settings className="w-3 h-3" />
+                          </button>
+                        )}
+                        {isEditable && onRemovePlayer && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRemovePlayer(player.id, player.name);
+                            }}
+                            className="p-0.5 rounded hover:bg-red-500/15 transition-colors text-light-500 dark:text-gray-500 hover:text-red-400"
+                            title="Remove from league"
+                          >
+                            <UserMinus className="w-3 h-3" />
                           </button>
                         )}
                       </div>

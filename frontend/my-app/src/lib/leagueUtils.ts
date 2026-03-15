@@ -228,6 +228,79 @@ export const addPlayersToLeague = async (
 };
 
 /**
+ * Remove a player from a league and delete all their match results.
+ *
+ * Steps:
+ *   1. Remove the player ID from the league's `playerIds` array.
+ *   2. Recalculate `totalMatches` for the reduced roster (n(n-1)/2).
+ *   3. Query and delete every match where the player was involved.
+ *   4. Decrement `matchesPlayed` by the number of deleted matches.
+ *   5. Remove any `pointAdjustments` for the player.
+ *
+ * @param leagueId - The Firestore document ID of the league.
+ * @param playerId - The ID of the player to remove.
+ * @throws If the league document is not found or Firestore operations fail.
+ */
+export const removePlayerFromLeague = async (
+  leagueId: string,
+  playerId: string
+): Promise<void> => {
+  try {
+    const league = await getLeagueById(leagueId);
+    if (!league) {
+      throw new Error('League not found');
+    }
+
+    // 1. Remove player from the roster
+    const currentPlayerIds = league.playerIds || [];
+    const updatedPlayerIds = currentPlayerIds.filter(id => id !== playerId);
+
+    // 2. Recalculate total matches for the reduced roster
+    const numPlayers = updatedPlayerIds.length;
+    const totalMatches = numPlayers > 1 ? (numPlayers * (numPlayers - 1)) / 2 : 0;
+
+    // 3. Find and delete all matches involving this player
+    const matchesQuery = query(
+      collection(db, MATCHES_COLLECTION),
+      where('leagueId', '==', leagueId)
+    );
+    const matchesSnapshot = await getDocs(matchesQuery);
+
+    let deletedMatchCount = 0;
+    const deletePromises: Promise<void>[] = [];
+
+    matchesSnapshot.forEach((matchDoc) => {
+      const match = matchDoc.data();
+      if (match.playerA === playerId || match.playerB === playerId) {
+        deletePromises.push(deleteDoc(doc(db, MATCHES_COLLECTION, matchDoc.id)));
+        if (match.played) {
+          deletedMatchCount++;
+        }
+      }
+    });
+
+    await Promise.all(deletePromises);
+
+    // 4. Build the league update
+    const newMatchesPlayed = Math.max(0, (league.matchesPlayed || 0) - deletedMatchCount);
+
+    // 5. Remove point adjustments for this player
+    const pointAdjustments = { ...(league.pointAdjustments || {}) };
+    delete pointAdjustments[playerId];
+
+    await updateLeague(leagueId, {
+      playerIds: updatedPlayerIds,
+      totalMatches,
+      matchesPlayed: newMatchesPlayed,
+      pointAdjustments,
+    });
+  } catch (error) {
+    console.error('Error removing player from league:', error);
+    throw error;
+  }
+};
+
+/**
  * Fetch all matches belonging to a given league, sorted newest-first.
  *
  * Implements a fallback strategy for backward compatibility:

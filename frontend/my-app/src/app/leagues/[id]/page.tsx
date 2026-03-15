@@ -46,7 +46,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useLeague, useLeagueMatches } from '@/hooks/useLeagues';
 import { usePlayers } from '@/hooks/usePlayers';
 import { useAuth } from '@/lib/AuthContext';
-import { calculateStandings, calculateWinStreaks, addPlayersToLeague, updateLeague, adjustPlayerPoints } from '@/lib/leagueUtils';
+import { calculateStandings, calculateWinStreaks, addPlayersToLeague, removePlayerFromLeague, updateLeague, adjustPlayerPoints } from '@/lib/leagueUtils';
 import { incrementLeagueWins } from '@/lib/playerUtils';
 import { LeaguePlayer, WinStreak } from '@/types/league';
 
@@ -72,6 +72,7 @@ export default function LeagueDetailPage() {
   const [isCalculating, setIsCalculating] = useState(false);
   const [isAddPlayersModalOpen, setIsAddPlayersModalOpen] = useState(false);
   const [endLeagueConfirmOpen, setEndLeagueConfirmOpen] = useState(false);
+  const [removePlayerConfirm, setRemovePlayerConfirm] = useState<{ id: string; name: string } | null>(null);
 
   /**
    * Derive the filtered list of players who belong to this league.
@@ -254,6 +255,21 @@ export default function LeagueDetailPage() {
   };
 
   /**
+   * Remove a player from the league and delete all their matches.
+   * Called after user confirms in the ConfirmModal.
+   */
+  const doRemovePlayer = async () => {
+    if (!league?.id || !removePlayerConfirm) return;
+    try {
+      await removePlayerFromLeague(league.id, removePlayerConfirm.id);
+    } catch (error) {
+      console.error('Error removing player from league:', error);
+    } finally {
+      setRemovePlayerConfirm(null);
+    }
+  };
+
+  /**
    * Admin controls (edit matches, adjust points, end league) are only active while
    * the league is still ongoing. Completed leagues are read-only.
    */
@@ -316,7 +332,7 @@ export default function LeagueDetailPage() {
           />
         );
       case 'standings':
-        return <Standings standings={standings} leagueId={league.id!} isEditable={isEditable} onAdjustPoints={isEditable ? handleAdjustPoints : undefined} {...sectionProps} />;
+        return <Standings standings={standings} leagueId={league.id!} isEditable={isEditable} onAdjustPoints={isEditable ? handleAdjustPoints : undefined} onRemovePlayer={isEditable ? (playerId, playerName) => setRemovePlayerConfirm({ id: playerId, name: playerName }) : undefined} {...sectionProps} />;
       case 'results':
         return <Results matches={matches} players={leaguePlayers} onMatchUpdated={isEditable ? handleMatchUpdated : undefined} {...sectionProps} />;
       case 'streaks':
@@ -381,6 +397,17 @@ export default function LeagueDetailPage() {
         isDestructive
         onConfirm={doEndLeague}
         onCancel={() => setEndLeagueConfirmOpen(false)}
+      />
+
+      {/* Remove Player Confirmation */}
+      <ConfirmModal
+        isOpen={!!removePlayerConfirm}
+        title="Remove Player?"
+        message={`Remove ${removePlayerConfirm?.name || 'this player'} from the league? All their match results will be deleted. This cannot be undone.`}
+        confirmLabel="Remove"
+        isDestructive
+        onConfirm={doRemovePlayer}
+        onCancel={() => setRemovePlayerConfirm(null)}
       />
     </MainLayout>
   );
