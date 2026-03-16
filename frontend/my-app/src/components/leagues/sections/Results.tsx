@@ -25,10 +25,10 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { ListChecks, Filter, Users, Trophy, Edit3, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { ListChecks, Filter, Users, Trophy, Edit3, User, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { LeagueMatch } from '@/types/league';
 import { Player } from '@/types/player';
-import { convertTimestamp } from '@/lib/leagueUtils';
+import { convertTimestamp, deleteMatch } from '@/lib/leagueUtils';
 import { useAuth } from '@/lib/AuthContext';
 import Card from '../../ui/Card';
 import EditMatchModal from '../EditMatchModal';
@@ -73,12 +73,27 @@ function getMatchResult(match: LeagueMatch, perspectivePlayerId: string) {
 function MatchRow({ match, onMatchUpdated }: { match: LeagueMatch; onMatchUpdated?: () => void }) {
   const { isAuthenticated } = useAuth();
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const matchDate = convertTimestamp(match.date);
   const scoreA = match.scoreA || 0;
   const scoreB = match.scoreB || 0;
   const isDraw = scoreA === scoreB;
   const playerAWon = scoreA > scoreB;
   const playerBWon = scoreB > scoreA;
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+      await deleteMatch(match.id, match.leagueId);
+      if (onMatchUpdated) onMatchUpdated();
+    } catch (err) {
+      console.error('Error deleting match:', err);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
 
   return (
     <>
@@ -107,20 +122,52 @@ function MatchRow({ match, onMatchUpdated }: { match: LeagueMatch; onMatchUpdate
           </div>
         </div>
 
-        <div className="flex items-center gap-2 ml-2">
+        <div className="flex items-center gap-1 ml-2">
           <span className="text-[10px] text-light-500 dark:text-gray-500 hidden sm:inline">
             {matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </span>
           {isAuthenticated && (
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="text-light-500 dark:text-gray-500 hover:text-cyber-400 transition-colors"
-            >
-              <Edit3 className="w-3 h-3" />
-            </button>
+            <>
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="p-1 rounded text-cyber-400 hover:text-cyber-300 hover:bg-cyber-500/10 transition-colors"
+                title="Edit match"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="p-1 rounded text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                title="Delete match"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </>
           )}
         </div>
       </div>
+
+      {/* Delete confirmation */}
+      {showDeleteConfirm && (
+        <div className="flex items-center justify-between gap-2 px-2 py-1.5 mb-1 rounded-lg bg-red-500/10 border border-red-500/20">
+          <span className="text-[11px] text-red-400 font-medium">Delete this match?</span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="px-2 py-0.5 rounded text-[11px] font-bold text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-50"
+            >
+              {isDeleting ? '...' : 'Delete'}
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              className="px-2 py-0.5 rounded text-[11px] font-medium text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       <EditMatchModal
         isOpen={showEditModal}
@@ -139,11 +186,26 @@ function CompactMatchRow({ match, perspectivePlayerId, onMatchUpdated }: {
 }) {
   const { isAuthenticated } = useAuth();
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const result = getMatchResult(match, perspectivePlayerId);
   const isHome = match.playerA === perspectivePlayerId;
   const myScore = isHome ? (match.scoreA || 0) : (match.scoreB || 0);
   const oppScore = isHome ? (match.scoreB || 0) : (match.scoreA || 0);
   const matchDate = convertTimestamp(match.date);
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+      await deleteMatch(match.id, match.leagueId);
+      if (onMatchUpdated) onMatchUpdated();
+    } catch (err) {
+      console.error('Error deleting match:', err);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
 
   return (
     <>
@@ -154,21 +216,53 @@ function CompactMatchRow({ match, perspectivePlayerId, onMatchUpdated }: {
             {isHome ? 'H' : 'A'}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <span className={`text-xs font-bold ${result.color}`}>{myScore} – {oppScore}</span>
           <span className="text-[10px] text-light-500 dark:text-gray-400">
             {matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </span>
           {isAuthenticated && (
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="text-light-500 dark:text-gray-500 hover:text-cyber-400 transition-colors"
-            >
-              <Edit3 className="w-3 h-3" />
-            </button>
+            <>
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="p-1 rounded text-cyber-400 hover:text-cyber-300 hover:bg-cyber-500/10 transition-colors"
+                title="Edit match"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="p-1 rounded text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                title="Delete match"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </>
           )}
         </div>
       </div>
+
+      {/* Delete confirmation */}
+      {showDeleteConfirm && (
+        <div className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 mt-1">
+          <span className="text-[11px] text-red-400 font-medium">Delete this match?</span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="px-2 py-0.5 rounded text-[11px] font-bold text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-50"
+            >
+              {isDeleting ? '...' : 'Delete'}
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              className="px-2 py-0.5 rounded text-[11px] font-medium text-light-600 dark:text-gray-400 hover:text-light-900 dark:hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       <EditMatchModal
         isOpen={showEditModal}
@@ -223,7 +317,7 @@ function MatchupSection({ matchup, perspectivePlayerId, onMatchUpdated }: {
       </button>
 
       {expanded && (
-        <div className="mt-1 space-y-1 pl-2">
+        <div className="mt-1 space-y-1 pl-3">
           {matchup.matches.map((match) => (
             <CompactMatchRow
               key={match.id}
@@ -269,7 +363,7 @@ function PlayerSection({ group, onMatchUpdated }: { group: PlayerGroup; onMatchU
       </button>
 
       {expanded && (
-        <div className="mt-2 space-y-1.5 pl-2">
+        <div className="mt-2 space-y-1.5 pl-4 ml-2 border-l-2 border-cyber-500/10">
           {group.matchups.map((matchup) => (
             <MatchupSection
               key={matchup.opponentName}
