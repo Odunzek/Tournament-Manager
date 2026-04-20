@@ -218,36 +218,38 @@ export default function UCLFixtures({ uclMatches, isAuthenticated, isLoading }: 
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
-                      <div className="p-2 space-y-1">
+                      <div className="p-2 space-y-1.5">
                         {pf.pairings.map(pairing => (
                           <div
                             key={pairing.opponentId}
-                            className="flex items-center gap-2 px-3 py-2 rounded-tech border bg-light-200/50 dark:bg-dark-100/60 border-black/10 dark:border-white/10"
+                            className="flex items-center gap-2 px-3 py-2.5 rounded-tech border bg-light-100/60 dark:bg-dark-50/60 border-black/10 dark:border-white/10"
                           >
                             {/* Opponent name */}
-                            <span className="flex-1 text-xs font-semibold text-light-900 dark:text-white truncate">
+                            <span className="flex-1 text-xs font-bold text-light-900 dark:text-white truncate min-w-0">
                               vs {pairing.opponentName}
                             </span>
 
-                            {/* H leg */}
-                            <LegCell
-                              label="H"
-                              match={pairing.home}
-                              isAdmin={isAuthenticated}
-                              isLoading={isLoading}
-                              onRecord={setRecordingMatch}
-                            />
-
-                            <span className="text-light-300 dark:text-gray-700 text-xs shrink-0">·</span>
-
-                            {/* A leg */}
-                            <LegCell
-                              label="A"
-                              match={pairing.away}
-                              isAdmin={isAuthenticated}
-                              isLoading={isLoading}
-                              onRecord={setRecordingMatch}
-                            />
+                            {/* Legs side by side — only render legs that exist */}
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {pairing.home && (
+                                <LegCell
+                                  label="H"
+                                  match={pairing.home}
+                                  isAdmin={isAuthenticated}
+                                  isLoading={isLoading}
+                                  onRecord={setRecordingMatch}
+                                />
+                              )}
+                              {pairing.away && (
+                                <LegCell
+                                  label="A"
+                                  match={pairing.away}
+                                  isAdmin={isAuthenticated}
+                                  isLoading={isLoading}
+                                  onRecord={setRecordingMatch}
+                                />
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -276,63 +278,68 @@ export default function UCLFixtures({ uclMatches, isAuthenticated, isLoading }: 
   );
 }
 
-// ── LegCell: renders one leg (H or A) in the pairing row ──────────────────────
+// ── LegCell: pronounced pill for one leg (H or A) ─────────────────────────────
 interface LegCellProps {
   label: 'H' | 'A';
-  match: (UCLMatch & { isPlayerA: boolean }) | null;
+  match: UCLMatch & { isPlayerA: boolean };
   isAdmin: boolean;
   isLoading: boolean;
   onRecord: (m: UCLMatch) => void;
 }
 
 function LegCell({ label, match, isAdmin, isLoading, onRecord }: LegCellProps) {
-  const labelColor = label === 'H' ? 'text-cyber-400' : 'text-light-400 dark:text-gray-500';
+  const isHome = label === 'H';
 
-  if (!match) {
+  const pillBase = isHome
+    ? 'border-cyber-500/40 bg-cyber-500/10'
+    : 'border-electric-500/40 bg-electric-500/10';
+  const labelStyle = isHome ? 'text-cyber-400' : 'text-electric-400';
+
+  const myScore = match.isPlayerA ? match.scoreA : match.scoreB;
+  const oppScore = match.isPlayerA ? match.scoreB : match.scoreA;
+  const iWon  = match.played && (myScore ?? 0) > (oppScore ?? 0);
+  const iLost = match.played && (myScore ?? 0) < (oppScore ?? 0);
+
+  const scoreColor = iWon ? 'text-green-400' : iLost ? 'text-red-400' : 'text-yellow-400';
+
+  if (match.played) {
     return (
-      <div className="flex items-center gap-1 shrink-0">
-        <span className={`text-[9px] font-bold uppercase ${labelColor}`}>{label}</span>
-        <span className="text-[10px] text-light-400 dark:text-gray-600">—</span>
+      <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border ${pillBase} min-w-[60px] justify-between`}>
+        <span className={`text-[10px] font-black uppercase tracking-wide ${labelStyle}`}>{label}</span>
+        <span className={`text-xs font-black tabular-nums ${scoreColor}`}>
+          {myScore}–{oppScore}
+        </span>
+        {isAdmin && (
+          <button
+            onClick={() => onRecord(match)}
+            disabled={isLoading}
+            className="text-light-400 dark:text-gray-600 hover:text-yellow-400 transition-colors disabled:opacity-40 ml-0.5"
+          >
+            <Pencil className="w-2.5 h-2.5" />
+          </button>
+        )}
       </div>
     );
   }
 
-  const myScore = match.isPlayerA ? match.scoreA : match.scoreB;
-  const oppScore = match.isPlayerA ? match.scoreB : match.scoreA;
-  const iWon = match.played && (myScore ?? 0) > (oppScore ?? 0);
-  const iLost = match.played && (myScore ?? 0) < (oppScore ?? 0);
+  // Unplayed
+  if (isAdmin) {
+    return (
+      <button
+        onClick={() => onRecord(match)}
+        disabled={isLoading}
+        className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border ${pillBase} hover:opacity-80 transition-opacity disabled:opacity-40 min-w-[60px] justify-between`}
+      >
+        <span className={`text-[10px] font-black uppercase tracking-wide ${labelStyle}`}>{label}</span>
+        <span className="text-[10px] text-light-500 dark:text-gray-400 font-semibold">Record</span>
+      </button>
+    );
+  }
 
   return (
-    <div className="flex items-center gap-1 shrink-0">
-      <span className={`text-[9px] font-bold uppercase ${labelColor}`}>{label}</span>
-      {match.played ? (
-        <>
-          <span className={`text-xs font-bold tabular-nums ${iWon ? 'text-green-400' : iLost ? 'text-red-400' : 'text-yellow-400'}`}>
-            {myScore}–{oppScore}
-          </span>
-          {isAdmin && (
-            <button
-              onClick={() => onRecord(match)}
-              disabled={isLoading}
-              className="text-light-400 dark:text-gray-600 hover:text-yellow-400 transition-colors disabled:opacity-40"
-            >
-              <Pencil className="w-2.5 h-2.5" />
-            </button>
-          )}
-        </>
-      ) : (
-        isAdmin ? (
-          <button
-            onClick={() => onRecord(match)}
-            disabled={isLoading}
-            className="bg-cyber-500 hover:bg-cyber-600 text-white text-[9px] px-1.5 py-0.5 rounded-tech font-semibold transition-colors disabled:opacity-40"
-          >
-            +
-          </button>
-        ) : (
-          <span className="text-[10px] text-yellow-400/60">vs</span>
-        )
-      )}
+    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border ${pillBase} min-w-[60px] justify-between`}>
+      <span className={`text-[10px] font-black uppercase tracking-wide ${labelStyle}`}>{label}</span>
+      <span className="text-[10px] text-light-500 dark:text-gray-500">TBP</span>
     </div>
   );
 }

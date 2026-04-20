@@ -45,6 +45,7 @@ import {
   syncOrphanedMembersToGroups,
   generateUCLPlayoffs,
   generateUCLKnockout,
+  regenerateUCLLeaguePhase,
 } from '@/lib/tournamentUtils';
 import type { UCLMatch } from '@/lib/uclUtils';
 import { incrementTournamentWins } from '@/lib/playerUtils';
@@ -332,6 +333,19 @@ function TournamentDetailContent() {
     }
   };
 
+  const handleUCLRegenerateFixtures = async () => {
+    if (!isAuthenticated) { setShowAuthModal(true); return; }
+    if (!tournament) return;
+    try {
+      setLoading(true);
+      await regenerateUCLLeaguePhase(tournament.id!);
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to regenerate fixtures');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleUCLGenerateKnockout = async () => {
     if (!isAuthenticated) { setShowAuthModal(true); return; }
     if (!tournament) return;
@@ -488,6 +502,7 @@ function TournamentDetailContent() {
                     onNavigate={(section: string) => setActiveSection(section as TournamentSection)}
                     onUCLGeneratePlayoffs={handleUCLGeneratePlayoffs}
                     onUCLGenerateKnockout={handleUCLGenerateKnockout}
+                    onUCLRegenerateFixtures={handleUCLRegenerateFixtures}
                     uclLeagueMatchStats={uclLeagueMatchStats}
                   />
                 ) : null}

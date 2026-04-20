@@ -53,6 +53,7 @@ interface OverviewProps {
   // UCL-specific
   onUCLGeneratePlayoffs?: () => Promise<void>;
   onUCLGenerateKnockout?: () => Promise<void>;
+  onUCLRegenerateFixtures?: () => Promise<void>;
   uclLeagueMatchStats?: { played: number; total: number };
 }
 
@@ -99,9 +100,11 @@ export default function Overview({
   onNavigate,
   onUCLGeneratePlayoffs,
   onUCLGenerateKnockout,
+  onUCLRegenerateFixtures,
   uclLeagueMatchStats,
 }: OverviewProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [isEditingRules, setIsEditingRules] = useState(false);
   const [editedRules, setEditedRules] = useState(tournament.rules || '');
@@ -365,6 +368,48 @@ export default function Overview({
               ) : (
                 <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-tech p-4">
                   <p className="text-yellow-400 font-semibold text-sm">Complete all league matches to generate playoffs.</p>
+                </div>
+              )}
+              {onUCLRegenerateFixtures && (
+                <div className="pt-2 border-t border-black/10 dark:border-white/10">
+                  {!showRegenerateConfirm ? (
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowRegenerateConfirm(true)}
+                      disabled={isLoading}
+                      className="w-full text-orange-400 hover:bg-orange-500/10 border border-orange-500/20 text-xs"
+                    >
+                      Regenerate All Fixtures
+                    </Button>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="bg-orange-500/10 border border-orange-500/20 rounded-tech p-3">
+                        <p className="text-orange-400 font-semibold text-sm mb-1">Are you sure?</p>
+                        <p className="text-orange-300/70 text-xs">
+                          This will delete all existing league phase matches and generate a fresh set. This cannot be undone.
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          onClick={() => setShowRegenerateConfirm(false)}
+                          disabled={isLoading}
+                          className="flex-1 text-xs"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={async () => { setShowRegenerateConfirm(false); await onUCLRegenerateFixtures(); }}
+                          disabled={isLoading}
+                          isLoading={isLoading}
+                          className="flex-1 text-xs bg-orange-500 hover:bg-orange-600 text-white border-0"
+                        >
+                          Yes, Regenerate
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

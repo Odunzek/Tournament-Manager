@@ -1,28 +1,3 @@
-/**
- * PlayerStatsModal — Detailed tournament stats for a single participant.
- *
- * Opens as a modal dialog and aggregates all available stats for the selected
- * player across both the group stage and knockout stage of a tournament.
- *
- * Stats computed client-side via `useMemo` from the full Tournament object:
- *
- * Group stage:
- *   - Position in their group, P/W/D/L/GF/GA/GD/Pts
- *   - Whether they qualified for the knockout stage
- *
- * Knockout stage:
- *   - Each knockout tie (round label, opponent, aggregate score, outcome)
- *   - Highest round reached (round_16, quarter_final, semi_final, final)
- *   - Whether they won the tournament
- *   - Who eliminated them (if applicable)
- *
- * Combined totals:
- *   - Overall goals scored/conceded across the whole tournament
- *   - Overall W/D/L/played record
- *
- * `ROUND_HIERARCHY` maps round keys to numeric values for comparison,
- * allowing the "highest round" to be determined from the list of ties.
- */
 "use client";
 
 import React, { useMemo } from 'react';
@@ -30,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Trophy, Target, Shield, Swords, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import Modal from '../ui/Modal';
 import { Tournament, KnockoutTie } from '@/lib/tournamentUtils';
+import { UCLMatch, computeLeagueStandings, applyZones, computeUCLCutoffs, UCLStanding } from '@/lib/uclUtils';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -73,9 +49,19 @@ interface PlayerTournamentStats {
   tournamentResult: string;
 }
 
+interface UCLLeaguePhaseStats {
+  standing: UCLStanding;
+  pairings: Array<{
+    opponentName: string;
+    home: UCLMatch | null;
+    away: UCLMatch | null;
+  }>;
+}
+
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const ROUND_HIERARCHY: Record<string, number> = {
+  playoff: -1,
   round_16: 0,
   quarter_final: 1,
   semi_final: 2,
@@ -83,6 +69,7 @@ const ROUND_HIERARCHY: Record<string, number> = {
 };
 
 const ROUND_LABELS: Record<string, string> = {
+  playoff: 'Playoff',
   round_16: 'Round of 16',
   quarter_final: 'Quarter Finals',
   semi_final: 'Semi Finals',
@@ -90,13 +77,64 @@ const ROUND_LABELS: Record<string, string> = {
 };
 
 const ROUND_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  playoff: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30' },
   round_16: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/30' },
   quarter_final: { bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500/30' },
   semi_final: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/30' },
   final: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30' },
 };
 
-// ─── Pure Stats Computation ─────────────────────────────────────────────────
+const ZONE_STYLES = {
+  direct:   { bg: 'bg-green-500/15',  text: 'text-green-400',  border: 'border-green-500/30',  label: 'Direct Qualifier' },
+  playoff:  { bg: 'bg-cyber-500/15',  text: 'text-cyber-400',  border: 'border-cyber-500/30',  label: 'Playoff' },
+  eliminated: { bg: 'bg-red-500/15', text: 'text-red-400',    border: 'border-red-500/30',    label: 'Eliminated' },
+};
+
+// ─── UCL League Phase Stats ──────────────────────────────────────────────────
+
+function computeUCLLeaguePhaseStats(
+  uclMatches: UCLMatch[],
+  playerName: string
+): UCLLeaguePhaseStats | null {
+  // Build players list from all matches
+  const playerMap = new Map<string, string>();
+  for (const m of uclMatches) {
+    playerMap.set(m.playerAId, m.playerAName);
+    playerMap.set(m.playerBId, m.playerBName);
+  }
+  const players = Array.from(playerMap.entries()).map(([id, name]) => ({ id, name }));
+  const playerId = players.find(p => p.name === playerName)?.id;
+  if (!playerId) return null;
+
+  // Compute standings without pot info (not needed here)
+  const raw = computeLeagueStandings(uclMatches, players, {});
+  const cutoffs = computeUCLCutoffs(players.length);
+  const standings = applyZones(raw, cutoffs);
+  const standing = standings.find(s => s.memberId === playerId);
+  if (!standing) return null;
+
+  // Build H/A pairings per opponent
+  const pairingMap = new Map<string, { opponentName: string; home: UCLMatch | null; away: UCLMatch | null }>();
+  for (const m of uclMatches) {
+    const isA = m.playerAId === playerId;
+    const isB = m.playerBId === playerId;
+    if (!isA && !isB) continue;
+
+    const oppId = isA ? m.playerBId : m.playerAId;
+    const oppName = isA ? m.playerBName : m.playerAName;
+    if (!pairingMap.has(oppId)) pairingMap.set(oppId, { opponentName: oppName, home: null, away: null });
+    const pair = pairingMap.get(oppId)!;
+    if (isA) pair.home = m;
+    else pair.away = m;
+  }
+
+  const pairings = Array.from(pairingMap.values())
+    .sort((a, b) => a.opponentName.localeCompare(b.opponentName));
+
+  return { standing, pairings };
+}
+
+// ─── Champions-League Stats Computation ─────────────────────────────────────
 
 function computePlayerTournamentStats(
   tournament: Tournament,
@@ -107,9 +145,7 @@ function computePlayerTournamentStats(
 
   if (tournament.groups) {
     for (const group of tournament.groups) {
-      const standing = group.standings.find(
-        (s) => s.teamName === playerName
-      );
+      const standing = group.standings.find(s => s.teamName === playerName);
       if (standing) {
         const teamsAdvance = tournament.settings.teamsAdvanceFromGroup ?? 2;
         groupStats = {
@@ -144,7 +180,7 @@ function computePlayerTournamentStats(
       completed: boolean;
     }> = [];
 
-    let highestRoundValue = -1;
+    let highestRoundValue = -2;
     let highestRound = '';
     let eliminatedBy: string | null = null;
     let isWinner = false;
@@ -152,7 +188,6 @@ function computePlayerTournamentStats(
     let knockoutGoalsAgainst = 0;
 
     for (const tie of tournament.knockoutBracket) {
-      // Skip replay ties — we process them via the original tie
       if (tie.originalTieId) continue;
 
       const isTeam1 = tie.team1 === playerName;
@@ -162,66 +197,43 @@ function computePlayerTournamentStats(
       const opponent = isTeam1 ? tie.team2 : tie.team1;
       const round = tie.round;
 
-      // Track highest round reached
       const roundValue = ROUND_HIERARCHY[round] ?? -1;
       if (roundValue > highestRoundValue) {
         highestRoundValue = roundValue;
         highestRound = round;
       }
 
-      // Calculate goals from legs
       let playerGoals = 0;
       let opponentGoals = 0;
 
       if (tie.firstLeg?.played) {
-        if (isTeam1) {
-          playerGoals += tie.firstLeg.homeTeam === playerName
-            ? (tie.firstLeg.homeScore ?? 0)
-            : (tie.firstLeg.awayScore ?? 0);
-          opponentGoals += tie.firstLeg.homeTeam === playerName
-            ? (tie.firstLeg.awayScore ?? 0)
-            : (tie.firstLeg.homeScore ?? 0);
-        } else {
-          playerGoals += tie.firstLeg.homeTeam === playerName
-            ? (tie.firstLeg.homeScore ?? 0)
-            : (tie.firstLeg.awayScore ?? 0);
-          opponentGoals += tie.firstLeg.homeTeam === playerName
-            ? (tie.firstLeg.awayScore ?? 0)
-            : (tie.firstLeg.homeScore ?? 0);
-        }
+        playerGoals += tie.firstLeg.homeTeam === playerName
+          ? (tie.firstLeg.homeScore ?? 0) : (tie.firstLeg.awayScore ?? 0);
+        opponentGoals += tie.firstLeg.homeTeam === playerName
+          ? (tie.firstLeg.awayScore ?? 0) : (tie.firstLeg.homeScore ?? 0);
       }
-
       if (tie.secondLeg?.played) {
         playerGoals += tie.secondLeg.homeTeam === playerName
-          ? (tie.secondLeg.homeScore ?? 0)
-          : (tie.secondLeg.awayScore ?? 0);
+          ? (tie.secondLeg.homeScore ?? 0) : (tie.secondLeg.awayScore ?? 0);
         opponentGoals += tie.secondLeg.homeTeam === playerName
-          ? (tie.secondLeg.awayScore ?? 0)
-          : (tie.secondLeg.homeScore ?? 0);
+          ? (tie.secondLeg.awayScore ?? 0) : (tie.secondLeg.homeScore ?? 0);
       }
 
       knockoutGoalsFor += playerGoals;
       knockoutGoalsAgainst += opponentGoals;
 
-      // Determine winner — check for replay chain
-      // Only trust completion status if at least one leg was actually played
       const anyLegPlayed = !!tie.firstLeg?.played || !!tie.secondLeg?.played;
       let effectiveWinner: string | undefined;
       let tieCompleted = tie.completed && anyLegPlayed;
 
       if (tie.awaitingReplay && tie.replayTieId) {
-        const replayTie = tournament.knockoutBracket.find(
-          (t) => t.id === tie.replayTieId
-        );
+        const replayTie = tournament.knockoutBracket.find(t => t.id === tie.replayTieId);
         if (replayTie) {
-          // Add replay goals
           if (replayTie.firstLeg?.played) {
             const rpGoals = replayTie.firstLeg.homeTeam === playerName
-              ? (replayTie.firstLeg.homeScore ?? 0)
-              : (replayTie.firstLeg.awayScore ?? 0);
+              ? (replayTie.firstLeg.homeScore ?? 0) : (replayTie.firstLeg.awayScore ?? 0);
             const rpOppGoals = replayTie.firstLeg.homeTeam === playerName
-              ? (replayTie.firstLeg.awayScore ?? 0)
-              : (replayTie.firstLeg.homeScore ?? 0);
+              ? (replayTie.firstLeg.awayScore ?? 0) : (replayTie.firstLeg.homeScore ?? 0);
             knockoutGoalsFor += rpGoals;
             knockoutGoalsAgainst += rpOppGoals;
             playerGoals += rpGoals;
@@ -229,11 +241,9 @@ function computePlayerTournamentStats(
           }
           if (replayTie.secondLeg?.played) {
             const rpGoals = replayTie.secondLeg.homeTeam === playerName
-              ? (replayTie.secondLeg.homeScore ?? 0)
-              : (replayTie.secondLeg.awayScore ?? 0);
+              ? (replayTie.secondLeg.homeScore ?? 0) : (replayTie.secondLeg.awayScore ?? 0);
             const rpOppGoals = replayTie.secondLeg.homeTeam === playerName
-              ? (replayTie.secondLeg.awayScore ?? 0)
-              : (replayTie.secondLeg.homeScore ?? 0);
+              ? (replayTie.secondLeg.awayScore ?? 0) : (replayTie.secondLeg.homeScore ?? 0);
             knockoutGoalsFor += rpGoals;
             knockoutGoalsAgainst += rpOppGoals;
             playerGoals += rpGoals;
@@ -245,52 +255,28 @@ function computePlayerTournamentStats(
           }
         }
       } else {
-        // Only trust the winner field if the tie is genuinely completed
         effectiveWinner = tieCompleted ? tie.winner : undefined;
       }
 
       const won = !!effectiveWinner && effectiveWinner === playerName;
+      if (tieCompleted && !won && effectiveWinner) eliminatedBy = effectiveWinner;
+      if (tieCompleted && won && round === 'final') isWinner = true;
 
-      // Track elimination — only when tie is fully completed with a valid winner
-      if (tieCompleted && !won && effectiveWinner) {
-        eliminatedBy = effectiveWinner;
-      }
-
-      // Track tournament winner
-      if (tieCompleted && won && round === 'final') {
-        isWinner = true;
-      }
-
-      playerTies.push({
-        tie,
-        round,
-        opponent,
-        playerAgg: playerGoals,
-        opponentAgg: opponentGoals,
-        won,
-        completed: tieCompleted,
-      });
+      playerTies.push({ tie, round, opponent, playerAgg: playerGoals, opponentAgg: opponentGoals, won, completed: tieCompleted });
     }
 
     if (playerTies.length > 0) {
-      // Sort ties by round hierarchy
-      playerTies.sort(
-        (a, b) => (ROUND_HIERARCHY[a.round] ?? 0) - (ROUND_HIERARCHY[b.round] ?? 0)
-      );
-
+      playerTies.sort((a, b) => (ROUND_HIERARCHY[a.round] ?? 0) - (ROUND_HIERARCHY[b.round] ?? 0));
       knockoutStats = {
         highestRound,
         knockoutGoalsFor,
         knockoutGoalsAgainst,
         eliminatedBy,
         isWinner,
-        ties: playerTies.map((t) => ({
-          round: t.round,
-          opponent: t.opponent,
-          playerAgg: t.playerAgg,
-          opponentAgg: t.opponentAgg,
-          won: t.won,
-          completed: t.completed,
+        ties: playerTies.map(t => ({
+          round: t.round, opponent: t.opponent,
+          playerAgg: t.playerAgg, opponentAgg: t.opponentAgg,
+          won: t.won, completed: t.completed,
         })),
       };
     }
@@ -304,37 +290,18 @@ function computePlayerTournamentStats(
   const groupGF = groupStats?.goalsFor ?? 0;
   const groupGA = groupStats?.goalsAgainst ?? 0;
 
-  // Knockout W/D/L: count from completed ties
-  let koWon = 0;
-  let koLost = 0;
-  let koPlayed = 0;
+  let koWon = 0, koLost = 0, koPlayed = 0;
   if (knockoutStats) {
     for (const t of knockoutStats.ties) {
-      if (t.completed) {
-        koPlayed++;
-        if (t.won) koWon++;
-        else koLost++;
-      }
+      if (t.completed) { koPlayed++; if (t.won) koWon++; else koLost++; }
     }
   }
 
-  const totalPlayed = groupPlayed + koPlayed;
-  const totalWon = groupWon + koWon;
-  const totalDrawn = groupDrawn;
-  const totalLost = groupLost + koLost;
-  const totalGoalsFor = groupGF + (knockoutStats?.knockoutGoalsFor ?? 0);
-  const totalGoalsAgainst = groupGA + (knockoutStats?.knockoutGoalsAgainst ?? 0);
-
-  // Tournament result
   let tournamentResult = 'Group Stage';
   if (knockoutStats) {
-    if (knockoutStats.isWinner) {
-      tournamentResult = 'Winner';
-    } else if (knockoutStats.highestRound === 'final' && !knockoutStats.isWinner) {
-      tournamentResult = 'Runner-up';
-    } else {
-      tournamentResult = ROUND_LABELS[knockoutStats.highestRound] ?? 'Knockout';
-    }
+    if (knockoutStats.isWinner) tournamentResult = 'Winner';
+    else if (knockoutStats.highestRound === 'final') tournamentResult = 'Runner-up';
+    else tournamentResult = ROUND_LABELS[knockoutStats.highestRound] ?? 'Knockout';
   } else if (!groupStats) {
     tournamentResult = 'No Data';
   }
@@ -342,12 +309,12 @@ function computePlayerTournamentStats(
   return {
     group: groupStats,
     knockout: knockoutStats,
-    totalGoalsFor,
-    totalGoalsAgainst,
-    totalPlayed,
-    totalWon,
-    totalDrawn,
-    totalLost,
+    totalGoalsFor: groupGF + (knockoutStats?.knockoutGoalsFor ?? 0),
+    totalGoalsAgainst: groupGA + (knockoutStats?.knockoutGoalsAgainst ?? 0),
+    totalPlayed: groupPlayed + koPlayed,
+    totalWon: groupWon + koWon,
+    totalDrawn: groupDrawn,
+    totalLost: groupLost + koLost,
     tournamentResult,
   };
 }
@@ -358,136 +325,227 @@ interface PlayerStatsModalProps {
   tournament: Tournament;
   playerName: string;
   onClose: () => void;
+  uclMatches?: UCLMatch[];
 }
 
-export default function PlayerStatsModal({
-  tournament,
-  playerName,
-  onClose,
-}: PlayerStatsModalProps) {
+export default function PlayerStatsModal({ tournament, playerName, onClose, uclMatches }: PlayerStatsModalProps) {
+  const isUCL = tournament.type === 'ucl';
+
+  const uclLeague = useMemo(
+    () => isUCL && uclMatches ? computeUCLLeaguePhaseStats(uclMatches, playerName) : null,
+    [isUCL, uclMatches, playerName]
+  );
+
   const stats = useMemo(
     () => computePlayerTournamentStats(tournament, playerName),
     [tournament, playerName]
   );
 
-  const resultBadge = getResultBadge(stats.tournamentResult);
+  // For UCL, derive totals from league standing + knockout
+  const totalPlayed = isUCL
+    ? (uclLeague?.standing.played ?? 0) + (stats.totalPlayed)
+    : stats.totalPlayed;
+  const totalWon = isUCL
+    ? (uclLeague?.standing.won ?? 0) + (stats.totalWon)
+    : stats.totalWon;
+  const totalDrawn = isUCL
+    ? (uclLeague?.standing.drawn ?? 0) + (stats.totalDrawn)
+    : stats.totalDrawn;
+  const totalLost = isUCL
+    ? (uclLeague?.standing.lost ?? 0) + (stats.totalLost)
+    : stats.totalLost;
+  const totalGF = isUCL
+    ? (uclLeague?.standing.goalsFor ?? 0) + (stats.totalGoalsFor)
+    : stats.totalGoalsFor;
+  const totalGA = isUCL
+    ? (uclLeague?.standing.goalsAgainst ?? 0) + (stats.totalGoalsAgainst)
+    : stats.totalGoalsAgainst;
+
+  // Tournament result label
+  let tournamentResult = stats.tournamentResult;
+  if (isUCL && !stats.knockout) {
+    const zone = uclLeague?.standing.zone;
+    tournamentResult = zone === 'direct' ? 'Direct Qualifier' : zone === 'playoff' ? 'Playoff' : zone === 'eliminated' ? 'Eliminated' : 'League Phase';
+  }
+
+  const resultBadge = getResultBadge(tournamentResult);
 
   return (
     <Modal isOpen onClose={onClose} size="lg" title={playerName}>
       <div className="space-y-6">
-        {/* Tournament Result Badge */}
-        <div className="flex items-center gap-3">
-          <span
-            className={`px-3 py-1.5 rounded-full text-sm font-bold ${resultBadge.bg} ${resultBadge.text} border ${resultBadge.border}`}
-          >
-            {resultBadge.icon} {stats.tournamentResult}
+
+        {/* Result Badge */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className={`px-3 py-1.5 rounded-full text-sm font-bold ${resultBadge.bg} ${resultBadge.text} border ${resultBadge.border}`}>
+            {resultBadge.icon} {tournamentResult}
           </span>
-          <span className="text-sm text-light-600 dark:text-gray-400">
-            {tournament.name}
-          </span>
+          <span className="text-sm text-light-600 dark:text-gray-400">{tournament.name}</span>
         </div>
 
-        {/* Overall Stats Grid */}
+        {/* Overall Stats */}
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-          <StatCard label="Played" value={stats.totalPlayed} icon={<Swords className="w-4 h-4 text-cyber-400" />} />
-          <StatCard label="Won" value={stats.totalWon} icon={<TrendingUp className="w-4 h-4 text-green-400" />} />
-          <StatCard label="Drawn" value={stats.totalDrawn} icon={<Minus className="w-4 h-4 text-amber-400" />} />
-          <StatCard label="Lost" value={stats.totalLost} icon={<TrendingDown className="w-4 h-4 text-red-400" />} />
-          <StatCard label="GF" value={stats.totalGoalsFor} icon={<Target className="w-4 h-4 text-electric-400" />} />
-          <StatCard label="GA" value={stats.totalGoalsAgainst} icon={<Shield className="w-4 h-4 text-pink-400" />} />
+          <StatCard label="Played" value={totalPlayed} icon={<Swords className="w-4 h-4 text-cyber-400" />} />
+          <StatCard label="Won"    value={totalWon}    icon={<TrendingUp className="w-4 h-4 text-green-400" />} />
+          <StatCard label="Drawn"  value={totalDrawn}  icon={<Minus className="w-4 h-4 text-amber-400" />} />
+          <StatCard label="Lost"   value={totalLost}   icon={<TrendingDown className="w-4 h-4 text-red-400" />} />
+          <StatCard label="GF"     value={totalGF}     icon={<Target className="w-4 h-4 text-electric-400" />} />
+          <StatCard label="GA"     value={totalGA}     icon={<Shield className="w-4 h-4 text-pink-400" />} />
         </div>
 
-        {/* Group Stage Section */}
-        {stats.group && (
+        {/* UCL: League Phase */}
+        {isUCL && uclLeague && (
           <section>
             <div className="flex items-center gap-2 mb-3">
-              <h3 className="text-sm font-bold text-light-900 dark:text-white uppercase tracking-wider">
-                Group Stage
-              </h3>
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-cyber-500/20 text-cyber-400 border border-cyber-500/30">
-                {stats.group.name}
-              </span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                  stats.group.qualified
-                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                    : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                }`}
-              >
-                {stats.group.qualified ? 'Qualified' : 'Eliminated'}
+              <h3 className="text-sm font-bold text-light-900 dark:text-white uppercase tracking-wider">League Phase</h3>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${ZONE_STYLES[uclLeague.standing.zone].bg} ${ZONE_STYLES[uclLeague.standing.zone].text} ${ZONE_STYLES[uclLeague.standing.zone].border}`}>
+                {ZONE_STYLES[uclLeague.standing.zone].label}
               </span>
             </div>
 
-            {/* Mini standings row */}
+            {/* Mini stats row */}
+            <div className="bg-light-200/50 dark:bg-white/5 rounded-tech p-3 border border-black/10 dark:border-white/10 mb-3">
+              <div className="grid grid-cols-8 gap-1 text-center text-xs">
+                {[
+                  { label: 'Pos', value: getOrdinal(uclLeague.standing.position), color: 'text-light-900 dark:text-white' },
+                  { label: 'P',   value: uclLeague.standing.played,              color: 'text-light-900 dark:text-white' },
+                  { label: 'W',   value: uclLeague.standing.won,                 color: 'text-green-400' },
+                  { label: 'D',   value: uclLeague.standing.drawn,               color: 'text-amber-400' },
+                  { label: 'L',   value: uclLeague.standing.lost,                color: 'text-red-400' },
+                  { label: 'GD',  value: (uclLeague.standing.goalDifference > 0 ? '+' : '') + uclLeague.standing.goalDifference, color: uclLeague.standing.goalDifference > 0 ? 'text-green-400' : uclLeague.standing.goalDifference < 0 ? 'text-red-400' : 'text-light-900 dark:text-white' },
+                  { label: 'Pts', value: uclLeague.standing.points,              color: 'text-light-900 dark:text-white font-bold' },
+                  { label: 'Form', value: null, color: '' },
+                ].map(({ label, value, color }) =>
+                  label === 'Form' ? (
+                    <div key="form">
+                      <p className="text-light-500 dark:text-gray-500 mb-1">Form</p>
+                      <div className="flex gap-0.5 justify-center">
+                        {uclLeague.standing.form.length
+                          ? uclLeague.standing.form.map((r, i) => (
+                              <div key={i} className={`w-2 h-3 rounded-sm ${r === 'W' ? 'bg-green-500' : r === 'D' ? 'bg-yellow-400' : 'bg-red-500'}`} />
+                            ))
+                          : <span className="text-light-500 dark:text-gray-600 text-[10px]">—</span>
+                        }
+                      </div>
+                    </div>
+                  ) : (
+                    <div key={label}>
+                      <p className="text-light-500 dark:text-gray-500 mb-1">{label}</p>
+                      <p className={`font-bold ${color}`}>{value}</p>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+
+            {/* H/A results per opponent */}
+            <div className="space-y-1">
+              {uclLeague.pairings.map(pair => {
+                const hMatch = pair.home;
+                const aMatch = pair.away;
+                return (
+                  <div key={pair.opponentName} className="flex items-center justify-between px-3 py-2 rounded-tech bg-light-100/60 dark:bg-white/5 border border-black/5 dark:border-white/5">
+                    <span className="text-sm font-semibold text-light-900 dark:text-white truncate min-w-0 flex-1">vs {pair.opponentName}</span>
+                    <div className="flex items-center gap-3 shrink-0 ml-2">
+                      {hMatch && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] font-black text-cyber-400 uppercase">H</span>
+                          {hMatch.played
+                            ? <ScoreSpan myScore={hMatch.scoreA} oppScore={hMatch.scoreB} />
+                            : <span className="text-[10px] text-light-400 dark:text-gray-600">TBP</span>
+                          }
+                        </div>
+                      )}
+                      {aMatch && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] font-black text-electric-400 uppercase">A</span>
+                          {aMatch.played
+                            ? <ScoreSpan myScore={aMatch.scoreB} oppScore={aMatch.scoreA} />
+                            : <span className="text-[10px] text-light-400 dark:text-gray-600">TBP</span>
+                          }
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Non-UCL: Group Stage */}
+        {!isUCL && stats.group && (
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <h3 className="text-sm font-bold text-light-900 dark:text-white uppercase tracking-wider">Group Stage</h3>
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-cyber-500/20 text-cyber-400 border border-cyber-500/30">{stats.group.name}</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${stats.group.qualified ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
+                {stats.group.qualified ? 'Qualified' : 'Eliminated'}
+              </span>
+            </div>
             <div className="bg-light-200/50 dark:bg-white/5 rounded-tech p-3 border border-black/10 dark:border-white/10">
               <div className="grid grid-cols-9 gap-2 text-center text-xs">
-                <div>
-                  <p className="text-light-500 dark:text-gray-500 mb-1">Pos</p>
-                  <p className="font-bold text-light-900 dark:text-white">{getOrdinal(stats.group.position)}</p>
-                </div>
-                <div>
-                  <p className="text-light-500 dark:text-gray-500 mb-1">P</p>
-                  <p className="font-bold text-light-900 dark:text-white">{stats.group.played}</p>
-                </div>
-                <div>
-                  <p className="text-light-500 dark:text-gray-500 mb-1">W</p>
-                  <p className="font-bold text-green-400">{stats.group.won}</p>
-                </div>
-                <div>
-                  <p className="text-light-500 dark:text-gray-500 mb-1">D</p>
-                  <p className="font-bold text-amber-400">{stats.group.drawn}</p>
-                </div>
-                <div>
-                  <p className="text-light-500 dark:text-gray-500 mb-1">L</p>
-                  <p className="font-bold text-red-400">{stats.group.lost}</p>
-                </div>
-                <div>
-                  <p className="text-light-500 dark:text-gray-500 mb-1">GF</p>
-                  <p className="font-bold text-light-900 dark:text-white">{stats.group.goalsFor}</p>
-                </div>
-                <div>
-                  <p className="text-light-500 dark:text-gray-500 mb-1">GA</p>
-                  <p className="font-bold text-light-900 dark:text-white">{stats.group.goalsAgainst}</p>
-                </div>
-                <div>
-                  <p className="text-light-500 dark:text-gray-500 mb-1">GD</p>
-                  <p className={`font-bold ${stats.group.goalDifference > 0 ? 'text-green-400' : stats.group.goalDifference < 0 ? 'text-red-400' : 'text-light-900 dark:text-white'}`}>
-                    {stats.group.goalDifference > 0 ? '+' : ''}{stats.group.goalDifference}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-light-500 dark:text-gray-500 mb-1">Pts</p>
-                  <p className="font-bold text-cyber-400">{stats.group.points}</p>
-                </div>
+                {[
+                  { label: 'Pos', value: getOrdinal(stats.group.position), color: '' },
+                  { label: 'P',   value: stats.group.played,              color: '' },
+                  { label: 'W',   value: stats.group.won,                 color: 'text-green-400' },
+                  { label: 'D',   value: stats.group.drawn,               color: 'text-amber-400' },
+                  { label: 'L',   value: stats.group.lost,                color: 'text-red-400' },
+                  { label: 'GF',  value: stats.group.goalsFor,            color: '' },
+                  { label: 'GA',  value: stats.group.goalsAgainst,        color: '' },
+                  { label: 'GD',  value: (stats.group.goalDifference > 0 ? '+' : '') + stats.group.goalDifference, color: stats.group.goalDifference > 0 ? 'text-green-400' : stats.group.goalDifference < 0 ? 'text-red-400' : '' },
+                  { label: 'Pts', value: stats.group.points,              color: 'text-cyber-400' },
+                ].map(({ label, value, color }) => (
+                  <div key={label}>
+                    <p className="text-light-500 dark:text-gray-500 mb-1">{label}</p>
+                    <p className={`font-bold text-light-900 dark:text-white ${color}`}>{value}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </section>
         )}
 
-        {/* Knockout Journey Section */}
+        {/* Knockout Journey */}
         {stats.knockout && (
           <section>
             <div className="flex items-center gap-2 mb-3">
-              <h3 className="text-sm font-bold text-light-900 dark:text-white uppercase tracking-wider">
-                Knockout Journey
-              </h3>
+              <h3 className="text-sm font-bold text-light-900 dark:text-white uppercase tracking-wider">Knockout Journey</h3>
               {stats.knockout.highestRound && (
-                <span
-                  className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                    ROUND_COLORS[stats.knockout.highestRound]?.bg ?? 'bg-gray-500/20'
-                  } ${ROUND_COLORS[stats.knockout.highestRound]?.text ?? 'text-gray-400'} border ${
-                    ROUND_COLORS[stats.knockout.highestRound]?.border ?? 'border-gray-500/30'
-                  }`}
-                >
+                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${ROUND_COLORS[stats.knockout.highestRound]?.bg ?? 'bg-gray-500/20'} ${ROUND_COLORS[stats.knockout.highestRound]?.text ?? 'text-gray-400'} ${ROUND_COLORS[stats.knockout.highestRound]?.border ?? 'border-gray-500/30'}`}>
                   {ROUND_LABELS[stats.knockout.highestRound] ?? stats.knockout.highestRound}
                 </span>
               )}
             </div>
 
-            {/* Eliminated by / Winner */}
+            <div className="space-y-2">
+              {stats.knockout.ties.map((t, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-tech border ${t.completed ? (t.won ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20') : 'bg-light-100/50 dark:bg-white/5 border-black/10 dark:border-white/10'}`}
+                >
+                  <div>
+                    <p className="text-xs font-semibold text-light-500 dark:text-gray-500 uppercase">{ROUND_LABELS[t.round] ?? t.round}</p>
+                    <p className="text-sm font-bold text-light-900 dark:text-white">vs {t.opponent}</p>
+                  </div>
+                  {t.completed ? (
+                    <div className="text-right">
+                      <p className={`text-lg font-black tabular-nums ${t.won ? 'text-green-400' : 'text-red-400'}`}>{t.playerAgg}–{t.opponentAgg}</p>
+                      <p className={`text-xs font-bold ${t.won ? 'text-green-400' : 'text-red-400'}`}>{t.won ? 'Advanced' : 'Eliminated'}</p>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-light-500 dark:text-gray-500">Ongoing</span>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
             {stats.knockout.eliminatedBy && (
               <p className="mt-3 text-sm text-red-400">
-                Knocked out by <span className="font-semibold">{stats.knockout.eliminatedBy}</span> in the {ROUND_LABELS[stats.knockout.highestRound] ?? stats.knockout.highestRound}
+                Knocked out by <span className="font-semibold">{stats.knockout.eliminatedBy}</span>
+                {' '}in the {ROUND_LABELS[stats.knockout.highestRound] ?? stats.knockout.highestRound}
               </p>
             )}
             {stats.knockout.isWinner && (
@@ -498,12 +556,10 @@ export default function PlayerStatsModal({
           </section>
         )}
 
-        {/* No data state */}
-        {!stats.group && !stats.knockout && (
+        {/* No data */}
+        {!stats.group && !stats.knockout && !uclLeague && (
           <div className="text-center py-8">
-            <p className="text-light-600 dark:text-gray-400">
-              No match data available for this player yet.
-            </p>
+            <p className="text-light-600 dark:text-gray-400">No match data available yet.</p>
           </div>
         )}
       </div>
@@ -512,6 +568,16 @@ export default function PlayerStatsModal({
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
+
+function ScoreSpan({ myScore, oppScore }: { myScore: number | null; oppScore: number | null }) {
+  const won = (myScore ?? 0) > (oppScore ?? 0);
+  const lost = (myScore ?? 0) < (oppScore ?? 0);
+  return (
+    <span className={`text-xs font-bold tabular-nums ${won ? 'text-green-400' : lost ? 'text-red-400' : 'text-yellow-400'}`}>
+      {myScore}–{oppScore}
+    </span>
+  );
+}
 
 function StatCard({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
@@ -531,19 +597,15 @@ function getOrdinal(n: number): string {
 
 function getResultBadge(result: string): { bg: string; text: string; border: string; icon: string } {
   switch (result) {
-    case 'Winner':
-      return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30', icon: '\u{1F3C6}' };
-    case 'Runner-up':
-      return { bg: 'bg-gray-300/20', text: 'text-light-700 dark:text-gray-300', border: 'border-gray-300/30', icon: '\u{1F948}' };
-    case 'Semi Finals':
-      return { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/30', icon: '\u{1F3C5}' };
-    case 'Quarter Finals':
-      return { bg: 'bg-pink-500/20', text: 'text-pink-400', border: 'border-pink-500/30', icon: '\u{1F396}' };
-    case 'Round of 16':
-      return { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/30', icon: '\u{26BD}' };
-    case 'Group Stage':
-      return { bg: 'bg-gray-500/20', text: 'text-light-700 dark:text-gray-400', border: 'border-gray-500/30', icon: '\u{1F4CB}' };
-    default:
-      return { bg: 'bg-gray-500/20', text: 'text-light-700 dark:text-gray-400', border: 'border-gray-500/30', icon: '\u{2796}' };
+    case 'Winner':           return { bg: 'bg-yellow-500/20', text: 'text-yellow-400',  border: 'border-yellow-500/30',  icon: '🏆' };
+    case 'Runner-up':        return { bg: 'bg-gray-300/20',   text: 'text-light-700 dark:text-gray-300', border: 'border-gray-300/30', icon: '🥈' };
+    case 'Semi Finals':      return { bg: 'bg-amber-500/20',  text: 'text-amber-400',   border: 'border-amber-500/30',   icon: '🥅' };
+    case 'Quarter Finals':   return { bg: 'bg-pink-500/20',   text: 'text-pink-400',    border: 'border-pink-500/30',    icon: '🎖️' };
+    case 'Round of 16':      return { bg: 'bg-cyan-500/20',   text: 'text-cyan-400',    border: 'border-cyan-500/30',    icon: '⚽' };
+    case 'Playoff':          return { bg: 'bg-orange-500/20', text: 'text-orange-400',  border: 'border-orange-500/30',  icon: '⚔️' };
+    case 'Direct Qualifier': return { bg: 'bg-green-500/20',  text: 'text-green-400',   border: 'border-green-500/30',   icon: '✅' };
+    case 'Eliminated':       return { bg: 'bg-red-500/20',    text: 'text-red-400',     border: 'border-red-500/30',     icon: '✗' };
+    case 'Group Stage':      return { bg: 'bg-gray-500/20',   text: 'text-light-700 dark:text-gray-400', border: 'border-gray-500/30', icon: '📋' };
+    default:                 return { bg: 'bg-gray-500/20',   text: 'text-light-700 dark:text-gray-400', border: 'border-gray-500/30', icon: '➖' };
   }
 }

@@ -90,7 +90,10 @@ export default function TournamentSidebar({
 
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-light-50/95 dark:bg-dark-100/95 backdrop-blur-xl border-t border-cyber-500/20 dark:border-white/10 safe-area-inset-bottom">
-        <nav className="flex items-center justify-around px-1 py-2.5 overflow-x-auto scrollbar-hide">
+        <nav
+          className="grid px-1 py-2"
+          style={{ gridTemplateColumns: `repeat(${navItems.length}, 1fr)` }}
+        >
           {navItems.map((item) => {
             const isActive = activeSection === item.id;
 
@@ -99,24 +102,23 @@ export default function TournamentSidebar({
                 key={item.id}
                 onClick={() => onSectionChange(item.id)}
                 className={`
-                  flex flex-col items-center gap-1.5 px-2 py-2 rounded-xl min-w-[58px] flex-shrink-0 relative
+                  flex flex-col items-center gap-1 px-0.5 py-1.5 rounded-xl min-w-0 relative
                   transition-all duration-200
-                  ${isActive ? 'bg-cyber-500/20 border border-cyber-600/30 dark:border-transparent' : 'active:bg-cyber-100 dark:active:bg-white/5'}
+                  ${isActive ? 'bg-cyber-500/20 ring-1 ring-cyber-500/40' : 'active:bg-cyber-100 dark:active:bg-white/5'}
                 `}
               >
                 <div className={`
-                  transition-all duration-200
+                  transition-all duration-200 shrink-0
                   ${isActive ? 'text-cyber-700 dark:text-cyber-400 scale-110' : 'text-light-700 dark:text-gray-400'}
                 `}>
                   {item.icon}
                 </div>
                 <span className={`
-                  text-[11px] font-semibold transition-colors leading-tight
+                  text-[9px] font-semibold transition-colors leading-tight w-full text-center truncate
                   ${isActive ? 'text-light-900 dark:text-white' : 'text-light-600 dark:text-gray-500'}
                 `}>
                   {item.label}
                 </span>
-
               </button>
             );
           })}

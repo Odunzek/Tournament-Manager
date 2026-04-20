@@ -10,17 +10,20 @@ import {
   removePlayerFromTournament,
   confirmUCLDraw,
 } from '@/lib/tournamentUtils';
+import { UCLMatch } from '@/lib/uclUtils';
 import { usePlayers } from '@/hooks/usePlayers';
 import Card from '../../ui/Card';
 import Input from '../../ui/Input';
 import Button from '../../ui/Button';
 import UCLSeedingModal from '../UCLSeedingModal';
+import PlayerStatsModal from '../PlayerStatsModal';
 
 interface UCLPotsProps {
   tournament: Tournament;
   tournamentMembers: TournamentParticipant[];
   isAuthenticated: boolean;
   isLoading: boolean;
+  uclMatches?: UCLMatch[];
 }
 
 const POT_DEFS = [
@@ -30,8 +33,9 @@ const POT_DEFS = [
   { id: 'pot4', name: 'Pot 4', gradient: 'from-purple-500/20 to-indigo-500/20', border: 'border-purple-500/30', text: 'text-purple-400', badge: 'bg-purple-500/20 text-purple-400' },
 ];
 
-export default function UCLPots({ tournament, tournamentMembers, isAuthenticated, isLoading }: UCLPotsProps) {
+export default function UCLPots({ tournament, tournamentMembers, isAuthenticated, isLoading, uclMatches }: UCLPotsProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
   const [playerSearch, setPlayerSearch] = useState('');
@@ -111,36 +115,48 @@ export default function UCLPots({ tournament, tournamentMembers, isAuthenticated
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {potDefs.map(pot => {
             const list = potMembers[pot.id] ?? [];
             return (
               <Card key={pot.id} variant="glass" className={`bg-gradient-to-b ${pot.gradient} border-2 ${pot.border} !p-0 overflow-hidden`}>
-                <div className={`flex items-center justify-between px-3 py-2 border-b ${pot.border}`}>
-                  <span className={`text-xs font-bold ${pot.text}`}>{pot.name}</span>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${pot.badge}`}>{list.length}</span>
+                {/* Pot header */}
+                <div className={`flex items-center justify-between px-4 py-2.5 border-b ${pot.border}`}>
+                  <span className={`text-sm font-bold ${pot.text}`}>{pot.name}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${pot.badge}`}>{list.length}</span>
                 </div>
-                <div className="p-2 space-y-1">
+                {/* Player rows */}
+                <div className="divide-y divide-black/5 dark:divide-white/5">
                   {list.map((m, idx) => (
-                    <motion.div
+                    <motion.button
                       key={m.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                       transition={{ delay: idx * 0.03 }}
-                      className="px-2 py-1.5 rounded-tech bg-light-100/70 dark:bg-dark-100/60 border border-black/10 dark:border-white/10"
+                      onClick={() => setSelectedPlayer(m.name)}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left"
                     >
-                      <p className="text-[11px] font-semibold text-light-900 dark:text-white truncate">{m.name}</p>
-                      {m.psnId && <p className="text-[9px] text-light-500 dark:text-gray-500 truncate">{m.psnId}</p>}
-                    </motion.div>
+                      <span className={`text-[10px] font-black tabular-nums w-4 shrink-0 ${pot.text} opacity-60`}>{idx + 1}</span>
+                      <span className="text-sm font-semibold text-light-900 dark:text-white truncate flex-1">{m.name}</span>
+                    </motion.button>
                   ))}
                   {list.length === 0 && (
-                    <p className="text-[10px] text-light-400 dark:text-gray-600 text-center py-2">Empty</p>
+                    <p className="text-[10px] text-light-400 dark:text-gray-600 text-center py-4">Empty</p>
                   )}
                 </div>
               </Card>
             );
           })}
         </div>
+
+        {selectedPlayer && (
+          <PlayerStatsModal
+            tournament={tournament}
+            playerName={selectedPlayer}
+            uclMatches={uclMatches}
+            onClose={() => setSelectedPlayer(null)}
+          />
+        )}
       </div>
     );
   }
@@ -214,10 +230,10 @@ export default function UCLPots({ tournament, tournamentMembers, isAuthenticated
             transition={{ delay: idx * 0.03 }}
             className="flex items-center justify-between bg-light-100/70 dark:bg-dark-100/60 border border-black/10 dark:border-white/10 rounded-tech px-3 py-2.5 hover:border-cyber-500/30 transition-all"
           >
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-light-900 dark:text-white truncate">{member.name}</p>
+            <button onClick={() => setSelectedPlayer(member.name)} className="min-w-0 text-left">
+              <p className="text-sm font-semibold text-light-900 dark:text-white truncate hover:text-cyber-400 transition-colors">{member.name}</p>
               {member.psnId && <p className="text-xs text-light-500 dark:text-gray-500 truncate">{member.psnId}</p>}
-            </div>
+            </button>
             {isAuthenticated && isSetup && (
               removingId === member.id ? (
                 <Loader2 className="w-4 h-4 text-light-500 dark:text-gray-500 animate-spin shrink-0" />
@@ -328,6 +344,15 @@ export default function UCLPots({ tournament, tournamentMembers, isAuthenticated
           members={tournamentMembers}
           onConfirm={handleDrawConfirm}
           onClose={() => setShowDrawModal(false)}
+        />
+      )}
+
+      {selectedPlayer && (
+        <PlayerStatsModal
+          tournament={tournament}
+          playerName={selectedPlayer}
+          uclMatches={uclMatches}
+          onClose={() => setSelectedPlayer(null)}
         />
       )}
     </div>

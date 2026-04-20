@@ -2023,6 +2023,53 @@ export const confirmUCLDraw = async (
   });
 };
 
+export const regenerateUCLLeaguePhase = async (tournamentId: string): Promise<{ regenerated: number }> => {
+  const tournament = await getTournamentById(tournamentId);
+  if (!tournament || tournament.type !== 'ucl') throw new Error('Not a UCL tournament');
+
+  // Fetch all existing league phase matches
+  const existing = await getDocs(
+    query(collection(db, 'tournament_matches'),
+      where('tournamentId', '==', tournamentId),
+      where('round', '==', 'league_phase')
+    )
+  );
+
+  // Delete all existing matches
+  const BATCH_SIZE = 400;
+  for (let i = 0; i < existing.docs.length; i += BATCH_SIZE) {
+    const batch = writeBatch(db);
+    existing.docs.slice(i, i + BATCH_SIZE).forEach(d => batch.delete(d.ref));
+    await batch.commit();
+  }
+
+  // Rebuild pot arrays from current member groupId assignments
+  const members = await getTournamentMembers(tournamentId);
+  const potMap = new Map<string, { id: string; name: string }[]>();
+  for (const m of members) {
+    if (!m.id || !m.groupId) continue;
+    if (!potMap.has(m.groupId)) potMap.set(m.groupId, []);
+    potMap.get(m.groupId)!.push({ id: m.id, name: m.name });
+  }
+
+  const potsForFixtures = Array.from(potMap.values());
+  if (potsForFixtures.length === 0) throw new Error('No pot assignments found');
+
+  const fixtures = generateLeaguePhaseFixtures(potsForFixtures, tournamentId);
+
+  // Batch write all new fixtures
+  for (let i = 0; i < fixtures.length; i += BATCH_SIZE) {
+    const batch = writeBatch(db);
+    fixtures.slice(i, i + BATCH_SIZE).forEach(m => {
+      const ref = doc(collection(db, 'tournament_matches'));
+      batch.set(ref, removeUndefinedValues({ ...m, createdAt: serverTimestamp() }));
+    });
+    await batch.commit();
+  }
+
+  return { regenerated: fixtures.length };
+};
+
 export const generateUCLPlayoffs = async (tournamentId: string): Promise<void> => {
   const tournament = await getTournamentById(tournamentId);
   if (!tournament) throw new Error('Tournament not found');

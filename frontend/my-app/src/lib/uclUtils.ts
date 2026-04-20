@@ -76,7 +76,6 @@ export function generateLeaguePhaseFixtures(
 ): Omit<UCLMatch, 'id' | 'createdAt'>[] {
   const matches: Omit<UCLMatch, 'id' | 'createdAt'>[] = [];
   const n = pots[0].length;
-  const offset = Math.ceil(n / 2);
   const base = {
     tournamentId,
     round: 'league_phase' as const,
@@ -86,7 +85,8 @@ export function generateLeaguePhaseFixtures(
     played: false,
   };
 
-  // Same-pot fixtures (2 per player within their pot)
+  // Same-pot: circular pairs, each pair plays both legs (home + away)
+  // Each player faces 2 adjacent pot-mates, 2 legs each = 4 same-pot matches
   for (const pot of pots) {
     const shuffled = shuffleArray([...pot]);
     for (let i = 0; i < shuffled.length; i++) {
@@ -97,16 +97,15 @@ export function generateLeaguePhaseFixtures(
     }
   }
 
-  // Cross-pot fixtures (2 per player per opposing pot)
+  // Cross-pot: 1-for-1 mapping, each pair plays both legs (home + away)
+  // Each player faces 1 opponent per opposing pot, 2 legs each = 6 cross-pot matches
   for (let p1 = 0; p1 < pots.length; p1++) {
     for (let p2 = p1 + 1; p2 < pots.length; p2++) {
       const a = pots[p1];
       const b = shuffleArray([...pots[p2]]);
       for (let i = 0; i < n; i++) {
-        const opp1 = b[i];
-        const opp2 = b[(i + offset) % n];
-        matches.push({ ...base, playerAId: a[i].id, playerAName: a[i].name, playerBId: opp1.id, playerBName: opp1.name });
-        matches.push({ ...base, playerAId: opp2.id, playerAName: opp2.name, playerBId: a[i].id, playerBName: a[i].name });
+        matches.push({ ...base, playerAId: a[i].id, playerAName: a[i].name, playerBId: b[i].id, playerBName: b[i].name });
+        matches.push({ ...base, playerAId: b[i].id, playerAName: b[i].name, playerBId: a[i].id, playerBName: a[i].name });
       }
     }
   }
