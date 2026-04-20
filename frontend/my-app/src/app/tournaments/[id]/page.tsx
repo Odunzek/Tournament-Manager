@@ -32,6 +32,7 @@ import {
   getTournamentById,
   subscribeToTournamentById,
   subscribeToTournamentMembers,
+  subscribeToUCLMatches,
   generateGroups,
   progressToKnockoutStage,
   recordGroupMatch,
@@ -42,7 +43,10 @@ import {
   updateTournament,
   repairKnockoutProgression,
   syncOrphanedMembersToGroups,
+  generateUCLPlayoffs,
+  generateUCLKnockout,
 } from '@/lib/tournamentUtils';
+import type { UCLMatch } from '@/lib/uclUtils';
 import { incrementTournamentWins } from '@/lib/playerUtils';
 import { usePlayers } from '@/hooks/usePlayers';
 
@@ -53,6 +57,12 @@ import Fixtures from '../../../components/tournaments/sections/Fixtures';
 import Teams from '../../../components/tournaments/sections/Teams';
 import Knockout from '../../../components/tournaments/sections/Knockout';
 import Results from '../../../components/tournaments/sections/Results';
+import UCLPots from '../../../components/tournaments/sections/UCLPots';
+import UCLLeague from '../../../components/tournaments/sections/UCLLeague';
+import UCLPlayoff from '../../../components/tournaments/sections/UCLPlayoff';
+import UCLFixtures from '../../../components/tournaments/sections/UCLFixtures';
+import UCLStats from '../../../components/tournaments/sections/UCLStats';
+
 const sectionComponents: Record<TournamentSection, React.ComponentType<any>> = {
   overview: Overview,
   groups: Groups,
@@ -60,6 +70,10 @@ const sectionComponents: Record<TournamentSection, React.ComponentType<any>> = {
   teams: Teams,
   knockout: Knockout,
   results: Results,
+  ucl_pots: UCLPots,
+  ucl_league: UCLLeague,
+  ucl_playoff: UCLPlayoff,
+  ucl_stats: UCLStats,
 };
 
 function TournamentDetailContent() {
@@ -74,6 +88,7 @@ function TournamentDetailContent() {
   const [mounted, setMounted] = useState(false);
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [tournamentMembers, setTournamentMembers] = useState<TournamentParticipant[]>([]);
+  const [uclMatches, setUclMatches] = useState<UCLMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const hasSyncedRef = useRef(false);
@@ -123,6 +138,17 @@ function TournamentDetailContent() {
 
     return () => unsubscribe();
   }, [tournamentId]);
+
+  // Subscribe to UCL league matches (only for UCL tournaments)
+  useEffect(() => {
+    if (!tournamentId || !tournament || tournament.type !== 'ucl') return;
+
+    const unsubscribe = subscribeToUCLMatches(tournamentId, (matches) => {
+      setUclMatches(matches);
+    });
+
+    return () => unsubscribe();
+  }, [tournamentId, tournament?.type]);
 
   /**
    * Navigate back to tournaments list
@@ -271,7 +297,7 @@ function TournamentDetailContent() {
           winnerName = sorted[0].teamName;
         }
       } else {
-        // Knockout / groups_knockout: winner from the completed final tie
+        // UCL / Knockout / champions_league: winner from the completed final tie
         const finalTie = tournament.knockoutBracket?.find(
           (tie) => tie.round === 'final' && tie.completed && tie.winner
         );
@@ -281,7 +307,7 @@ function TournamentDetailContent() {
       if (winnerName) {
         const winnerPlayer = players.find((p) => p.name === winnerName);
         if (winnerPlayer?.id) {
-          await incrementTournamentWins(winnerPlayer.id, tournament.seasonId);
+          await incrementTournamentWins(winnerPlayer.id, tournament.seasonId, tournament.name);
         }
       }
 
@@ -289,6 +315,32 @@ function TournamentDetailContent() {
     } catch (err) {
       console.error('Error completing tournament:', err);
       setError('Failed to complete tournament');
+      setLoading(false);
+    }
+  };
+
+  const handleUCLGeneratePlayoffs = async () => {
+    if (!isAuthenticated) { setShowAuthModal(true); return; }
+    if (!tournament) return;
+    try {
+      setLoading(true);
+      await generateUCLPlayoffs(tournament.id!);
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to generate playoffs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUCLGenerateKnockout = async () => {
+    if (!isAuthenticated) { setShowAuthModal(true); return; }
+    if (!tournament) return;
+    try {
+      setLoading(true);
+      await generateUCLKnockout(tournament.id!);
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to generate knockout');
+    } finally {
       setLoading(false);
     }
   };
@@ -348,7 +400,15 @@ function TournamentDetailContent() {
     );
   }
 
-  const ActiveSectionComponent = sectionComponents[activeSection];
+  const isUCL = tournament.type === 'ucl';
+  // UCL 'fixtures' tab renders UCLFixtures instead of the generic Fixtures component
+  const ActiveSectionComponent = (isUCL && activeSection === 'fixtures')
+    ? null
+    : sectionComponents[activeSection];
+
+  const uclLeagueMatchStats = isUCL
+    ? { played: uclMatches.filter(m => m.played).length, total: uclMatches.length }
+    : undefined;
 
   return (
     <MainLayout showBackground={false}>
@@ -372,6 +432,7 @@ function TournamentDetailContent() {
             activeSection={activeSection}
             onSectionChange={(section) => setActiveSection(section as TournamentSection)}
             tournamentId={tournamentId}
+            tournamentType={tournament.type}
           />
 
           {/* Main Content */}
@@ -401,22 +462,35 @@ function TournamentDetailContent() {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                <ActiveSectionComponent
-                  tournament={tournament}
-                  tournamentMembers={tournamentMembers}
-                  isAuthenticated={isAuthenticated && tournament.status !== 'completed'}
-                  isLoading={loading}
-                  onGenerateGroups={handleGenerateGroups}
-                  onGenerateKnockout={handleGenerateKnockout}
-                  onRecordGroupMatch={handleRecordGroupMatch}
-                  onRecordKnockoutMatch={handleRecordKnockoutMatch}
-                  areGroupMatchesComplete={areGroupMatchesComplete}
-                  setTournament={setTournament}
-                  onDeleteTournament={handleDeleteTournament}
-                  onCompleteTournament={handleCompleteTournament}
-                  onRepairKnockout={handleRepairKnockout}
-                  onNavigate={(section) => setActiveSection(section as TournamentSection)}
-                />
+                {/* UCL Fixtures tab rendered inline */}
+                {isUCL && activeSection === 'fixtures' ? (
+                  <UCLFixtures
+                    uclMatches={uclMatches}
+                    isAuthenticated={isAuthenticated && tournament.status !== 'completed'}
+                    isLoading={loading}
+                  />
+                ) : ActiveSectionComponent ? (
+                  <ActiveSectionComponent
+                    tournament={tournament}
+                    tournamentMembers={tournamentMembers}
+                    uclMatches={uclMatches}
+                    isAuthenticated={isAuthenticated && tournament.status !== 'completed'}
+                    isLoading={loading}
+                    onGenerateGroups={handleGenerateGroups}
+                    onGenerateKnockout={handleGenerateKnockout}
+                    onRecordGroupMatch={handleRecordGroupMatch}
+                    onRecordKnockoutMatch={handleRecordKnockoutMatch}
+                    areGroupMatchesComplete={areGroupMatchesComplete}
+                    setTournament={setTournament}
+                    onDeleteTournament={handleDeleteTournament}
+                    onCompleteTournament={handleCompleteTournament}
+                    onRepairKnockout={handleRepairKnockout}
+                    onNavigate={(section: string) => setActiveSection(section as TournamentSection)}
+                    onUCLGeneratePlayoffs={handleUCLGeneratePlayoffs}
+                    onUCLGenerateKnockout={handleUCLGenerateKnockout}
+                    uclLeagueMatchStats={uclLeagueMatchStats}
+                  />
+                ) : null}
               </motion.div>
             </Container>
           </main>

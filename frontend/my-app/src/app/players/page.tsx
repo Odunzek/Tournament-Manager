@@ -185,9 +185,8 @@ export default function PlayersPage() {
                                      'border-l-transparent';
 
               const tierBadge =
-                tier === 'legend'   ? { label: 'Legend',  className: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/30' } :
-                tier === 'champion' ? { label: 'Champ',   className: 'bg-electric-500/10 text-electric-600 dark:text-electric-400 border-electric-500/30' } :
-                tier === 'veteran'  ? { label: 'Veteran', className: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30' } :
+                tier === 'legend'   ? { label: 'Legend', className: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/30' } :
+                tier === 'champion' ? { label: 'Champ',  className: 'bg-electric-500/10 text-electric-600 dark:text-electric-400 border-electric-500/30' } :
                                      null;
 
               return (

@@ -32,7 +32,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Player, PlayerFormData, SeasonAchievements, calculateTier } from '@/types/player';
+import { Player, PlayerFormData, SeasonAchievements, TitleRecord, calculateTier } from '@/types/player';
 import { getActiveSeason } from './seasonUtils';
 
 /**
@@ -142,6 +142,7 @@ export const getPlayers = async (): Promise<Player[]> => {
         avatar: data.avatar || undefined,
         achievements: data.achievements,
         seasonAchievements: data.seasonAchievements || undefined,
+        titleHistory: data.titleHistory || undefined,
         createdAt: data.createdAt instanceof Timestamp
           ? data.createdAt.toDate().toISOString()
           : new Date(data.createdAt).toISOString(),
@@ -176,6 +177,7 @@ export const getPlayerById = async (playerId: string): Promise<Player | null> =>
         avatar: data.avatar || undefined,
         achievements: data.achievements,
         seasonAchievements: data.seasonAchievements || undefined,
+        titleHistory: data.titleHistory || undefined,
         createdAt: data.createdAt instanceof Timestamp
           ? data.createdAt.toDate().toISOString()
           : new Date(data.createdAt).toISOString(),
@@ -490,7 +492,7 @@ export const getAllTimeRecords = async () => {
 /**
  * Increment player's league wins (global + per-season if seasonId provided)
  */
-export const incrementLeagueWins = async (playerId: string, seasonId?: string): Promise<void> => {
+export const incrementLeagueWins = async (playerId: string, seasonId?: string, titleName?: string): Promise<void> => {
   try {
     const player = await getPlayerById(playerId);
     if (!player) {
@@ -550,6 +552,17 @@ export const incrementLeagueWins = async (playerId: string, seasonId?: string): 
       updateData[`seasonAchievements.${seasonId}`] = seasonAchievement;
     }
 
+    // Append to title history
+    if (titleName) {
+      const newTitle: TitleRecord = {
+        name: titleName,
+        type: 'league',
+        date: new Date().toISOString(),
+        ...(seasonId ? { seasonId } : {}),
+      };
+      updateData.titleHistory = [...(player.titleHistory ?? []), newTitle];
+    }
+
     batch.update(playerRef, updateData);
     await batch.commit();
 
@@ -564,7 +577,7 @@ export const incrementLeagueWins = async (playerId: string, seasonId?: string): 
  * Increment player's tournament wins (global + per-season if seasonId provided)
  * Uses a single batch write for atomicity — both global and season data update together or not at all.
  */
-export const incrementTournamentWins = async (playerId: string, seasonId?: string): Promise<void> => {
+export const incrementTournamentWins = async (playerId: string, seasonId?: string, titleName?: string): Promise<void> => {
   try {
     const player = await getPlayerById(playerId);
     if (!player) {
@@ -622,6 +635,17 @@ export const incrementTournamentWins = async (playerId: string, seasonId?: strin
       }
 
       updateData[`seasonAchievements.${seasonId}`] = seasonAchievement;
+    }
+
+    // Append to title history
+    if (titleName) {
+      const newTitle: TitleRecord = {
+        name: titleName,
+        type: 'tournament',
+        date: new Date().toISOString(),
+        ...(seasonId ? { seasonId } : {}),
+      };
+      updateData.titleHistory = [...(player.titleHistory ?? []), newTitle];
     }
 
     batch.update(playerRef, updateData);
@@ -802,6 +826,7 @@ export const subscribeToPlayers = (
         avatar: data.avatar || undefined,
         achievements: data.achievements,
         seasonAchievements: data.seasonAchievements || undefined,
+        titleHistory: data.titleHistory || undefined,
         createdAt: data.createdAt instanceof Timestamp
           ? data.createdAt.toDate().toISOString()
           : new Date(data.createdAt).toISOString(),
@@ -836,6 +861,7 @@ export const subscribeToPlayerById = (
         avatar: data.avatar || undefined,
         achievements: data.achievements,
         seasonAchievements: data.seasonAchievements || undefined,
+        titleHistory: data.titleHistory || undefined,
         createdAt: data.createdAt instanceof Timestamp
           ? data.createdAt.toDate().toISOString()
           : new Date(data.createdAt).toISOString(),
@@ -871,6 +897,7 @@ export const subscribeToHallOfFame = (
         avatar: data.avatar || undefined,
         achievements: data.achievements,
         seasonAchievements: data.seasonAchievements || undefined,
+        titleHistory: data.titleHistory || undefined,
         createdAt: data.createdAt instanceof Timestamp
           ? data.createdAt.toDate().toISOString()
           : new Date(data.createdAt).toISOString(),

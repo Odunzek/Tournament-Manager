@@ -35,7 +35,7 @@ import { useSeasons } from '@/hooks/useSeasons';
 import CustomDropdown from '@/components/ui/CustomDropdown';
 
 // Firebase Tournament status types for filtering
-type TournamentStatusFilter = 'setup' | 'group_stage' | 'knockout' | 'completed' | 'all';
+type TournamentStatusFilter = 'setup' | 'group_stage' | 'league_phase' | 'playoff' | 'knockout' | 'completed' | 'all';
 
 function TournamentsContent() {
   const router = useRouter();
@@ -236,7 +236,7 @@ function TournamentsContent() {
           <div className="grid grid-cols-4 divide-x divide-black/10 dark:divide-white/10">
             {[
               { label: 'Total', value: filteredTournaments.length },
-              { label: 'Active', value: filteredTournaments.filter(t => t.status === 'group_stage' || t.status === 'knockout').length },
+              { label: 'Active', value: filteredTournaments.filter(t => ['group_stage', 'league_phase', 'playoff', 'knockout'].includes(t.status)).length },
               { label: 'Setup', value: filteredTournaments.filter(t => t.status === 'setup').length },
               { label: 'Done', value: filteredTournaments.filter(t => t.status === 'completed').length },
             ].map((stat) => (

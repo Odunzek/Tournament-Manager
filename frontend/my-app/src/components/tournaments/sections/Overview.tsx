@@ -50,6 +50,10 @@ interface OverviewProps {
   onCompleteTournament?: () => Promise<void>;
   onRepairKnockout?: () => Promise<void>;
   onNavigate?: (section: TournamentSection) => void;
+  // UCL-specific
+  onUCLGeneratePlayoffs?: () => Promise<void>;
+  onUCLGenerateKnockout?: () => Promise<void>;
+  uclLeagueMatchStats?: { played: number; total: number };
 }
 
 /**
@@ -72,7 +76,9 @@ const getTournamentTypeLabel = (type: string) => {
     case 'knockout':
       return 'Knockout Format';
     case 'champions_league':
-      return 'Champions League Format';
+      return 'Groups & Knockout';
+    case 'ucl':
+      return 'UCL Format';
     case 'custom':
       return 'Custom Format';
     default:
@@ -91,6 +97,9 @@ export default function Overview({
   onCompleteTournament,
   onRepairKnockout,
   onNavigate,
+  onUCLGeneratePlayoffs,
+  onUCLGenerateKnockout,
+  uclLeagueMatchStats,
 }: OverviewProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
@@ -316,8 +325,93 @@ export default function Overview({
         <Card variant="gradient">
           <h3 className="text-sm sm:text-lg font-bold text-light-900 dark:text-white mb-2 sm:mb-4">Admin Actions</h3>
 
-          {/* Setup Phase - Generate Groups */}
-          {tournament.status === 'setup' && (
+          {/* UCL: Setup — go to Pots tab */}
+          {tournament.type === 'ucl' && tournament.status === 'setup' && (
+            <div className="space-y-3">
+              <div className="bg-cyber-500/10 border border-cyber-500/20 rounded-tech p-4">
+                <p className="text-cyber-400 font-semibold mb-1">Setup Phase</p>
+                <p className="text-light-600 dark:text-gray-400 text-sm">
+                  Enroll players and open the Pot Draw from the <strong>Pots</strong> tab.
+                </p>
+              </div>
+              <Button variant="ghost" className="w-full" onClick={() => onNavigate?.('ucl_pots' as any)}>
+                Go to Pots →
+              </Button>
+            </div>
+          )}
+
+          {/* UCL: League Phase */}
+          {tournament.type === 'ucl' && tournament.status === 'league_phase' && (
+            <div className="space-y-3">
+              {uclLeagueMatchStats && (
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-tech p-4">
+                  <p className="text-blue-400 font-semibold mb-1">League Phase Active</p>
+                  <p className="text-blue-300/70 text-sm">
+                    {uclLeagueMatchStats.played} / {uclLeagueMatchStats.total} matches played
+                  </p>
+                </div>
+              )}
+              {uclLeagueMatchStats?.played === uclLeagueMatchStats?.total && (uclLeagueMatchStats?.total ?? 0) > 0 ? (
+                <Button
+                  variant="secondary"
+                  onClick={onUCLGeneratePlayoffs}
+                  disabled={isLoading}
+                  isLoading={isLoading}
+                  glow
+                  className="w-full"
+                >
+                  Generate Playoffs
+                </Button>
+              ) : (
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-tech p-4">
+                  <p className="text-yellow-400 font-semibold text-sm">Complete all league matches to generate playoffs.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* UCL: Playoff Phase */}
+          {tournament.type === 'ucl' && tournament.status === 'playoff' && (() => {
+            const playoffTies = tournament.knockoutBracket?.filter(t => t.round === 'playoff' && !t.originalTieId) ?? [];
+            const allPlayoffDone = playoffTies.length > 0 && playoffTies.every(t => t.completed);
+            return (
+              <div className="space-y-3">
+                <div className="bg-orange-500/10 border border-orange-500/20 rounded-tech p-4">
+                  <p className="text-orange-400 font-semibold mb-1">Playoff Round Active</p>
+                  <p className="text-orange-300/70 text-sm">
+                    {playoffTies.filter(t => t.completed).length} / {playoffTies.length} playoff ties completed
+                  </p>
+                </div>
+                {allPlayoffDone ? (
+                  <Button variant="secondary" onClick={onUCLGenerateKnockout} disabled={isLoading} isLoading={isLoading} glow className="w-full">
+                    Generate Knockout Stage
+                  </Button>
+                ) : (
+                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-tech p-4">
+                    <p className="text-yellow-400 font-semibold text-sm">Complete all playoff ties to generate the knockout bracket.</p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* UCL: Knockout Phase */}
+          {tournament.type === 'ucl' && tournament.status === 'knockout' && (
+            <div className="space-y-3">
+              <div className="bg-green-500/10 border border-green-500/20 rounded-tech p-4">
+                <p className="text-green-400 font-semibold mb-1">Knockout Stage Active</p>
+                <p className="text-green-300/70 text-sm">Two-legged ties — winners auto-advance each round.</p>
+              </div>
+              {onRepairKnockout && (
+                <Button variant="secondary" onClick={onRepairKnockout} disabled={isLoading} isLoading={isLoading} className="w-full">
+                  Generate Next Round
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Setup Phase - Generate Groups (non-UCL) */}
+          {tournament.type !== 'ucl' && tournament.status === 'setup' && (
             <div className="space-y-4">
               {tournament.currentTeams >= 8 ? (
                 <Button
@@ -366,8 +460,8 @@ export default function Overview({
             </div>
           )}
 
-          {/* Knockout Phase */}
-          {tournament.status === 'knockout' && (
+          {/* Knockout Phase (non-UCL) */}
+          {tournament.type !== 'ucl' && tournament.status === 'knockout' && (
             <div className="space-y-4">
               <div className="bg-green-500/10 border border-green-500/20 rounded-tech p-4">
                 <p className="text-green-400 font-semibold mb-1">Knockout Stage Active</p>

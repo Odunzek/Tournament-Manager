@@ -35,7 +35,8 @@ interface CreateTournamentModalProps {
 
 // Tournament type options
 const tournamentTypes = [
-  { value: 'champions_league', label: 'Champions League', description: 'Groups + Knockout format' },
+  { value: 'ucl', label: 'UCL', description: 'Pots → League phase → Playoff → Knockout' },
+  { value: 'champions_league', label: 'Groups & Knockout', description: 'Group stage + Knockout bracket' },
   { value: 'knockout', label: 'Knockout Only', description: 'Direct elimination' },
   { value: 'league', label: 'League', description: 'Round-robin format' },
   { value: 'custom', label: 'Custom', description: 'Customizable settings' },
@@ -47,7 +48,7 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
 
   // Form state
   const [name, setName] = useState('');
-  const [type, setType] = useState<'champions_league' | 'knockout' | 'league' | 'custom'>('champions_league');
+  const [type, setType] = useState<'ucl' | 'champions_league' | 'knockout' | 'league' | 'custom'>('ucl');
   const [maxTeams, setMaxTeams] = useState(32);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -88,6 +89,7 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
       // Determine settings based on tournament type
       let settings;
       switch (type) {
+        case 'ucl':
         case 'champions_league':
           settings = DEFAULT_CHAMPIONS_LEAGUE_SETTINGS;
           break;
@@ -129,7 +131,7 @@ export default function CreateTournamentModal({ isOpen, onClose, onSuccess }: Cr
 
       // Reset form and close modal
       setName('');
-      setType('champions_league');
+      setType('ucl');
       setMaxTeams(32);
       setStartDate('');
       setEndDate('');

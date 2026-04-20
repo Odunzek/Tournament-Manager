@@ -18,7 +18,9 @@ export default function TournamentCard({ tournament, onClick }: TournamentCardPr
       case 'knockout':
         return 'Knockout';
       case 'champions_league':
-        return 'Champions League';
+        return 'Groups & Knockout';
+      case 'ucl':
+        return 'UCL';
       case 'custom':
         return 'Custom';
       default:
@@ -30,7 +32,7 @@ export default function TournamentCard({ tournament, onClick }: TournamentCardPr
     <Card
       variant="gradient"
       hover
-      glow={tournament.status === 'group_stage' || tournament.status === 'knockout'}
+      glow={['group_stage', 'league_phase', 'playoff', 'knockout'].includes(tournament.status)}
       onClick={onClick}
       className="cursor-pointer !p-3 sm:!p-4 !rounded-xl !h-[60px] sm:!h-[68px] flex flex-col justify-center"
     >

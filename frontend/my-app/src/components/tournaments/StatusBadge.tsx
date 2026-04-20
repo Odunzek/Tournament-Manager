@@ -4,7 +4,7 @@ import React from 'react';
 import Badge from '../ui/Badge';
 
 // Support both Firebase and UI status types
-type Status = 'setup' | 'group_stage' | 'knockout' | 'completed' |
+type Status = 'setup' | 'group_stage' | 'league_phase' | 'playoff' | 'knockout' | 'completed' |
               'upcoming' | 'active' |
               'scheduled' | 'live' | 'postponed';
 
@@ -20,6 +20,8 @@ const statusConfig: Record<Status, {
   // Firebase Tournament statuses
   setup: { variant: 'info', label: 'Setup' },
   group_stage: { variant: 'success', label: 'Groups' },
+  league_phase: { variant: 'success', label: 'League Phase' },
+  playoff: { variant: 'warning', label: 'Playoff' },
   knockout: { variant: 'warning', label: 'Knockout' },
   completed: { variant: 'default', label: 'Completed' },
 
@@ -40,7 +42,7 @@ export default function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
   return (
     <Badge
       variant={config.variant}
-      glow={status === 'group_stage' || status === 'knockout' || status === 'active' || status === 'live'}
+      glow={status === 'group_stage' || status === 'league_phase' || status === 'playoff' || status === 'knockout' || status === 'active' || status === 'live'}
       className={sizeClass}
     >
       {config.label}

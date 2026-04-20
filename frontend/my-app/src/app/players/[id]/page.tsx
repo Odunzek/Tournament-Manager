@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Edit, Trash2, Calendar, Loader2, Trophy } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Calendar, Loader2, Trophy, Star } from 'lucide-react';
 import MainLayout from '@/components/layouts/MainLayout';
 import Container from '@/components/layouts/Container';
 import GlobalNavigation from '@/components/layouts/GlobalNavigation';
@@ -212,6 +212,40 @@ export default function PlayerDetailPage() {
             />
           </div>
         </motion.div>
+
+        {/* Title History */}
+        {player.titleHistory && player.titleHistory.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="mb-6"
+          >
+            <h2 className="text-lg font-bold text-light-900 dark:text-white mb-3 flex items-center gap-2">
+              <Star className="w-5 h-5 text-yellow-400" />
+              Title History
+            </h2>
+            <div className="space-y-1.5">
+              {[...player.titleHistory].reverse().map((title, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg bg-light-100/60 dark:bg-white/5 border border-black/8 dark:border-white/8"
+                >
+                  <Trophy className={`w-4 h-4 shrink-0 ${title.type === 'league' ? 'text-cyber-400' : 'text-electric-400'}`} />
+                  <span className="flex-1 text-sm font-semibold text-light-900 dark:text-white truncate">{title.name}</span>
+                  <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded border ${
+                    title.type === 'league'
+                      ? 'text-cyber-600 dark:text-cyber-400 bg-cyber-500/10 border-cyber-500/30'
+                      : 'text-electric-600 dark:text-electric-400 bg-electric-500/10 border-electric-500/30'
+                  }`}>{title.type === 'league' ? 'League' : 'Tournament'}</span>
+                  <span className="text-[10px] text-light-500 dark:text-gray-500 shrink-0">
+                    {new Date(title.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Per-Season Breakdown */}
         {player.seasonAchievements && Object.keys(player.seasonAchievements).length > 0 && (

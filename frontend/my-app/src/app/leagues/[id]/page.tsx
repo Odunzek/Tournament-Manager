@@ -211,7 +211,7 @@ export default function LeagueDetailPage() {
         const finalStandings = await calculateStandings(league.id, leaguePlayers, league.pointAdjustments || {});
         if (finalStandings.length > 0 && finalStandings[0].id) {
           // Award the league title and update the player's achievement tier
-          await incrementLeagueWins(finalStandings[0].id, league.seasonId);
+          await incrementLeagueWins(finalStandings[0].id, league.seasonId, league.name);
         }
       }
     } catch (error) {

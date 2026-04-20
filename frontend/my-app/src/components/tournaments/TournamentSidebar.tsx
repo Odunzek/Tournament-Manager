@@ -9,6 +9,10 @@ import {
   Trophy,
   Target,
   BarChart3,
+  Layers,
+  BarChart2,
+  Swords,
+  TrendingUp,
 } from 'lucide-react';
 import { TournamentSidebarProps, TournamentSection } from '@/types/tournament';
 
@@ -18,7 +22,7 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-const navItems: NavItem[] = [
+const defaultNavItems: NavItem[] = [
   { id: 'overview', label: 'Overview', icon: <Info className="w-5 h-5" /> },
   { id: 'groups', label: 'Groups', icon: <Users className="w-5 h-5" /> },
   { id: 'fixtures', label: 'Fixtures', icon: <Calendar className="w-5 h-5" /> },
@@ -27,10 +31,22 @@ const navItems: NavItem[] = [
   { id: 'results', label: 'Stats', icon: <BarChart3 className="w-5 h-5" /> },
 ];
 
+const uclNavItems: NavItem[] = [
+  { id: 'overview', label: 'Overview', icon: <Info className="w-5 h-5" /> },
+  { id: 'ucl_pots', label: 'Pots', icon: <Layers className="w-5 h-5" /> },
+  { id: 'ucl_league', label: 'League', icon: <BarChart2 className="w-5 h-5" /> },
+  { id: 'fixtures', label: 'Fixtures', icon: <Calendar className="w-5 h-5" /> },
+  { id: 'ucl_playoff', label: 'Playoff', icon: <Swords className="w-5 h-5" /> },
+  { id: 'knockout', label: 'Knockout', icon: <Target className="w-5 h-5" /> },
+  { id: 'ucl_stats', label: 'Stats', icon: <TrendingUp className="w-5 h-5" /> },
+];
+
 export default function TournamentSidebar({
   activeSection,
   onSectionChange,
+  tournamentType,
 }: TournamentSidebarProps) {
+  const navItems = tournamentType === 'ucl' ? uclNavItems : defaultNavItems;
   return (
     <>
       {/* Desktop Sidebar */}

@@ -37,6 +37,16 @@ export interface SeasonAchievements {
 }
 
 /**
+ * Individual title won by a player
+ */
+export interface TitleRecord {
+  name: string;
+  type: 'league' | 'tournament';
+  date: string;
+  seasonId?: string;
+}
+
+/**
  * Main Player interface
  */
 export interface Player {
@@ -46,6 +56,7 @@ export interface Player {
   avatar?: string;
   achievements: PlayerAchievements;
   seasonAchievements?: Record<string, SeasonAchievements>;
+  titleHistory?: TitleRecord[];
   createdAt: string;
   updatedAt: string;
 }

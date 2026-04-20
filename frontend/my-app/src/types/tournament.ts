@@ -199,6 +199,7 @@ export interface TournamentSidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
   tournamentId: string;
+  tournamentType?: string;
 }
 
 /**
@@ -211,7 +212,12 @@ export type TournamentSection =
   | 'fixtures'    // Full fixture list
   | 'teams'       // All participants/teams
   | 'knockout'    // Knockout bracket visualization
-  | 'results';    // Completed match results
+  | 'results'     // Completed match results
+  // UCL-specific sections
+  | 'ucl_pots'    // Pot assignment + player enrollment
+  | 'ucl_league'  // Unified league phase standings
+  | 'ucl_playoff' // Playoff 2-legged ties
+  | 'ucl_stats';  // League phase stats & results
 
 /** Base props passed to each tournament section component */
 export interface TournamentSectionProps {

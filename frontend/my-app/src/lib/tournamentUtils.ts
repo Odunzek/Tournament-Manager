@@ -39,10 +39,20 @@ import {
   onSnapshot,
   orderBy,
   Timestamp,
-  serverTimestamp
+  serverTimestamp,
+  writeBatch
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { v4 as uuidv4 } from "uuid";
+import type { UCLMatch } from './uclUtils';
+import {
+  generateLeaguePhaseFixtures,
+  computeLeagueStandings,
+  applyZones,
+  computeUCLCutoffs,
+  shuffleArray,
+  pickKnockoutRound,
+} from './uclUtils';
 
 /**
  * Converts a Firestore Timestamp (or any timestamp-like value) into a native JavaScript Date.
@@ -232,11 +242,16 @@ const getNextRound = (currentRound: string): string | null => {
 };
 
 
+export interface UCLPot {
+  id: string;
+  name: string;
+}
+
 export interface Tournament {
   id?: string;
   name: string;
-  type: 'league' | 'champions_league' | 'knockout' | 'custom';
-  status: 'setup' | 'group_stage' | 'knockout' | 'completed';
+  type: 'league' | 'champions_league' | 'knockout' | 'custom' | 'ucl';
+  status: 'setup' | 'group_stage' | 'league_phase' | 'playoff' | 'knockout' | 'completed';
   seasonId?: string; // references seasons collection doc ID
   createdAt: Date;
   startDate?: Date;
@@ -248,6 +263,9 @@ export interface Tournament {
   settings: TournamentSettings;
   qualifiedTeams?: TournamentParticipant[];
   rules?: string;
+  // UCL-specific
+  pots?: UCLPot[];
+  seedings?: Record<string, number>; // memberId → seeding position (direct qualifiers)
 }
 
 export interface TournamentGroup {
@@ -327,7 +345,7 @@ export interface KnockoutMatch {
 
 export interface KnockoutTie {
   id?: string;
-  round: 'round_16' | 'quarter_final' | 'semi_final' | 'final';
+  round: 'playoff' | 'round_16' | 'quarter_final' | 'semi_final' | 'final';
   team1: string; // Team name
   team2: string; // Team name  
   firstLeg: KnockoutMatch;
@@ -1923,6 +1941,188 @@ export const subscribeToTournamentById = (tournamentId: string, callback: (tourn
     } else {
       callback(null);
     }
+  });
+};
+
+// ─── UCL Functions ────────────────────────────────────────────────────────────
+
+export const subscribeToUCLMatches = (
+  tournamentId: string,
+  callback: (matches: UCLMatch[]) => void
+): (() => void) => {
+  const q = query(
+    collection(db, 'tournament_matches'),
+    where('tournamentId', '==', tournamentId),
+    where('round', '==', 'league_phase')
+  );
+  return onSnapshot(q, snap => {
+    const matches = snap.docs.map(d => ({ id: d.id, ...d.data() } as UCLMatch));
+    callback(matches);
+  });
+};
+
+export const recordUCLLeagueMatch = async (
+  matchId: string,
+  scoreA: number,
+  scoreB: number
+): Promise<void> => {
+  await updateDoc(doc(db, 'tournament_matches', matchId), {
+    scoreA,
+    scoreB,
+    played: true,
+  });
+};
+
+export const confirmUCLDraw = async (
+  tournamentId: string,
+  potAssignments: { potId: string; potName: string; memberIds: string[] }[]
+): Promise<void> => {
+  const members = await getTournamentMembers(tournamentId);
+
+  // Map each member to their pot
+  const memberPotMap: Record<string, { potId: string; potName: string }> = {};
+  for (const pot of potAssignments) {
+    for (const mid of pot.memberIds) {
+      memberPotMap[mid] = { potId: pot.potId, potName: pot.potName };
+    }
+  }
+
+  // Update tournament_members groupId to pot id
+  await Promise.all(
+    Object.entries(memberPotMap).map(([memberId, { potId }]) =>
+      updateDoc(doc(db, 'tournament_members', memberId), { groupId: potId })
+    )
+  );
+
+  // Build pots array for fixture generation
+  const potsForFixtures = potAssignments.map(pot =>
+    pot.memberIds.map(mid => {
+      const member = members.find(m => m.id === mid);
+      return { id: mid, name: member?.name ?? mid };
+    })
+  );
+
+  const fixtures = generateLeaguePhaseFixtures(potsForFixtures, tournamentId);
+
+  // Batch write fixtures to tournament_matches
+  const BATCH_SIZE = 400;
+  for (let i = 0; i < fixtures.length; i += BATCH_SIZE) {
+    const batch = writeBatch(db);
+    fixtures.slice(i, i + BATCH_SIZE).forEach(m => {
+      const ref = doc(collection(db, 'tournament_matches'));
+      batch.set(ref, removeUndefinedValues({ ...m, createdAt: serverTimestamp() }));
+    });
+    await batch.commit();
+  }
+
+  const pots = potAssignments.map(p => ({ id: p.potId, name: p.potName }));
+  await updateTournament(tournamentId, {
+    pots,
+    status: 'league_phase',
+    currentTeams: members.length,
+  });
+};
+
+export const generateUCLPlayoffs = async (tournamentId: string): Promise<void> => {
+  const tournament = await getTournamentById(tournamentId);
+  if (!tournament) throw new Error('Tournament not found');
+
+  const matchSnap = await getDocs(
+    query(
+      collection(db, 'tournament_matches'),
+      where('tournamentId', '==', tournamentId),
+      where('round', '==', 'league_phase')
+    )
+  );
+  const matches = matchSnap.docs.map(d => ({ id: d.id, ...d.data() } as UCLMatch));
+
+  const allPlayed = matches.every(m => m.played);
+  if (!allPlayed) throw new Error('Not all league phase matches have been played yet.');
+
+  const members = await getTournamentMembers(tournamentId);
+  const potMap: Record<string, { potId: string; potName: string }> = {};
+  for (const m of members) {
+    const pot = tournament.pots?.find(p => p.id === m.groupId);
+    potMap[m.id!] = { potId: m.groupId ?? '', potName: pot?.name ?? '' };
+  }
+
+  const simplePlayers = members.map(m => ({ id: m.id!, name: m.name }));
+  const rawStandings = computeLeagueStandings(matches, simplePlayers, potMap);
+  const cutoffs = computeUCLCutoffs(members.length);
+  const standings = applyZones(rawStandings, cutoffs);
+
+  // Build seedings for direct qualifiers
+  const seedings: Record<string, number> = {};
+  standings.filter(s => s.zone === 'direct').forEach((s, i) => {
+    seedings[s.memberId] = i + 1;
+  });
+
+  // Pair playoff pool randomly into 2-legged ties
+  const playoffPool = standings.filter(s => s.zone === 'playoff');
+  const shuffled = shuffleArray(playoffPool);
+  const playoffTies: KnockoutTie[] = [];
+
+  for (let i = 0; i < shuffled.length - 1; i += 2) {
+    const team1 = shuffled[i].playerName;
+    const team2 = shuffled[i + 1].playerName;
+    const tieId = uuidv4();
+    playoffTies.push({
+      id: tieId,
+      round: 'playoff',
+      team1,
+      team2,
+      firstLeg: { id: `${tieId}_leg1`, leg: 'first', homeTeam: team1, awayTeam: team2, played: false },
+      secondLeg: { id: `${tieId}_leg2`, leg: 'second', homeTeam: team2, awayTeam: team1, played: false },
+      completed: false,
+      tieNumber: Math.floor(i / 2) + 1,
+    });
+  }
+
+  await updateTournament(tournamentId, {
+    status: 'playoff',
+    seedings,
+    knockoutBracket: playoffTies,
+  });
+};
+
+export const generateUCLKnockout = async (tournamentId: string): Promise<void> => {
+  const tournament = await getTournamentById(tournamentId);
+  if (!tournament?.knockoutBracket) throw new Error('Tournament or bracket not found');
+
+  const playoffTies = tournament.knockoutBracket.filter(t => t.round === 'playoff');
+  const allDone = playoffTies.every(t => t.completed);
+  if (!allDone) throw new Error('Not all playoff ties have been completed.');
+
+  const playoffWinners = playoffTies.filter(t => t.winner).map(t => t.winner!);
+  const seedings = tournament.seedings ?? {};
+  const members = await getTournamentMembers(tournamentId);
+
+  const directQualifiers = members
+    .filter(m => seedings[m.id!] !== undefined)
+    .sort((a, b) => (seedings[a.id!] ?? 999) - (seedings[b.id!] ?? 999))
+    .map(m => m.name);
+
+  const totalTeams = directQualifiers.length + playoffWinners.length;
+  const roundName = pickKnockoutRound(totalTeams) as KnockoutTie['round'];
+
+  const knockoutTies: KnockoutTie[] = directQualifiers.map((direct, i) => {
+    const opponent = playoffWinners[i] ?? '';
+    const tieId = uuidv4();
+    return {
+      id: tieId,
+      round: roundName,
+      team1: direct,
+      team2: opponent,
+      firstLeg: { id: `${tieId}_leg1`, leg: 'first', homeTeam: direct, awayTeam: opponent, played: false },
+      secondLeg: { id: `${tieId}_leg2`, leg: 'second', homeTeam: opponent, awayTeam: direct, played: false },
+      completed: false,
+      tieNumber: i + 1,
+    };
+  });
+
+  await updateTournament(tournamentId, {
+    status: 'knockout',
+    knockoutBracket: [...tournament.knockoutBracket, ...knockoutTies],
   });
 };
 
