@@ -481,7 +481,7 @@ export default function Fixtures({
                     <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-tech bg-gradient-cyber flex items-center justify-center shrink-0">
                       <Trophy className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-light-900 dark:text-white" />
                     </div>
-                    Group {groupName}
+                    {groupName}
                   </h3>
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="text-[10px] sm:text-sm text-light-600 dark:text-gray-400">
