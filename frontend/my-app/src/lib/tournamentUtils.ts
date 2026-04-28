@@ -2104,14 +2104,17 @@ export const generateUCLPlayoffs = async (tournamentId: string): Promise<void> =
     seedings[s.memberId] = i + 1;
   });
 
-  // Pair playoff pool randomly into 2-legged ties
+  // Seeded draw: top half (e.g. 9–16) vs bottom half (e.g. 17–24) in reverse order
+  // → 9 vs 24, 10 vs 23, 11 vs 22, etc.
   const playoffPool = standings.filter(s => s.zone === 'playoff');
-  const shuffled = shuffleArray(playoffPool);
+  const half = Math.floor(playoffPool.length / 2);
+  const seeded = playoffPool.slice(0, half);
+  const unseeded = playoffPool.slice(half);
   const playoffTies: KnockoutTie[] = [];
 
-  for (let i = 0; i < shuffled.length - 1; i += 2) {
-    const team1 = shuffled[i].playerName;
-    const team2 = shuffled[i + 1].playerName;
+  for (let i = 0; i < seeded.length; i++) {
+    const team1 = seeded[i].playerName;
+    const team2 = unseeded[unseeded.length - 1 - i].playerName;
     const tieId = uuidv4();
     playoffTies.push({
       id: tieId,
@@ -2121,7 +2124,7 @@ export const generateUCLPlayoffs = async (tournamentId: string): Promise<void> =
       firstLeg: { id: `${tieId}_leg1`, leg: 'first', homeTeam: team1, awayTeam: team2, played: false },
       secondLeg: { id: `${tieId}_leg2`, leg: 'second', homeTeam: team2, awayTeam: team1, played: false },
       completed: false,
-      tieNumber: Math.floor(i / 2) + 1,
+      tieNumber: i + 1,
     });
   }
 
